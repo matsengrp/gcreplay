@@ -1,0 +1,15 @@
+name: replay
+channels:
+  - conda-forge
+  - defaults
+  - bioconda
+dependencies:
+  - numpy
+  - pandas
+  - seaborn
+  - jupyter
+  - phylip
+  - pip
+  - pip:
+    - gctree
+    - git+https://github.com/matsengrp/torchdms.git
