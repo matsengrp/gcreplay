@@ -24,7 +24,7 @@ example command line shown below.
 
 **WHILE PRIVATE**
 
-    $ git clone git@github.com:matsengrp/gcreplay.git #ssh
+    $ git clone git@github.com:matsengrp/gcreplay.git && cd gcreplay
     $ git checkout 1_nextflow_infrastructure
     $ nextflow run nextflow/main.nf -profile docker -resume
 
