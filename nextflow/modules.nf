@@ -1,0 +1,102 @@
+
+
+/*
+ * Process 1A: trim the first three bases of the paired end reads.
+ */
+process TRIM_COMBINE_MATES { 
+  container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir 'intermediate/trimmed/'
+  input: tuple val(key), path(reads)
+  output: tuple val(key), path("${key}.fasta")
+  script:
+  """
+  fastx_trimmer -Q33 -i ${reads[0]} -f 3 -o t_${reads[0]}
+  fastx_trimmer -Q33 -i ${reads[1]} -f 3 -o t_${reads[1]}
+  pandaseq -f t_${reads[0]} -r t_${reads[1]} -O 0 -w ${key}.fasta
+  """
+}
+
+
+/*
+ * Process 1B: demultiplex the different plates
+ * if there are no sequences matching a barcode,
+ * and thus th resulting file is empty, we don't
+ * output it.
+ */
+process DEMULTIPLEX_PLATES {
+  container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir 'intermediate/plate_splits/'
+  input: 
+    tuple val(key), path(key_fasta)
+    path plate_barcodes
+  output: path "${key}.*"
+  script:
+  """
+  cat ${key_fasta} | fastx_barcode_splitter.pl \
+    --bcfile ${plate_barcodes} --eol \
+    --prefix ${key}. --exact
+  """
+}
+
+/*
+ * Process 1C: Demultiplex each plate into the 96 wells per plate
+ */
+process DEMULTIPLEX_WELLS {
+  container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir 'intermediate/well_splits/'
+  input: tuple path(plate), path(well_barcodes)
+  output: path "${plate}.*"
+  script:
+  """
+  cat ${plate} | fastx_barcode_splitter.pl \
+    --bcfile ${well_barcodes} --bol --prefix ${plate}. --exact
+  """
+}
+
+
+/*
+ * Process 1D: Split each demultiplexed fasta into 
+ * heavy and light chain by using cutadapt to search
+ * for common motifs
+ */
+process SPLIT_HK {
+  container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir 'intermediate/hk_splits/'
+  input: 
+    path(well) 
+    val(motif)
+    val(chain)
+  output: path "${well}.${chain}"
+  script:
+  """
+  cutadapt -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
+  """
+}
+
+
+/*
+ * Process 1F: Collapse each heavy and light chain
+ * demultiplexed files into  
+ */
+process COLLAPSE_RANK_PRUNE {
+  container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir 'intermediate/coll_rank/'
+  input: path(well_chain)
+  output: path("${well_chain}.coll_rank")
+  script:
+  """
+  fastx_collapser -i ${well_chain} | head -n 6 > ${well_chain}.coll_rank
+  """
+}
+
+process MERGE_BCRS {
+  container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir 'intermediate/final_sequences/'
+  input: path(all_coll_rank)
+  output: path("merged_bcrs.fasta")
+  script:
+  """
+  awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > merged_bcrs.fasta
+  """
+}
+

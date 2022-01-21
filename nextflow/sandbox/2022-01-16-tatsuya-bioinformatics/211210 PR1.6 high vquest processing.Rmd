@@ -1,0 +1,1983 @@
+---
+title: "211210 PR1.6 high vquest processing"
+date: "Last edited `r Sys.Date()`"
+output:
+  html_notebook:
+    toc: yes
+    toc_depth: 2
+    toc_float:
+      collapsed: no
+    number_sections: yes
+    highlight: pygments
+    css: "/Users/Tatsuya7091/Dropbox/R/SSmin.css"
+  pdf_document: 
+    toc: yes
+    toc_depth: 3
+    highlight: pygments
+  html_document:
+    toc: yes
+    toc_depth: '2'
+    toc_float:
+      collapsed: no
+    number_sections: yes
+    highlight: pygments
+    css: "/Users/Tatsuya7091/Dropbox/R/SSmin.css"
+editor_options:
+  chunk_output_type: inline
+params:
+  folder: 211203 PR1.6
+  key: PR1_6-key.csv
+  miseq: PR1.6
+---
+
+## Preamble: load necessary packages
+```{r preamble, include=FALSE}
+wd <- paste("/Users/Tatsuya7091/Dropbox (Personal)/Rockefeller/2. Victora lab/2. Projects/11. Parallel replay/12. PR miseq analysis/",
+            params$folder, sep="")
+#setwd(wd)
+
+library(readxl)
+library(seqinr)
+library(Biostrings) # has to be after seqinr to mask translate, but before tidyverse
+library(assertive) # warning when needed
+library(knitr)
+library(kableExtra) # simple table
+library(biozhuoer)
+library(circlize)
+library(viridis) #for coloring: viridis, magma, plasma, inferno, cividis, etc.
+  # https://www.thinkingondata.com/something-about-viridis-library/
+library(ggthemes)
+library(ComplexHeatmap)
+library(tidyverse)
+```
+
+### Import key file
+```{r key import}
+keypath <- paste(getwd(), "/input/", params$key, sep="")
+
+key <- read_csv(keypath, col_types = "iiicciicc") 
+# mouse, plate, gc, node, cell_type, hc_barcode, lc_barcode
+```
+
+### Data being analyzed
+```{r list of GCs in this miseq}
+key %>% 
+  kbl(align = "ccccccc") %>%
+    kable_styling(bootstrap_options = "striped",
+                  full_width = FALSE,
+                  position = "left",
+                  stripe_color = "#f0f0f0")
+```
+
+## Database generation
+
+Raw file is an output of the IMGT's high-vquest. Make sure to export AIRR format as well, to make processing simpler (i.e. less files to import for simplicity).
+
+Process both IgH and IgK at the same time as per PCR strategy.
+
+### Read high vquest files (AIRR,7,8,9)
+```{r read data}
+airr <- read_tsv("./airr/vquest_airr.tsv")
+change <- read_tsv("./airr/7_V-REGION-mutation-and-AA-change-table.txt")
+ntmut <- read_tsv("./airr/8_V-REGION-nt-mutation-statistics.txt")
+aamut <- read_tsv("./airr/9_V-REGION-AA-change-statistics.txt")
+
+print("done")
+```
+
+### Assemble V(D)J nt/aa seq in AIRR
+```{r airr preprocessing}
+# assemble V(D)J nt and aa sequences in airr from components for gctree
+airr <- airr %>% 
+  mutate(seq_nt = paste(fwr1, cdr1, fwr2, cdr2, fwr3, cdr3, fwr4, sep = "")) %>% 
+  mutate(seq_aa = paste(fwr1_aa, cdr1_aa, fwr2_aa, cdr2_aa,
+                        fwr3_aa, cdr3_aa, fwr4_aa, sep = ""))
+print("done")
+```
+
+### Compile/rename all data into one tibble
+```{r data compilation, echo=TRUE}
+vquest <- airr %>% 
+  select(ID = "sequence_id", 
+         locus = "locus",
+         V = "v_call",
+         D = "d_call",
+         J = "j_call",
+         Productive = "productive",
+         AAjunction = "junction_aa",
+         seq_nt,
+         seq_aa,
+         seq_input = sequence,
+         "gapped seq_nt" = "sequence_alignment",
+         "gapped seq_aa" = "sequence_alignment_aa",
+         v_cigar,
+         d_cigar,
+         j_cigar) %>% 
+  mutate(num = 1:nrow(airr), .before = ID) %>% 
+  mutate(seq_nt_length = str_length(seq_nt), .after = seq_nt) %>% 
+  mutate(seq_aa_length = str_length(seq_aa), .after = seq_aa) %>% 
+  mutate(nt_mut = ntmut$`V-REGION Nb of mutations`, .after = seq_nt_length) %>% 
+  mutate(nt_mut_silent = ntmut$`V-REGION Nb of silent mutations`, .after = nt_mut) %>% 
+  mutate(nt_mut_replacement = 
+           ntmut$`V-REGION Nb of nonsilent mutations`, .after = nt_mut_silent) %>% 
+  mutate(aa_replacement = aamut$`V-REGION Nb of AA changes`, .after = nt_mut_replacement) %>% 
+  mutate(Vchanges = change$`V-REGION`, .after = aa_replacement) 
+
+print("done") #if evaluated
+```
+
+### Delete entries with no results
+```{r delete empty rows}
+vquest <- vquest %>% 
+  filter(V != "NA")
+
+print ("done")
+```
+
+### Parse seq name into ID, well, count, rank, and barcode#
+```{r name parsing, echo=TRUE}
+vquest <- vquest %>% 
+  mutate(counts = str_split(ID, "-", simplify = TRUE)[,2], .after = ID) %>% # count
+  mutate(ID = str_split(ID, "-", simplify = TRUE)[,1], .after = "num") %>% # delete count in ID
+  mutate(well = str_extract(ID, "[A-H]{1}[0-9]{1,2}"), .after = ID) %>% 
+  mutate(row = str_extract(well, "[A-H]{1}"), .after = well) %>% 
+  mutate(column = str_extract(well, "[0-9]{1,2}"), .after = row) %>% 
+  mutate(rank = str_split(ID, "_", simplify = TRUE)[,2], .after = ID) %>% 
+  mutate(ID = str_split(ID, "_", simplify = TRUE)[,1], .after = "num") %>% # delete rank in ID
+  mutate(barcode = str_extract(ID, "P[0-9]{2,}"), .after = counts) %>% # barcode#, digit>=2
+  mutate(barcode = str_extract(barcode, "[0-9]{2,}"), .after = counts) # (-)"P" in barcode
+
+print("done") #if evaluated
+```
+
+### Make fasta column with input sequence
+```{r make fasta_input, echo=TRUE}
+vquest <- vquest %>% 
+  mutate(seq_input = tolower(seq_input)) %>% # force lower case, in case
+  mutate(fasta_input = paste(">", ID, "\n", seq_input, sep="" ))
+
+print("done") #if evaluated
+```
+
+### Determine isotype
+```{r isotype, echo=TRUE}
+# Initialize isotype column
+vquest <- vquest %>% 
+  mutate(isotype = "to be filled", .after = J)
+
+# For LC fill in "IGK" and identify the isotypes for the HC
+for (i in 1:length(vquest$seq_input)) {
+  if (vquest$locus[i] == "IGK") {
+    vquest$isotype[i] <- "IgK"
+  } else if("atgtcttccccct" %in% str_extract(vquest$seq_input[i], "atgtcttccccct")) {
+    vquest$isotype[i] <- "IgM"
+  } else if ("atggtgaccctggg" %in% str_extract(vquest$seq_input[i], "atggtgaccctggg")) {
+    vquest$isotype[i] <- "IgG1"
+  } else if ("ggctcctcggtgactcta" %in% 
+             str_extract(vquest$seq_input[i], "ggctcctcggtgactcta") |
+             "tcggtgactctagg" %in% str_extract(vquest$seq_input[i], "tcggtgactctagg") |
+             "gtgtggagatacaactgg" %in% 
+             str_extract(vquest$seq_input[i], "gtgtggagatacaactgg")) {
+    vquest$isotype[i] <- "IgG2"
+  } else if ("cccttggtccctggctgcggtgacacat" %in% 
+             str_extract(vquest$seq_input[i], "cccttggtccctggctgcggtgacacat") |
+             "cacatctggatcctcggtgaca" %in% 
+             str_extract(vquest$seq_input[i], "cacatctggatcctcggtgaca")) {
+    vquest$isotype[i] <- "IgG3"
+  } else if ("tctgcgagaaatcccaccatcta" %in% 
+             str_extract(vquest$seq_input[i], "tctgcgagaaatcccaccatcta")) {
+    vquest$isotype[i] <- "IgA"
+  } else (vquest$isotype[i] <- "error")
+}
+
+print("done") #if evaluated
+```
+
+### delete 1nt from seq_nt (not a coding codon)
+```{r remove last nt in seq_nt}
+vquest <- vquest %>%
+  mutate(seq_nt = substr(seq_nt, 1, nchar(seq_nt)-1)) %>% 
+  mutate(seq_nt_length = seq_nt_length -1)
+
+print("done")
+```
+
+### Function to parse VDJ name
+```{r VDJ parse function}
+# function to parse names
+vdj_parse <- function(gene_name){
+  return (str_split(gene_name, " ", simplify = TRUE)[2]) # take after "musmus", not take "F"
+}
+
+print("done")
+```
+
+### Actually parse VDJ name
+```{r parse VDJ}
+# actually parse
+vquest$V <- map_chr(vquest$V, vdj_parse)
+vquest$D <- map_chr(vquest$D, vdj_parse)
+vquest$J <- map_chr(vquest$J, vdj_parse) # J tends to have ambiguities -- take only first
+
+print("done") #if evaluated
+```
+
+### Parse non-integer entries in nt/aa_mut
+To note, VK6-15 for simpleYK (i.e. PR) has 2 silent mutations in V as "germline". IMGT did not consider the LC naive sequence ambiguous. For VH3-8, IMGT incorrectly suggest 2 mutations for naive HC. Thus pick ### of "###(###)".
+
+Furthermore, nt mut statistics only shows result for **V only** and not D and/or J.
+** For the reasons above, # of nt mutations are to be taken as approximate.**
+
+#### Function to parse ntmut
+```{r nmut parsing function}
+# function: if the nt/aa mutation entry has "###(###)" format, pick the 1st
+parse_nmut <- function (string_nmut) {
+  if (ncol(str_extract_all(string_nmut, "[0-9]{1,}", simplify= TRUE)) != 1){
+    return(str_extract_all(string_nmut, "[0-9]{1,}", simplify= TRUE)[1]) #take 1st of 2
+  } else return(string_nmut)
+}
+
+print("done")
+```
+
+#### Parse `nt_mut`, `nt_mut_silent`, `nt_mut_replacement`, `aa_replacement`
+```{r parse #mut columns}
+# clean up: where "### (###)", take the 1st, then coerce class as integer
+vquest$nt_mut <- as.integer(map_chr(vquest$nt_mut, parse_nmut))
+vquest$nt_mut_silent <- as.integer(map_chr(vquest$nt_mut_silent, parse_nmut))
+vquest$nt_mut_replacement <- as.integer(map_chr(vquest$nt_mut_replacement, parse_nmut))
+vquest$aa_replacement <- as.integer(map_chr(vquest$aa_replacement, parse_nmut))
+
+print("done") #if evaluated
+```
+
+### Export clean database - whole thing
+```{r, clean database export}
+# set names/paths to export (e.g. 210712vquest_cleanAll.csv)
+output_csv_path_name <- paste(getwd(), "/output/", 
+                              format(Sys.time(), '%y%m%d'), params$miseq,
+                              "-vquest_cleanAll.csv", sep = "")
+
+write_csv(vquest, output_csv_path_name)
+
+
+print("done") #if evaluated
+```
+
+### Re-read the clean database with appropriate col classes
+```{r read specific dataframe w/correct col types}
+# reading the whole thing back with correct col types
+vquest2 <- read_csv(output_csv_path_name, 
+                  col_types = "icicciiicccccccciiiiiccicccccc") 
+print("read all data")
+
+```
+
+## Miseq data QC
+- Which V allele in each ranks
+- Number of reads in rank_1
+- Functionality of rank_1 V's
+- Sequence length of V(D)J (for gctree's sake)
+
+Provide surface level summary stats of miseq data and filter what passes the QC.
+
+### Keep rank_1 reads w/ count >= 10
+```{r rank_1 reads}
+# filter by rank 1 --> rank_1 reads
+rank1_reads <- vquest2 %>% 
+  filter(rank == 1)
+
+# Plot counts histogram for rank_1 reads
+rank1_reads %>% 
+  arrange(counts) %>% 
+  ggplot(aes(counts)) +
+  geom_histogram(binwidth = 2) +
+  scale_x_continuous(breaks = 
+                       seq(0, 
+                           max(rank1_reads$counts), 
+                           as.integer(max(rank1_reads$counts)/20))
+                     )+
+  labs(title = "Rank_1 read counts, IGH and IGK")+
+  theme_fivethirtyeight() +
+  facet_grid(rows = vars(locus))
+
+# warns if any rank_1 counts are not >=10
+assert_all_are_in_range(rank1_reads$counts, lower = 10, # lower(10) or higher fails
+                        upper = 10000, #10,000 just as a sanity check?
+                        severity = "warning")
+
+# save rank_1 reads with counts >= 10
+rank1_min10 <- rank1_reads %>% 
+  filter(counts >= 10)
+```
+
+### Rank 1 histogram of counts 1-15 per barcodes
+```{r count 1-10 histogram}
+rank1_reads %>% 
+  arrange(counts) %>% 
+  filter(counts <= 15) %>% 
+  ggplot(aes(counts)) +
+  geom_histogram(binwidth = 1) +
+  scale_x_continuous(breaks = 
+                       seq(0, 15, 1)
+                     )+
+  scale_y_continuous(breaks = 
+                     seq(0, 40, 20)
+                     )+
+  labs(title = "Rank_1 IgH read counts 1-15 per barcodes")+
+  theme_fivethirtyeight() +
+  facet_grid(rows = vars(barcode))
+```
+
+
+### Report rank_1 functionality *(not filtering unproductive out anymore)*
+```{r rank_1 functionality}
+# tabulate number of productive/unproductive V in rank_1
+rank1_min10 %>% 
+  group_by(Productive) %>% 
+  dplyr::count(Productive) %>% 
+  kbl(align = "ccccccc") %>%
+    kable_styling(bootstrap_options = "striped",
+                  full_width = FALSE,
+                  position = "left",
+                  stripe_color = "#f0f0f0")
+
+# keep only the productive reads
+#productive_rank1_min10 <- rank1_min10 %>% 
+  #filter(Productive == "TRUE")
+
+print("done")
+```
+
+
+
+#### Try to recover rank_1 unproductives *(eval=False)*
+Unproductives are now kept as is. Thus recovery is now irrelevant
+``` {r rank_1 unproductive recovery, eval=FALSE}
+# extract rank_1 unproductive IDs
+rank_1_unproductive <- rank1_min10 %>% 
+  filter(Productive == "FALSE") # chr, not logical
+
+# initialize empty tibble (bind_rows will create columns automatically)
+rank_all_unproductive <- tibble()
+
+# look for productive entry with count >= 5, and keep the one with highest rank
+for (i in 1:length(rank_1_unproductive$ID)) {
+  unproductive_well <- vquest2 %>%
+    filter(ID == rank_1_unproductive$ID[i]) %>% 
+    filter(Productive == "TRUE") %>% 
+    filter(counts >= 5) %>% 
+    arrange(rank) %>% # to make the highest rank the top
+    slice_min(rank, n=1) # choose entry with fewest rank value (ie top rank)
+
+  # add the the row back to the productive rank1 min10, if rows exist
+  if (nrow(unproductive_well) != 0) {
+    rank_all_unproductive <- bind_rows(rank_all_unproductive, unproductive_well)
+    productive_rank1_min10 <- bind_rows(productive_rank1_min10, unproductive_well)
+  }
+}
+
+# report what was added back, or comment none
+if (nrow(rank_all_unproductive) != 0){
+  rank_all_unproductive
+} else {print("Nothing added back")}
+
+```
+
+### V identity of the rank_1 reads
+For parallel replay, most if not all the Vs should be IGHV3-8*02 (IgYH) or IGKV6-15(IgYK). Remove ones that are not.
+```{r which V alleles, echo=TRUE}
+rank1_min10 %>% 
+  dplyr::count(V, sort = TRUE)
+
+rank1_min10_PSY <- rank1_min10 %>% 
+  filter(
+    (V == "IGKV6-15*01") |
+    (V == "IGHV3-8*02") 
+  )
+
+```
+
+### Seq length of rank_1 reads
+Sequence length needs to be identical for gctree to work. If `seq_nt_length` is not the same at this point, it is most likely out of frame (indel somewhere inside, not affecting the rearrangement)
+
+```{r seq length table}
+rank1_min10_PSY %>% 
+    group_by(V, seq_nt_length) %>% 
+    dplyr::count(seq_nt_length) %>% 
+    kbl(align = "ccccccc") %>%
+    kable_styling(bootstrap_options = "striped",
+                  full_width = FALSE,
+                  position = "left",
+                  stripe_color = "#f0f0f0")
+```
+
+#### Keep median seq length (assume most are correct) (should be 336 and 321)
+```{r keep median seq length}
+# save median for each chains
+median_seq_nt_length <- rank1_min10_PSY %>% 
+  group_by(V) %>% 
+  summarize(median = median(seq_nt_length))
+
+# keep only the sequences with YH or YK median length (assuming majority correct)
+IgYHK_clean <- rank1_min10_PSY %>% 
+  filter(
+    (seq_nt_length == median_seq_nt_length$median[1]) |
+    (seq_nt_length == median_seq_nt_length$median[2])
+  )
+
+print("done")
+```
+
+### Remove unmatched if it still exists
+```{r remove unmatched}
+IgYHK_clean <- IgYHK_clean  %>% # unmatched doesn't have well info (ie NA)
+  filter(well != "NA")
+
+print("done")
+```
+
+### Isotype error in significant entry
+```{r isotype QC}
+# if error in significant cell, manual entry?
+IgYHK_clean  %>% # not saving -- just to show
+  filter(isotype == "error")
+
+print("done")
+```
+
+### Summary: rank_1 IgYH & IgYK with same length
+```{r clean IgYH, IgYK summary}
+# Show tibble of IgYH and IgYK that will be exported for fasta --> gctree
+IgYHK_clean
+
+```
+
+## Concatenating HC & LC for gctree 
+Take the key.csv file which has HC then LC barcode # as integer. Each row corresponds to the HC LC pair (i.e. GC#1, 2, etc.); therefore, inner_join by these two barcode numbers and identify as unique GC.
+
+### Initialize all columns in df
+```{r col initialize for concat}
+# Initialize: mouse, node, cell_type, plate#, GC#
+IgYHK_clean <- IgYHK_clean %>%
+  mutate(mouse = 0, .before = ID) %>%
+  mutate(node = "nn", .after = counts) %>%
+  mutate(cell_type = "nn", .after = node) %>%
+  mutate(plate_num = 0, .after = cell_type) %>% 
+  mutate(GC_num = 0, .after = plate_num)
+
+print("done")
+```
+
+
+### Concatenate YH and YK & fill metadata
+211207 edit: allow row | col filtering to fill appropriate metadata
+```{r inner_join IgYH & IgYK}
+# initialize empty tibble
+GCdf <- tibble()
+
+# for each row in key, inner_join respective HC and LC barcode#, and output index# in GC col
+for (i in 1:length(key$plate)) {
+  # store specific row/col
+  key_row <- str_split(key$row[i], "\\.", simplify = TRUE) # dot needs escape in regex
+  key_col <- str_split(key$col[i], "\\.", simplify = TRUE)
+  
+  # Generate HC & LC df with specific barcode number
+  HC <- IgYHK_clean %>%
+    filter(barcode == key$hc_barcode[i]) %>% 
+    filter(locus == "IGH") %>% 
+    filter(column %in% key_col) %>% 
+    filter(row %in% key_row)
+
+  LC <- IgYHK_clean %>%
+    filter(barcode == key$lc_barcode[i]) %>% 
+    filter(locus == "IGK") %>% 
+    filter(column %in% key_col) %>% 
+    filter(row %in% key_row)
+
+  # join the entries only if the entries exist in both datasets
+  GC <- inner_join(HC, LC, by = "well", suffix = c("_HC", "_LC"))
+
+  # fill in info for mouse#, GC#, node identity, cell type, plate
+  GC <- GC %>%
+    mutate(mouse_HC = key$mouse[i]) %>%
+    mutate(GC_num_HC = key$gc[i]) %>%
+    mutate(node_HC = key$node[i]) %>%
+    mutate(cell_type_HC = key$cell_type[i]) %>% 
+    mutate(plate_num_HC = key$plate[i])
+
+  # add the rows to the result df
+  GCdf <- bind_rows(GCdf, GC)
+}
+
+print("done")
+#450 for PR1.6
+```
+
+### Add ID_HK to GCdf
+```{r mutate ID_HK to GCdf}
+GCdf <- GCdf %>% 
+  mutate(ID_HK = str_c(ID_HC, "K", sep=""), .before = num_HC)
+
+print("done")
+```
+
+### Add gctree fasta for H, K, HK, and total HK nt and AA sequence
+```{r make gctree fasta}
+GCdf <- GCdf %>% 
+  mutate(fasta_gctree_H = paste(">", ID_HC, "\n", seq_nt_HC, sep="" )) %>% 
+  mutate(fasta_gctree_K = paste(">", ID_LC, "\n", seq_nt_LC, sep="" )) %>% 
+  mutate(fasta_gctree_HK = paste(">", ID_HK, "\n", 
+                                 seq_nt_HC, seq_nt_LC, sep="" )) %>% 
+  mutate(seq_nt_HK = paste(seq_nt_HC, seq_nt_LC, sep="")) %>% 
+  mutate(seq_aa_HK = paste(seq_aa_HC, seq_aa_LC, sep=""))
+
+print("done")
+```
+
+
+
+### Export gctree_fasta
+Everything that needs to be done is done to this point, before mut# and DMS calculation. gctree needs to be complete before loading idmaps and putative nodes for DMS calculation. If need be, GCdf can also be exported here.
+
+#### Optional: export GCdf_preGCtree database
+```{r GCdf_preGCtree export}
+# set names/paths to export (e.g. 210712vquest_cleanAll.csv)
+GCdf_preGCtree_export_path <- paste(getwd(), "/output/", 
+                              format(Sys.time(), '%y%m%d'), params$miseq,
+                              "-GCdf", "_preGCtree.csv", sep = "")
+
+write_csv(GCdf, GCdf_preGCtree_export_path)
+
+print("done") #if evaluated
+```
+
+#### Import GCdf_preGCtree (eval=false)
+```{r import GCdf_preGCtree, eval=FALSE}
+GCdf <- read_csv("./output/211211PR1.6-GCdf_preGCtree.csv")
+print("GCdf_preGCtree loaded (resume from the middle)")
+```
+
+
+
+#### For each GC # in key, export gctree ready HK fasta (eval=false, manual)
+```{r gctree-ready fasta, eval=false}
+naiveHK_fasta <- ">naive\nGAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCTCAGACTCTGTCCCTCACCTGTTCTGTCACTGGCGACTCCATCACCAGTGGTTACTGGAACTGGATCCGGAAATTCCCAGGGAATAAACTTGAGTACATGGGGTACATAAGCTACAGTGGTAGCACTTACTACAATCCATCTCTCAAAAGTCGAATCTCCATCACTCGAGACACATCCAAGAACCAGTACTACCTGCAGTTGAATTCTGTGACTACTGAGGACACAGCCACATATTACTGTGCAAGGGACTTCGATGTCTGGGGCGCAGGGACCACGGTCACCGTCTCCTCAGACATTGTGATGACtCAGTCTCAAAAATTCATGTCCACATCAGTAGGAGACAGGGTCAGCGTCACCTGCAAGGCCAGTCAGAATGTGGGTACTAATGTAGCCTGGTATCAACAGAAACCAGGGCAATCTCCTAAAGCACTGATTTACTCGGCATCCTACAGGTACAGTGGAGTCCCTGATCGCTTCACAGGCAGTGGATCTGGGACAGATTTCACTCTCACCATCAGCAATGTGCAGTCTGAAGACTTGGCAGAGTATTTCTGTCAGCAATATAACAGCTATCCTCTCACGTTCGGCTCGGGGACtAAGCTaGAAATAAAA"
+
+for (i in 1:length(key$gc)) {
+  GC <- GCdf %>%
+    filter(GC_num_HC == key$gc[i])
+  
+  # if GC = 0 (PB/MB), write specific fasta separating the two
+  if(key$gc[i] == 0){
+    # subset PB and MB df
+    PB <- GCdf %>% 
+      filter(cell_type_HC == "PB")
+
+    MB <- GCdf %>% 
+      filter(cell_type_HC == "MB")
+    
+    # write naive for both PB and MB
+    write_lines(naiveHK_fasta, 
+              paste("./output/pb", key$gc[i], "HK.fa", sep="")
+    )
+    write_lines(naiveHK_fasta, 
+              paste("./output/mb", key$gc[i], "HK.fa", sep="")
+    )
+    
+    # append rest for both PB and MB
+    write_lines(PB$fasta_gctree_HK, 
+              paste("./output/pb", key$gc[i], "HK.fa", sep=""),
+              append = TRUE
+              )
+    write_lines(MB$fasta_gctree_HK, 
+              paste("./output/mb", key$gc[i], "HK.fa", sep=""),
+              append = TRUE
+              )
+    next
+  }
+  
+  # write naive first, overwriting/creating new file
+  write_lines(naiveHK_fasta, 
+              paste("./output/gc", key$gc[i], "HK.fa", sep="")
+  )
+  
+  # append actual entries
+  write_lines(GC$fasta_gctree_HK, 
+              paste("./output/gc", key$gc[i], "HK.fa", sep=""),
+              append = TRUE
+              )
+}
+
+print("done")
+```
+
+
+
+
+## Post-GCtree processing
+- import idmap, add to GCdf
+- import putative nodes, fill idmap info, add to GCdf
+- calculate total mut#
+- calculate DMS scores
+
+### import idmap of relevant GCs
+To note: GCtree only takes the deduplicated ID as input (seq1, etc.)
+
+#### idmap files to load
+```{r idmaps loaded}
+idmap_files <- list.files("./input/idmap/", pattern = "*.txt")
+idmap_files
+```
+
+#### Initialize idmap column
+```{r initialize idmap}
+GCdf <- GCdf %>% 
+  mutate(idmap = "", .after=ID_HK)
+
+print("done")
+```
+
+#### Combine idmap files into `idmap_total`
+```{r combine idmap files}
+# initialize total idmap df
+idmap_total <- tibble()
+
+# read/bind all idmap files
+for(i in 1:length(idmap_files)){ # loop through idmap files
+  idmap <- read_csv(paste("./input/idmap/", idmap_files[i], sep =""),
+                    col_names = c("name", "cell")) %>% 
+    filter(is.na(cell) == FALSE)
+  
+  idmap_total <- bind_rows(idmap_total, idmap)
+}
+
+print("done")
+```
+
+#### Fill in idmap info into `GCdf`
+This needs to run before putative nodes are added, because str_which probably won't behave correctly if ID is a number (as putative nodes have).
+
+```{r fill in idmap info}
+for(i in 1:length(GCdf$ID_HK)){
+  right_index <- str_which(idmap_total$cell, GCdf$ID_HK[i])
+  
+  if(length(right_index) != 0){
+    GCdf$idmap[i] <- idmap_total$name[right_index]
+  } else (next)
+}
+print("done")
+```
+
+
+### Import putative node data
+#### Function: which GC does this file belong to?
+```{r which_GC function}
+which_GC <- function(string_with_gc_num){
+  str_extract(string_with_gc_num, "gc[0-9]{1,}HK") %>% 
+    str_extract(., "[0-9]{1,}")
+}
+```
+
+#### `gctree.out.inference.1.fasta` files to load
+```{r inference fasta loaded}
+inference_fasta_dir <- paste("/Users/Tatsuya7091/gctree/", params$miseq, sep="")
+
+inference_fasta_files <- list.files(inference_fasta_dir, 
+                                    pattern = "gctree.out.inference.1.fasta", 
+                                    full.names = TRUE, recursive = TRUE)
+inference_fasta_files
+```
+
+
+#### Combine fasta files into `putative_total`
+Skip the PB and MB, since there's no meaningful competitive dynamics
+
+```{r combine putative inference fasta files}
+# initialize total inference.fasta df
+putative_total <- tibble()
+
+# read/bind all inference fasta files with appropriate data
+for(i in 1:length(inference_fasta_files)){ # loop through inference.1.fasta
+  # rename the inference.fasta file being looped, and initialize needed columns
+  inference_fasta_single <- read_fasta(inference_fasta_files[i]) %>% 
+    select(ID_HK = name, seq_nt_HK = `seq`) %>% 
+    mutate(seq_nt_HC = "", # for partis smetrics
+           seq_nt_LC = "",
+           seq_aa_HK = "", # for DMS calculation
+           counts_HC = 0)
+  
+  # initialize putative fasta from a single file
+  inference_fasta_putative <- tibble()
+  
+  # discard naive and ones where abundance != 0 (ie keep only putative)
+  for (j in 1:length(inference_fasta_single$ID_HK)){
+    if(str_split(inference_fasta_single$ID_HK[j],
+                 "abundance=", simplify=TRUE)[1] == "naive "){
+      next
+      } else if (str_split(inference_fasta_single$ID_HK[j],
+                 "abundance=", simplify=TRUE)[2] != 0){
+        next
+        }
+    # translate to make seq_aa_HK for the entry
+    inference_fasta_single$seq_aa_HK[j] <- as.character(
+      translate(DNAString(inference_fasta_single$seq_nt_HK[j])))
+    
+    # generate seq_nt_HC and seq_nt_LC from seq_nt_HK for partis's sake
+    inference_fasta_single$seq_nt_HC[j] <- as.character(
+      DNAString(inference_fasta_single$seq_nt_HK[j])[1:336])
+    
+    inference_fasta_single$seq_nt_LC[j] <- as.character(
+      DNAString(inference_fasta_single$seq_nt_HK[j])[337:657])
+    
+    # bind column to putative, non naive
+    inference_fasta_putative <- bind_rows(inference_fasta_putative,
+                                          inference_fasta_single[j,1:6])
+  }
+  # identify which GC
+  which_GC <- str_extract(inference_fasta_files[i], "gc[0-9]{1,}HK") %>% 
+    str_extract(., "[0-9]{1,}")
+  
+  # if not GC, then skip
+  if(str_detect(inference_fasta_files[i], "gc[0-9]{1,}HK") != TRUE){
+    next
+  }
+  
+  # identify index of this GC in key
+  right_index <- str_which(key$gc, which_GC)
+  
+  # if length(right_index) > 1, find which one is correct
+  if (length(right_index) >1){
+    for(m in 1:length(key$gc)){
+      if(which_GC %in% key$gc[m] == TRUE){
+        right_index <- m
+        break
+      } else (next)
+    }
+  }
+  
+  # mutate to add key entries in this df (also initialize idmap, translate to aa)
+  inference_fasta_putative <- inference_fasta_putative %>% 
+    mutate(mouse_HC = key$mouse[right_index], #_HC etc. because GCdf_select isn't made yet
+           GC_num_HC = key$gc[right_index],
+           node_HC = key$node[right_index],
+           cell_type_HC = "putative",
+           idmap = "")
+
+  # bind the putative entries in a inference.fasta file to total putative df
+  putative_total <- bind_rows(putative_total, inference_fasta_putative)
+}
+
+# rename the name of putative nodes and idmap as simple numbers (as it is)
+for(k in 1:length(putative_total$ID_HK)){
+  putative_total$ID_HK[k] <- str_split(putative_total$ID_HK[k],
+                                      " abundance=", simplify=TRUE)[1]
+  putative_total$idmap[k] <- putative_total$ID_HK[k]
+}
+
+print("done")
+```
+
+#### bind putative node info into `GCdf`
+```{r fill in putative node info}
+GCdf <- bind_rows(GCdf, putative_total)
+print("done")
+# PR1.3 GCdf has 1026 obs
+```
+
+
+### Import parent idmap data
+csv file showing an association between the idmap and its nearest ancestor will be calculated outside (via Google colab). Then do left join (GCdf, idmap-parent).
+
+#### Load `PR1_idmap_parent.csv` in PR1 total/input
+```{r join idmap-parent}
+idmap_parent <- read_csv("../PR1 total/input/211103PR1_idmap_parent.csv",
+                         col_names = c("GC_num_HC", "idmap", "idmap_parent", "spillover"))
+print("done")
+```
+
+#### "Fix" tuples
+If naive has a real sequence, `node.name` will have a form `('seq26', 'naive')`, even though the idmap will call the cell under `seq26` and not under `naive`. However, colormap doesn't seem to work, and this will happen only to naive, which is not important. Thus, whenever tuple happens, will fix to contain only the seq##.
+```{r fix tuples in idmap}
+# find index that has a tuple (by searching for parenthesis)
+right_index <- str_which(idmap_parent$idmap_parent, "\\)")
+
+# loop through the index to keep the first entry (seq##?)
+for(i in 1:length(right_index)){
+  idmap_parent$idmap_parent[right_index[i]] <- 
+    str_split(idmap_parent$idmap_parent[right_index[i]], "'", simplify = TRUE)[2]
+}
+print("done")
+```
+
+#### left join idmap_parent into GCdf
+```{r left join idmap_parent}
+GCdf <- left_join(GCdf, idmap_parent, by = c("GC_num_HC", "idmap"))
+print("done")
+```
+
+
+### Identify tree tips
+These should be excluded when plotting the lbi/lbr types of plots because tips don't have any children by definition. This will be done by identifying idmaps that doesn't appear in idmap_parents (ie tips are not parent of anyone), but will be done with unique entries (for speed) so df will be generated separately to be joined later.
+
+#### Calculate tips vs. parents
+```{r identify tree tips}
+# initialize the result df to join later
+node_position <- tibble()
+
+# loop with key (GC_num_HC)
+for(i in 1:length(key$gc)){
+  # skip non GCs (gc = 0 in key)
+  if(key$gc[i] == 0){
+    next
+  }
+  
+  # store unique idmap entries per GC (also prevent contaminating the master database)
+  random <- GCdf %>% 
+    select(GC_num_HC, idmap, idmap_parent) %>% 
+    distinct(.keep_all = TRUE) %>% 
+    filter(GC_num_HC == key$gc[i])
+  
+  # check, in unique idmap entries, idmaps that are never parents
+  for(j in 1:length(random$idmap)){
+    # if not in parents (ie tips)
+    if(!(random$idmap[j] %in% random$idmap_parent)){
+      which_position <- "tip"
+    }else if(random$idmap[j] %in% random$idmap_parent){
+      which_position <- "parent"
+    }else(which_position <- "error")
+    
+    # add the answer to the resulting df (idmap_parent unnecessary)
+    node_position <- bind_rows(node_position, 
+                               tibble(GC_num_HC = random$GC_num_HC[j],
+                                      idmap = random$idmap[j],
+                                      node_position = which_position))
+  }
+}
+
+print("done")
+```
+
+#### left join `node_position` to `GCdf`
+```{r join node_position to GCdf}
+GCdf <- left_join(GCdf, node_position, by = c("GC_num_HC", "idmap"))
+print("done")
+```
+
+
+
+### Calculate mut numbers (only for HK)
+naive seq already has silent mutations, so IMGT mut #s are not accurate. Simple subtraction can misrepresent the numbers because there were some cells that mutated that exact nucleotides.
+
+#### Function to identify aa given a codon
+```{r which.aa function}
+which.aa<-function(input){
+  acids<-c("Isoleucine","Leucine","Valine","Phenylalanine","Methionine","Cysteine","Alanine","Glycine","Proline","Threonine","Serine",
+           "Tyrosine","Tryptophan","Glutamine","Asparagine","Histidine","Glutamic acid","Aspartic acid","Lysine","Arginine","Stop codons")
+  slc<-c("I","L","V","F","M","C","A","G","P","T","S","Y","W","Q","N","H","E","D","K","R","Stop")
+  codon<-c("ATT, ATC, ATA","CTT, CTC, CTA, CTG, TTA, TTG","GTT, GTC, GTA, GTG","TTT, TTC","ATG","TGT, TGC",
+           "GCT, GCC, GCA, GCG","GGT, GGC, GGA, GGG","CCT, CCC, CCA, CCG","ACT, ACC, ACA, ACG","TCT, TCC, TCA, TCG, AGT, AGC",
+           "TAT, TAC","TGG","CAA, CAG","AAT, AAC","CAT, CAC","GAA, GAG","GAT, GAC","AAA, AAG","CGT, CGC, CGA, CGG, AGA, AGG","TAA, TAG, TGA")
+  codon.list<-strsplit(codon,",")
+  
+  # index = empty if no hit (e.g. non ACGT), length != 1 if "" query
+  index <- grep(input, codon.list, ignore.case = TRUE)
+  
+  ifelse(is_empty(index) == FALSE & length(index) == 1, return (slc[index]), return ("X"))
+}
+```
+
+#### Initialize total mut info
+Because IMGT mut #s  are not trustworthy, there's no point in storing the total mut. Thus just initialize as zero
+```{r total mut}
+GCdf <- GCdf %>% 
+  mutate(nt_mut_total = 0) %>% 
+  mutate(nt_mut_silent_total = 0) %>% 
+  mutate(nt_mut_replacement_total = 0) %>% 
+  mutate(aa_replacement_total = 0)
+
+print("done")
+```
+
+#### Actual calculation
+```{r mut number calculation}
+naiveHK_nt <- "GAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCTCAGACTCTGTCCCTCACCTGTTCTGTCACTGGCGACTCCATCACCAGTGGTTACTGGAACTGGATCCGGAAATTCCCAGGGAATAAACTTGAGTACATGGGGTACATAAGCTACAGTGGTAGCACTTACTACAATCCATCTCTCAAAAGTCGAATCTCCATCACTCGAGACACATCCAAGAACCAGTACTACCTGCAGTTGAATTCTGTGACTACTGAGGACACAGCCACATATTACTGTGCAAGGGACTTCGATGTCTGGGGCGCAGGGACCACGGTCACCGTCTCCTCAGACATTGTGATGACtCAGTCTCAAAAATTCATGTCCACATCAGTAGGAGACAGGGTCAGCGTCACCTGCAAGGCCAGTCAGAATGTGGGTACTAATGTAGCCTGGTATCAACAGAAACCAGGGCAATCTCCTAAAGCACTGATTTACTCGGCATCCTACAGGTACAGTGGAGTCCCTGATCGCTTCACAGGCAGTGGATCTGGGACAGATTTCACTCTCACCATCAGCAATGTGCAGTCTGAAGACTTGGCAGAGTATTTCTGTCAGCAATATAACAGCTATCCTCTCACGTTCGGCTCGGGGACtAAGCTaGAAATAAAA"
+
+naiveHK_aa <- "EVQLQESGPSLVKPSQTLSLTCSVTGDSITSGYWNWIRKFPGNKLEYMGYISYSGSTYYNPSLKSRISITRDTSKNQYYLQLNSVTTEDTATYYCARDFDVWGAGTTVTVSSDIVMTQSQKFMSTSVGDRVSVTCKASQNVGTNVAWYQQKPGQSPKALIYSASYRYSGVPDRFTGSGSGTDFTLTISNVQSEDLAEYFCQQYNSYPLTFGSGTKLEIK"
+
+
+# loop through the cells
+for (i in 1:length(GCdf$seq_nt_HK)){
+  # if naive, then total mut = 0
+  if (str_detect(GCdf$seq_nt_HK[i], naiveHK_nt) == TRUE){
+    GCdf$nt_mut_total[i] <- 0
+    GCdf$nt_mut_silent_total[i] <- 0
+    GCdf$nt_mut_replacement_total[i] <- 0
+    next
+  }
+  
+  # initialize silent_mut & replacement_mut, and naive nt and aa as singlets
+  silent_mut <- 0
+  replacement_mut <- 0
+  aa_replacement_total <- 0
+  naive_nt <- unlist(str_split(naiveHK_nt, ""))
+  naive_aa <- unlist(str_split(naiveHK_aa, ""))
+  
+  
+  # store the nt seq for the cell being looped
+  ntHK <- unlist(str_split(GCdf$seq_nt_HK[i], ""))
+  
+  while (length(naive_aa) != 0){ # break if no naive_aa left
+    # break before looping the last?
+    if (length(ntHK) < 3){
+      break
+    }
+  
+    # store first 3nt (codon)
+    ntHK_codon <- str_c(ntHK[1],ntHK[2],ntHK[3], "")
+    naive_nt_codon <- str_c(naive_nt[1],naive_nt[2],naive_nt[3], "")
+    
+    
+    # if codon is same (naive), go next codon and loop
+    if(as.numeric(adist(ntHK_codon, naive_nt_codon, 
+                        ignore.case = TRUE)) == 0){
+      ntHK <- ntHK[4:length(ntHK)]
+      naive_nt <- naive_nt[4:length(naive_nt)]
+      naive_aa <- naive_aa[2:length(naive_aa)]
+      next
+    }
+    
+    # Check if mutation is silent
+    if(which.aa(ntHK_codon) == naive_aa[1]){
+      silent_mut <- silent_mut + as.integer(adist(ntHK_codon, naive_nt_codon, 
+                        ignore.case = TRUE))
+      ntHK <- ntHK[4:length(ntHK)]
+      naive_nt <- naive_nt[4:length(naive_nt)]
+      naive_aa <- naive_aa[2:length(naive_aa)]
+      next
+    }
+    
+    # if not silent mut, then replacement mut
+    replacement_mut <- replacement_mut + as.integer(adist(ntHK_codon, naive_nt_codon, 
+                      ignore.case = TRUE))
+    aa_replacement_total <- aa_replacement_total + 1 # 1aa per loop, by definition
+    ntHK <- ntHK[4:length(ntHK)]
+    naive_nt <- naive_nt[4:length(naive_nt)]
+    naive_aa <- naive_aa[2:length(naive_aa)]
+  }
+  # store the tallied mut #s
+  GCdf$nt_mut_silent_total[i] <- silent_mut
+  GCdf$nt_mut_replacement_total[i] <- replacement_mut
+  GCdf$nt_mut_total[i] <- silent_mut + replacement_mut
+  GCdf$aa_replacement_total[i] <- aa_replacement_total
+}
+
+print("done")
+```
+
+### Replacement to Silent nt mut ratio
+```{r R/S ratio}
+GCdf <- GCdf %>% 
+  mutate(RS_ratio = nt_mut_replacement_total / nt_mut_silent_total,
+         .after = nt_mut_replacement_total)
+
+# report min/max R:S ratio
+GCdf %>% 
+  group_by(RS_ratio) %>% 
+  count(RS_ratio)
+```
+
+#### Optional: export GCdf_preDMS database
+```{r GCdf_preDMS export}
+# set names/paths to export (e.g. 210712vquest_cleanAll.csv)
+GCdf_preDMS_export_path <- paste(getwd(), "/output/", 
+                              format(Sys.time(), '%y%m%d'), params$miseq,
+                              "-GCdf", "_preDMS.csv", sep = "")
+
+write_csv(GCdf, GCdf_preDMS_export_path)
+
+print("done") #if evaluated
+```
+
+#### Import GCdf_preDMS (eval=false)
+```{r import GCdf_preDMS, eval=FALSE}
+GCdf <- read_csv("./output/211104PR1.4-GCdf_preDMS.csv")
+print("GCdf_preDMS loaded (resume from the middle)")
+```
+
+### Generate additive scores for affinity, expression, & polyspecificity
+Import Tyler's DMS table, then compute delta metrics
+
+#### Import Tyler's DMS table
+```{r import DMS table}
+dms <- read_csv("/Users/Tatsuya7091/Dropbox (Personal)/Rockefeller/2. Victora lab/2. Projects/11. Parallel replay/2. DMS/5. second pass/final_variant_scores.csv")
+
+print("done")
+```
+
+#### Remove linker entries and correct the position # on the DMS table
+```{r clean up the DMS table}
+dms <- dms %>% 
+  filter(
+    (chain == "H") | (chain == "L")
+    ) %>% 
+  mutate(position = rep(1:220, each = 20)) # HC position used to be after linker
+```
+
+#### Function to calculate 3 DMS scores given an AA HK seq
+This function simply tabulates delta scores for each residue. It also notes the identity of mutations
+
+*Edit 211213: stop codon (i.e. asterisk) will be disregarded*
+```{r dms tally function}
+calculate_dms_metrics <- function(string, dms_table){
+  # initialize naive seq by residues
+  naive_sep <- unlist(str_split("EVQLQESGPSLVKPSQTLSLTCSVTGDSITSGYWNWIRKFPGNKLEYMGYISYSGSTYYNPSLKSRISITRDTSKNQYYLQLNSVTTEDTATYYCARDFDVWGAGTTVTVSSDIVMTQSQKFMSTSVGDRVSVTCKASQNVGTNVAWYQQKPGQSPKALIYSASYRYSGVPDRFTGSGSGTDFTLTISNVQSEDLAEYFCQQYNSYPLTFGSGTKLEIK", ""))
+  string_sep <- unlist(str_split(string, ""))
+  
+  # initialize deltas and mut lists
+  deltaKd <- 0
+  deltaExpression <- 0
+  deltaPSR <- 0
+  HCmut <- ""
+  LCmut <- ""
+  comment <- ""
+  
+  # tally up dms delta scores per aa
+  for (i in 1:length(string_sep)){
+    # Skip to the next loop index if naive, or stop codon
+    if (str_detect(string_sep[i], naive_sep[i]) == TRUE) {
+      next
+    } else if (string_sep[i] == "*"){
+      next
+    }
+    
+    # find the correct mutation for that position
+    dmsEntry <- dms_table %>% 
+      filter(
+        (position == i) & (mutant == string_sep[i])
+      )
+
+    # append what the mutation is
+    if(dmsEntry$chain == "H"){
+      HCmut <- str_c(HCmut, dmsEntry$wildtype,
+                     dmsEntry$position_IMTG,
+                     dmsEntry$mutant, ":", sep="")
+    } else (LCmut <- str_c(LCmut, dmsEntry$wildtype,
+                     dmsEntry$position_IMTG,
+                     dmsEntry$mutant, ":", sep=""))
+    
+    # add up the respective delta values if not NA
+    if(is.na(dmsEntry$delta_bind) == FALSE){
+      deltaKd <- deltaKd + dmsEntry$delta_bind
+    } else (comment <- str_c(comment, dmsEntry$mutation, 
+                        " delta_bind = NA. ", sep="")
+            )
+    if(is.na(dmsEntry$delta_expr) == FALSE){
+      deltaExpression <- deltaExpression + dmsEntry$delta_expr
+    } else (comment <- str_c(comment, dmsEntry$mutation, 
+                        " delta_expr = NA. ", sep="")
+            )
+    if(is.na(dmsEntry$delta_psr) == FALSE){
+      deltaPSR <- deltaPSR + dmsEntry$delta_psr
+    } else (comment <- str_c(comment, dmsEntry$mutation, 
+                        " delta_psr = NA. ", sep="")
+            )
+    
+    # delete the current position entry in dms_table (faster?)
+    dms_table <- dms_table %>% 
+      filter(position != i)
+  }
+  
+  return (tibble(deltaKd, deltaExpression, deltaPSR, HCmut, LCmut, comment))
+}
+```
+
+#### Temporary & transposable save point (eval = false)
+```{r, eval=FALSE}
+write_csv(putative_total, paste(getwd(), "/output/", 
+                              format(Sys.time(), '%y%m%d'), params$miseq,
+                              "-GCdf", "_postPutative.csv", sep = ""))
+
+# save uncontaminated GCdf
+random <- GCdf
+
+# reload uncontaminated GCdf
+GCdf <- random
+```
+
+
+#### calculate 3 scores for each HK seq, then add to GCdf
+```{r tally 3 DMS scores}
+# initialize dms metric df (naiveHK_aa should have been initialized)
+dms_scores <- tibble()
+
+# loop through the cells
+for (i in 1:length(GCdf$seq_aa_HK)){
+  # if naive, then bind row with all delta = 0
+  if (str_detect(GCdf$seq_aa_HK[i], naiveHK_aa) == TRUE){
+    dms_scores <- bind_rows(dms_scores, tibble(ID_HK = GCdf$ID_HK[i],
+                                               GC_num_HC = GCdf$GC_num_HC[i],
+                                               deltaKd = 0, 
+                                               deltaExpression = 0, 
+                                               deltaPSR = 0))
+    next
+  }
+  
+  # store the aa seq for the cell being looped
+  aaHK <- unlist(str_split(GCdf$seq_aa_HK[i], ""))
+  
+  # calculate dms metrics and mut lists --> metrics (tibble)
+  metrics <- calculate_dms_metrics(aaHK, dms)
+  
+  # remove the last character (either nothing or colon)
+  metrics$HCmut <- str_sub(metrics$HCmut, 1, -2)
+  metrics$LCmut <- str_sub(metrics$LCmut, 1, -2)
+    # -2 = subset up to 2nd character from the end
+  
+  # mutate ID and GC_num_HC in the metrics to join by later
+  metrics <- metrics %>% 
+    mutate(ID_HK = GCdf$ID_HK[i], .before= deltaKd) %>% 
+    mutate(GC_num_HC = GCdf$GC_num_HC[i], .after= ID_HK)
+  
+  # add the result to the df
+  dms_scores <- bind_rows(dms_scores, metrics)
+}
+
+print("done")
+```
+
+#### inner-join dms_scores to GCdf
+inner join should be fine, since # obs should be the same.
+```{r join dms_score & GCdf}
+GCdf <- inner_join(GCdf, dms_scores, by = c("GC_num_HC", "ID_HK"))
+
+print("done")
+# 450 still
+```
+
+
+### Calculate deltaKd_recent, deltaExpression_recent, deltaPSR_recent
+Basically deltaKd(node) - deltaKd(parent) to get the last observable changes in Kd etc.
+
+#### Initialize _recent columns in GCdf
+```{r initialize _recent columns}
+GCdf <- GCdf %>% 
+  mutate(deltaKd_recent = 0, .after=deltaKd) %>% 
+  mutate(deltaExpression_recent = 0, .after = deltaExpression) %>% 
+  mutate(deltaPSR_recent = 0, .after = deltaPSR)
+print("done")
+```
+
+#### Loop to calculate deltaDMS_recent
+```{r actual deltaDMS calculation}
+for(i in 1:length(GCdf$ID_HK)){
+  # identify the entry of the parent node
+  parent_node <- GCdf %>% 
+    filter(
+    (GC_num_HC == GCdf$GC_num_HC[i]) & (idmap == GCdf$idmap_parent[i])
+    )
+  
+  # if no hit, next (prob naive). If >=1 (multiple), take first (all same anyway)
+  if (length(parent_node$idmap) == 0){
+    next
+  } else if(length(parent_node$idmap) >= 1){
+    GCdf$deltaKd_recent[i] <- GCdf$deltaKd[i] - parent_node$deltaKd[1]
+    GCdf$deltaExpression_recent[i] <- 
+      GCdf$deltaExpression[i] - parent_node$deltaExpression[1]
+    GCdf$deltaPSR_recent[i] <- 
+      GCdf$deltaPSR[i] - parent_node$deltaPSR[1]
+  } else (print(paste("sth went wrong trying to find parent node(s) in loop",
+                      i, sep=" ")))
+}
+print("done")
+```
+
+### Fasta and Kd csv for partis
+Partis needs one fasta file containing separate sequences of HC and LC with idmap names (names will be identical, but partis determines which locus).
+
+#### Mutate partis_H and partis_K column
+```{r partis_H and partis_K}
+GCdf <- GCdf %>% 
+  mutate(partis_H = paste(">", idmap, "\n", seq_nt_HC, sep="" ),
+         partis_K = paste(">", idmap, "\n", seq_nt_LC, sep="" ))
+
+print("done")
+```
+
+#### Export partis_Kd_gc##HK.fa and csv
+Has to be unique entries (distinct)
+```{r Export partis .fa and Kd csv}
+for(i in 1:length(key$gc)){
+  random <- GCdf %>% 
+    filter(GC_num_HC == key$gc[i]) %>% 
+    select(GC_num_HC, idmap, deltaKd, deltaKd_recent,
+           deltaExpression, deltaExpression_recent,
+           deltaPSR, deltaPSR_recent, partis_H, partis_K) %>% 
+    distinct(.keep_all = TRUE)
+  
+  # export csv containing at least Kd info per GCs
+  write_csv(random, paste("/Users/Tatsuya7091/partis/input/",
+                          params$miseq, "/partis_gc",
+                          key$gc[i], "HK.csv", sep=""))
+  
+  # write partis_H first, overwriting/creating new file
+  write_lines(random$partis_H, 
+              paste("/Users/Tatsuya7091/partis/input/",
+                          params$miseq, "/partis_gc",
+                          key$gc[i], "HK.fa", sep="")
+  )
+  
+  # append partis_K entries
+  write_lines(random$partis_K, 
+              paste("/Users/Tatsuya7091/partis/input/",
+                          params$miseq, "/partis_gc",
+                          key$gc[i], "HK.fa", sep=""),
+              append = TRUE
+              )
+}
+print("done")
+```
+
+
+### Remove duplicate entries if any
+Not the best way to resolve, but sometimes GCdf gets duplicate entries (probably during the process of left or inner joining other data frames). A relatively conservative way to delete duplicate entries is to keep only unique (with respect to every column) entries in GCdf.
+
+#### Remove duplicates, report if sth is removed
+```{r Keep only unique entries}
+entry_length <- length(GCdf$ID_HK)
+
+GCdf<- GCdf %>% 
+  distinct(.keep_all = TRUE)
+
+new_length <- length(GCdf$ID_HK)
+
+if(entry_length != new_length){
+  print(paste("deleted", entry_length - new_length, "entries", sep=" "))
+} else(print("nothing deleted"))
+
+# GCdf PR1.3 = 856 entries
+```
+
+### Optional: export GCdf_prePartis
+prePartis is postDMS calculation
+```{r export GCdf_prePartis}
+# set names/paths to export (e.g. 210712vquest_cleanAll.csv)
+GCdf_prePartis_export_path <- paste(getwd(), "/output/", 
+                              format(Sys.time(), '%y%m%d'), params$miseq,
+                              "-GCdf_prePartis_all.csv", sep = "")
+
+write_csv(GCdf, GCdf_prePartis_export_path)
+
+print("done") #if evaluated
+```
+
+
+
+## Post partis processing
+By this time selection metrics raw data should be generated via partis
+
+### Join partis selection metric files
+Refer to parse partis YAML(JSON) rmd file for the actual parsing. By this time there should be `smetrics_total` tibble containing all selection metrics with idmap and GC_num to join by.
+
+#### left-join selection metric scores to GCdf
+```{r join smetrics_total & GCdf}
+GCdf <- left_join(GCdf, smetrics_total, by = c("GC_num_HC", "idmap"))
+
+print("done")
+
+```
+
+#### aside: what's not included (eval=false)
+PR1.3 had MB plate (P06), where only 8 cells were recovered (mostly unmutated). dms_scores etc. should have 856 entries including MB, but 211103 GCdf did inne-join of the selection metrics (didn't run MB), which took 8 out to 848 cells, which is correct.
+```{r what was excluded, eval=False}
+for(i in 1:length(dms_scores$ID_HK)){
+  if(!(dms_scores$ID_HK[i] %in% GCdf$ID_HK)){
+    print(dms_scores$ID_HK[i])
+  }
+}
+print("done")
+```
+
+
+### Export GCdf_all database
+```{r GCdf_all export}
+# set names/paths to export (e.g. 210712vquest_cleanAll.csv)
+GCdf_all_export_path <- paste(getwd(), "/output/", 
+                              format(Sys.time(), '%y%m%d'), params$miseq,
+                              "-GCdf_all.csv", sep = "")
+
+write_csv(GCdf, GCdf_all_export_path)
+
+print("done") #if evaluated
+```
+
+#### Import GCdf_all (eval=false)
+```{r import GCdf, eval=FALSE}
+GCdf <- read_csv("./output/211025GCdf-PR1.2c_all.csv")
+```
+
+
+### Export GCdf_select database (less columns -- keep only essential)
+```{r GCdf_select export}
+# select relevant columns
+GCdf_select <- GCdf %>% 
+  select(ID_HK, idmap, idmap_short, idmap_parent, node_position, mouse = mouse_HC, 
+         node = node_HC, plate_num = plate_num_HC, GC_num = GC_num_HC, 
+         cell_type = cell_type_HC, well, 
+         num_HC, barcode_HC, ID_HC, rank_HC, counts_HC, V_HC, isotype_HC,
+         num_LC, barcode_LC, ID_LC, rank_LC, counts_LC, V_LC,
+         deltaKd, deltaKd_recent, deltaExpression, 
+         deltaExpression_recent, deltaPSR, deltaPSR_recent,
+         lbi, lbr, aalbi, aalbr, `aa-cdist`, HCmut, LCmut,
+         nt_mut_total, nt_mut_silent_total, nt_mut_replacement_total,
+         aa_replacement_total, seq_nt_HK, seq_aa_HK, fasta_input_HC, 
+         fasta_input_LC, fasta_gctree_H, fasta_gctree_K, fasta_gctree_HK,
+         partis_H, partis_K)
+
+# set names/paths to export (e.g. 210712vquest_cleanAll.csv)
+GCdf_select_export_path <- paste(getwd(), "/output/", 
+                              format(Sys.time(), '%y%m%d'), params$miseq,
+                              "-GCdf_select.csv", sep = "")
+
+write_csv(GCdf_select, GCdf_select_export_path)
+
+print("done") #if evaluated
+```
+
+### Export GCdf_select specific for PR1.6
+no partis, no parent/tip determination, deltaXX_recent
+```{r GCdf_select export PR1.5}
+# select relevant columns
+GCdf_select <- GCdf %>% 
+  select(ID_HK, idmap, mouse = mouse_HC, 
+         node = node_HC, plate_num = plate_num_HC, GC_num = GC_num_HC, 
+         cell_type = cell_type_HC, well, 
+         num_HC, barcode_HC, ID_HC, rank_HC, counts_HC, V_HC, isotype_HC,
+         num_LC, barcode_LC, ID_LC, rank_LC, counts_LC, V_LC,
+         deltaKd, deltaExpression, 
+         deltaPSR,
+         HCmut, LCmut,
+         nt_mut_total, nt_mut_silent_total, nt_mut_replacement_total,
+         aa_replacement_total, seq_nt_HK, seq_aa_HK, fasta_input_HC, 
+         fasta_input_LC, fasta_gctree_H, fasta_gctree_K, fasta_gctree_HK,
+         partis_H, partis_K)
+
+# set names/paths to export (e.g. 210712vquest_cleanAll.csv)
+GCdf_select_export_path <- paste(getwd(), "/output/", 
+                              format(Sys.time(), '%y%m%d'), params$miseq,
+                              "-GCdf_select.csv", sep = "")
+
+write_csv(GCdf_select, GCdf_select_export_path)
+
+print("done") #if evaluated
+```
+
+
+## Optional: Concatenating miseq GCdfs (eval=False. to be done manually)
+### Set all GCdf_all paths
+```{r concatenating miseq GCdfs, eval=FALSE}
+GCdf_common_path <- "/Users/Tatsuya7091/Dropbox (Personal)/Rockefeller/2. Victora lab/2. Projects/11. Parallel replay/12. PR miseq analysis/"
+
+# PR1.1 211104 should not be used (putative missing, delta calc messed up)
+PR1.1_path <- str_c(GCdf_common_path, 
+                    "210923 PR1.1/output/211105PR1.1-GCdf_all.csv",
+                    sep="")
+PR1.2c_path <- str_c(GCdf_common_path, 
+                    "211023 PR1.2c/output/211104PR1.2c-GCdf_all.csv",
+                    sep="")
+PR1.3_path <- str_c(GCdf_common_path, 
+                    "211014 PR1.3/output/211104PR1.3-GCdf_all.csv",
+                    sep="")
+PR1.4_path <- str_c(GCdf_common_path, 
+                    "211020 PR1.4/output/211104PR1.4-GCdf_all.csv",
+                    sep="")
+```
+
+### read all GCdf_all
+```{r read all GCdf_all}
+PR1_total <- bind_rows(read_csv(PR1.1_path),
+                       read_csv(PR1.2c_path),
+                       read_csv(PR1.3_path),
+                       read_csv(PR1.4_path)
+                       )
+print("done")
+```
+
+### Export PR1_total_all
+```{r export PR1_total_all, eval=FALSE}
+PR1_total_all_export_path <- paste("/Users/Tatsuya7091/Dropbox (Personal)/Rockefeller/2. Victora lab/2. Projects/11. Parallel replay/12. PR miseq analysis/PR1 total/output/", 
+                              format(Sys.time(), '%y%m%d'), 
+                              "PR1_total_all.csv", sep = "")
+
+write_csv(PR1_total, PR1_total_all_export_path)
+
+print("done")
+```
+
+
+### Export PR1_total_select database (less columns -- keep only essential)
+```{r PR1_total_select export}
+# select relevant columns
+PR1_total_select <- PR1_total %>% 
+  select(ID_HK, idmap, idmap_short, idmap_parent, node_position, mouse = mouse_HC, 
+         node = node_HC, plate_num = plate_num_HC, GC_num = GC_num_HC, 
+         cell_type = cell_type_HC, well, 
+         num_HC, barcode_HC, ID_HC, rank_HC, counts_HC, V_HC, isotype_HC,
+         num_LC, barcode_LC, ID_LC, rank_LC, counts_LC, V_LC,
+         deltaKd, deltaKd_recent, deltaExpression, 
+         deltaExpression_recent, deltaPSR, deltaPSR_recent,
+         lbi, lbr, aalbi, aalbr, `aa-cdist`, HCmut, LCmut,
+         nt_mut_total, nt_mut_silent_total, nt_mut_replacement_total,
+         aa_replacement_total, seq_nt_HK, seq_aa_HK, fasta_input_HC, 
+         fasta_input_LC, fasta_gctree_H, fasta_gctree_K, fasta_gctree_HK,
+         partis_H, partis_K)
+
+print("done") #if evaluated
+```
+
+### Export PR1_total
+```{r export PR1_total_select, eval=FALSE}
+PR1_total_select_export_path <- paste("/Users/Tatsuya7091/Dropbox (Personal)/Rockefeller/2. Victora lab/2. Projects/11. Parallel replay/12. PR miseq analysis/PR1 total/output/", 
+                              format(Sys.time(), '%y%m%d'), 
+                              "PR1_total_select.csv", sep = "")
+
+write_csv(PR1_total_select, PR1_total_select_export_path)
+
+print("done")
+```
+
+
+
+
+## Some visualizations?
+
+### number of cells recovered per GCs
+Barcode_HC == NA are putative nodes
+```{r HK seq recovered}
+GCdf %>% 
+  filter(is.na(barcode_HC) == FALSE) %>% 
+  group_by(GC_num_HC, barcode_HC) %>% 
+  dplyr::count(GC_num_HC) %>% 
+  kbl(align = "ccccccc") %>%
+  kable_styling(bootstrap_options = "striped",
+                full_width = FALSE,
+                position = "left",
+                stripe_color = "#f0f0f0")
+```
+
+### number of HC abundance counts per **non-putative** cell per GCs
+Putative nodes do not come from sequencing (NA), thus removed.
+
+```{r # of counts per GCs}
+GCdf_select_nonPutative <- GCdf_select %>% 
+  filter(cell_type != "putative")
+
+GCdf_select_nonPutative %>% 
+  arrange(counts_HC) %>% 
+  ggplot(aes(counts_HC)) +
+  geom_histogram(binwidth = 1) +
+  scale_x_continuous(breaks = 
+                       seq(0, 
+                           max(GCdf_select_nonPutative$counts_HC), 
+                           as.integer(max(GCdf_select_nonPutative$counts_HC)/10))
+                     )+
+  scale_y_continuous(breaks = seq(0,10,5))+
+  labs(title = "total HC read counts per GC")+
+  theme_fivethirtyeight() +
+  facet_grid(rows = vars(GC_num))
+
+```
+
+
+### mutation distribution per GCs
+```{r mut distribution per GCs}
+GCdf %>% 
+  group_by(GC_num_HC)
+
+GCdf_select %>% 
+  arrange(nt_mut_total) %>% 
+  ggplot(aes(x = nt_mut_total)) +
+  geom_histogram(binwidth = 1) +
+  scale_x_continuous(breaks = 
+                       seq(0, 
+                           max(GCdf_select$nt_mut_total), 
+                           as.integer(max(GCdf_select$nt_mut_total)/10))
+                     )+
+  labs(title = "total # nt mutations per GC")+
+  theme_fivethirtyeight() +
+  facet_grid(rows = vars(GC_num))
+```
+
+### delta KD distribution per GCs
+```{r deltaKD distribution}
+GCdf_select %>% 
+  arrange(deltaKd) %>% 
+  ggplot(aes(x = deltaKd)) +
+  geom_histogram(binwidth = 0.1) +
+  scale_x_continuous(breaks = 
+                       seq(as.integer(min(GCdf_select$deltaKd))-1, 
+                           as.integer(max(GCdf_select$deltaKd))+1, 
+                           1)
+                     )+
+  scale_y_continuous(breaks = 
+                     seq(0, 40, 20)
+                   )+
+  labs(title = "deltaKD distribution per GC")+
+  theme_fivethirtyeight() +
+  facet_grid(rows = vars(GC_num))
+```
+
+### delta expression distribution per GCs
+```{r deltaExpression distribution}
+GCdf_select %>% 
+  arrange(deltaExpression) %>% 
+  ggplot(aes(x = deltaExpression)) +
+  geom_histogram(binwidth = 0.1) +
+  scale_x_continuous(breaks = 
+                       seq(as.integer(min(GCdf_select$deltaExpression))-1, 
+                           as.integer(max(GCdf_select$deltaExpression))+1, 
+                           0.2)
+                     )+
+  scale_y_continuous(breaks = 
+                   seq(0, 40, 20)
+                 )+
+  labs(title = "deltaExpression distribution per GC")+
+  theme_fivethirtyeight() +
+  facet_grid(rows = vars(GC_num))
+```
+
+### delta PSR distribution per GCs
+```{r deltaPSR distribution}
+GCdf_select %>% 
+  arrange(deltaPSR) %>% 
+  ggplot(aes(x = deltaPSR)) +
+  geom_histogram(binwidth = 0.1) +
+  scale_x_continuous(breaks = 
+                       seq(as.integer(min(GCdf_select$deltaPSR))-1, 
+                           as.integer(max(GCdf_select$deltaPSR))+1, 
+                           0.5)
+                     )+
+  scale_y_continuous(breaks = 
+                 seq(0, 30, 15)
+               )+
+  labs(title = "deltaPSR distribution per GC")+
+  theme_fivethirtyeight() +
+  facet_grid(rows = vars(GC_num))
+```
+
+### Isotypes
+#### Isotype count per GCs
+```{r isotype count per GCs}
+isotype <- GCdf_select %>% 
+  group_by(GC_num, isotype_HC) %>% 
+  count(isotype_HC)
+isotype
+```
+
+#### Isotype distribution per GCs (no G3 & error, take red & yellow out)
+```{r isotype distribution per GCs}
+GCdf_select %>% 
+  filter(cell_type != "putative") %>% 
+  ggplot(., aes(x = factor(GC_num), fill = isotype_HC))+
+    geom_bar(position = "fill") +
+    scale_y_continuous(labels = scales::percent)+
+    scale_fill_manual(values=c("#fdc086", "#beaed4", "#7fc97f"))+
+    theme_fivethirtyeight()+
+    theme(legend.position = "right", legend.direction = "vertical")+
+    labs(title = "Isotype distribution per GCs (-putative nodes)", fill = "Isotype")
+
+# saturation = 20, default, 100
+# error = #FFFFCC, #ffff99, #FFFF00
+# IgG1 = #FDE3CA, #fdc086 (60:FDAF65), #FD7A00
+# IgG2 = #C5BAD4 (12), #beaed4(30:AF94D4), #7D40D4 (70)
+# IgG3 = #f4b9b8, #e98886(69), #fa4f4c
+# IgM = #ABC9AB(15), #7fc97f, #00C900
+
+```
+
+
+## dictionary generator
+### report min/max values for 3 DMS metrics
+```{r mix/max DMS values}
+GCdf_select %>% 
+  summarize(deltaKd_min = min(deltaKd),
+            deltaKd_max = max(deltaKd),
+            deltaExpr_min = min(deltaExpression),
+            deltaExpr_max = max(deltaExpression),
+            deltaPSR_min = min(deltaPSR),
+            deltaPSR_max = max(deltaPSR))
+```
+
+### Color setting for conversion
+This function adds "FF" at the end (alpha value), which needs to be trimmed
+```{r isotype color setting}
+# saturation = 20, default, 100
+# error = #FFFFCC, #ffff99, #FFFF00
+# IgG1 = #FDE3CA, #fdc086 (60:FDAF65), #FD7A00
+# IgG2 = #C5BAD4 (12), #beaed4(30:AF94D4), #7D40D4 (70)
+# IgG3 = in PR1.1-4 vis.rmd
+# IgM = #95b195(15), #8cba8c(25), #00C900
+
+# -3 to 3 manual approx of delta values, just to be symmetrical
+IgM_color <- colorRamp2(breaks = c(-3, 0, 3),
+                            colors = c("#95b195", "#8cba8c", "#00C900"))
+
+IgG1_color <- colorRamp2(breaks = c(-3, 0, 3),
+                            colors = c("#FDE3CA", "#fdc086", "#FD7A00"))
+
+IgG2_color <- colorRamp2(breaks = c(-3, 0, 3),
+                            colors = c("#C5BAD4", "#beaed4", "#7D40D4"))
+
+IgG3_color <- colorRamp2(breaks = c(-3, 0, 3),
+                            colors = c("#e9abaa", "#e98886", "#ff6461"))
+
+IgMG_color <- colorRamp2(breaks = c(-3, 0, 3),
+                            colors = c("#deebf7", "#6baed6", "#08519c"))
+
+RS_color <- colorRamp2(breaks = seq(0,10,1),
+                            colors = viridis(length(seq(0,10,1))))
+
+lbi_color <- colorRamp2(breaks = seq(0,1,0.1),
+                            colors = viridis(length(seq(0,1,0.1))))
+
+lbr_color <- colorRamp2(breaks = seq(0,10,1),
+                            colors = viridis(length(seq(0,10,1))))
+
+deltaKd_color <- colorRamp2(breaks = seq(-2,2,1),
+                            colors = turbo(length(seq(0,4,1)),
+                                           begin = 0.1,
+                                           end = 0.9,
+                                           direction = -1))
+
+expr_color <- colorRamp2(breaks = seq(-3,1,1),
+                            colors = cividis(length(seq(0,4,1)),
+                                           begin = 0.1,
+                                           end = 1,
+                                           direction = 1))
+
+deltaPSR_color <- colorRamp2(breaks = seq(-1,2,1),
+                            colors = magma(length(seq(0,3,1)),
+                                           begin = 0.2,
+                                           end = 0.9,
+                                           direction = -1))
+
+```
+
+#### (Complexheatmap: make continuous legend) (eval=false)
+```{r heatmap generating relevant legend scale, eval=FALSE} 
+lgd = Legend(col_fun = RS_color, title = "R:S ratio",
+             grid_height = unit(10, "mm"))
+draw(lgd, test = "legend-R:S ratio")
+```
+
+
+### dictionary for deltaKd
+```{r deltaKd dictionary}
+df_deltaKd <- GCdf_select %>% 
+  select(ID_HK, GC_num, mouse, cell_type, idmap, deltaKd) %>% 
+  mutate(key = "", .after=idmap)
+```
+
+#### deltaKd color interpolation
+```{r deltaKd color interpolation}
+df_deltaKd <- df_deltaKd %>% 
+  mutate(key = deltaKd_color(deltaKd)) %>% 
+  mutate(key = str_split(key, "FF$", simplify = TRUE)[,1]) 
+
+```
+
+### dictionary for expr
+```{r expr dictionary}
+df_expr <- GCdf_select %>% 
+  select(ID_HK, GC_num, mouse, cell_type, idmap, deltaExpression) %>% 
+  mutate(key = "", .after=idmap)
+```
+
+#### expr color interpolation
+```{r expr color interpolation}
+df_expr <- df_expr %>% 
+  mutate(key = expr_color(deltaExpression)) %>% 
+  mutate(key = str_split(key, "FF$", simplify = TRUE)[,1]) 
+
+```
+
+
+### dictionary for deltaPSR
+```{r deltaPSr dictionary}
+df_deltaPSR <- GCdf_select %>% 
+  select(ID_HK, GC_num, mouse, cell_type, idmap, deltaPSR) %>% 
+  mutate(key = "", .after=idmap)
+```
+
+#### deltaPSR color interpolation
+```{r deltaPSR color interpolation}
+df_deltaPSR <- df_deltaPSR %>% 
+  mutate(key = deltaPSR_color(deltaPSR)) %>% 
+  mutate(key = str_split(key, "FF$", simplify = TRUE)[,1]) 
+
+```
+
+### dictionary for R:S ratio
+```{r RS ratio dictionary}
+df_RS <- GCdf %>% 
+  select(ID_HK, GC_num = GC_num_HC, idmap, RS_ratio) %>% 
+  mutate(key = "", .after=idmap)
+```
+
+#### R/S color interpolation
+```{r R/S color interpolation}
+df_RS <- df_RS %>% 
+  mutate(key = RS_color(RS_ratio)) %>% 
+  mutate(key = str_split(key, "FF$", simplify = TRUE)[,1]) 
+
+for(i in 1:length(df_RS$ID_HK)){
+  if(df_RS$RS_ratio[i] == "Inf"){
+    df_RS$key[i] <- "#fdc086" # IgG1 orange if R:S ratio = infinity
+  } 
+}
+```
+
+### Generate affinity-coupled isotype dictionary
+Make colormap function for each isotypes, and apply the correct function
+
+#### Identify node(s) containing IgM and IgG
+##### Nodes with abundance >=2
+```{r M and G nodes}
+idmap_min2 <- GCdf_select %>% 
+  group_by(GC_num, cell_type, idmap) %>% 
+  count(idmap) %>% 
+  filter(n != 1)
+
+idmap_min2
+```
+
+##### Check whether any nodes have multiple isotypes
+```{r check multiple isotypes in a node}
+idmap_MG <- tibble()
+
+for(i in 1:length(idmap_min2$idmap)){
+  treenode <- GCdf_select %>% 
+    filter(
+          (GC_num == idmap_min2$GC_num[i] & idmap == idmap_min2$idmap[i])
+          ) %>% 
+    count(isotype_HC)
+  
+  if(length(treenode$isotype_HC) != 1){ # if more than 1 isotype found,
+    # report
+    print(paste("GC", idmap_min2$GC_num[i], idmap_min2$idmap[i], "is mixed", sep=" "))
+    
+    # tabulate idmap_MG
+    idmap_MG <- bind_rows(idmap_MG, idmap_min2[i,])
+  }
+}
+
+idmap_MG
+
+```
+
+#### interpolate M, G1, G2, MG color values to numerical key input
+##### Color key intialization
+```{r color key initialization}
+# initialize color column
+df_isotypeKd <- GCdf_select %>%
+  select(ID_HK, GC_num, mouse, cell_type, idmap, isotype_HC, deltaKd) %>% 
+  mutate(key = "", .after=idmap)
+```
+
+##### Actual color interpolation
+```{r color interpolation}
+for(i in 1:length(df_isotypeKd$ID_HK)){
+  if(is.na(df_isotypeKd$isotype_HC[i]) == TRUE){
+    next
+  }
+  
+  if(df_isotypeKd$isotype_HC[i] == "IgM"){
+    df_isotypeKd$key[i] <- IgM_color(df_isotypeKd$deltaKd[i])
+  } else if(df_isotypeKd$isotype_HC[i] == "IgG1"){
+    df_isotypeKd$key[i] <- IgG1_color(df_isotypeKd$deltaKd[i])
+  } else if(df_isotypeKd$isotype_HC[i] == "IgG2"){
+    df_isotypeKd$key[i] <- IgG2_color(df_isotypeKd$deltaKd[i])
+  } else if(df_isotypeKd$isotype_HC[i] == "IgG3"){
+    df_isotypeKd$key[i] <- IgG3_color(df_isotypeKd$deltaKd[i])
+  } else(next)
+}
+```
+
+##### Recalculate node with both M and G
+```{r MG color recalculation}
+for(i in 1:length(idmap_MG$idmap)){
+  # identify which index has such mixed entries
+  index_MG <- intersect(str_which(df_isotypeKd$GC_num, as.character(idmap_MG$GC_num[i])),
+                        str_which(df_isotypeKd$idmap, idmap_MG$idmap[i]))
+  # recalculate 
+  df_isotypeKd$key[index_MG] <- IgMG_color(df_isotypeKd$deltaKd[index_MG])
+}
+```
+
+##### Trim FF(transparency) at the end of the hex
+```{r Trim FF from hex}
+df_isotypeKd <- df_isotypeKd %>% 
+  mutate(key = str_split(key, "FF$", simplify = TRUE)[,1]) 
+```
+
+
+### write the python-formatted dictionary
+For some reason `key$gc` is considered atomic vector despite it being a tibble (ie. can't loop as is for unkonwn reason). This code works only if looping index --> GC_num is pre-stored
+
+```{r write dictionary inside}
+# loop through GC via key, and write dictionary for each GC
+for (i in 1:length(key$gc)) {
+  GC_loop <- key$gc[i] # without this, it won't work
+  
+  df <- df_isotypeKd %>%
+    filter(GC_num == GC_loop) %>% 
+    distinct(.keep_all = TRUE) # distinct given same GC# (not global)
+  
+  # initialize
+  dic <- "{"
+  
+  # actual dictionary writing
+  for (i in 1:length(df$idmap)){
+    if (i == length(df$idmap)){
+      dic <- paste(dic, "'", df$idmap[i], "': '", df$key[i], "'}", sep="")
+    } else {dic <- paste(dic, "'", df$idmap[i], "': '", df$key[i], "', ", sep="")}
+  }
+  
+  # export the dictionary
+  write_lines(dic, 
+              paste("./output/dic/gc", GC_loop, "HK_isotypeKd.txt", sep="")
+  )
+}
+
+```
+
+#### dictionary only for PB/MB
+```{r write PB/MB dictionary}
+# loop through GC via key, and write dictionary for each GC
+for (i in 1:length(key$gc)) {
+  # skip if GC not 0 (actual GCs)
+  if(key$gc[i] != 0){
+    next
+  }
+  
+  GC_loop <- key$gc[i] # without this, it won't work
+  mouse_loop <- key$mouse[i]
+  cell_type_loop <- key$cell_type[i]
+  
+  # actual process
+  df <- df_deltaPSR %>%
+    filter(GC_num == GC_loop,
+           cell_type == cell_type_loop) %>% 
+    select(cell_type, idmap, key) %>% 
+    distinct(.keep_all = TRUE) # distinct overall (global?)
+  
+  # initialize
+  dic <- "{"
+  
+  # actual dictionary writing
+  for (i in 1:length(df$idmap)){
+    if (i == length(df$idmap)){
+      dic <- paste(dic, "'", df$idmap[i], "': '", df$key[i], "'}", sep="")
+    } else {dic <- paste(dic, "'", df$idmap[i], "': '", df$key[i], "', ", sep="")}
+  }
+  
+  # export the dictionary
+  write_lines(dic, 
+              paste("./output/dic/", cell_type_loop, "HK_deltaPSR.txt", sep="")
+  )
+}
+
+```
+
+
+### Export the dictionary
+```{r expoer dictionary}
+write_lines(dic, paste(GCdf_common_path, "Tbinder2.5/output/Tb2.5HK-dic_deltaPSR-turbo.txt",
+                         sep =""))
+
+```
+
+
+
+
+
+### Color setting for conversion
+This function adds "FF" at the end (alpha value), which needs to be trimmed
+```{r color setting}
+viridis_color <- colorRamp2(breaks = seq(-6,3,1),
+                            colors = viridis(length(seq(-6,3,1)), begin = 0.1))
+
+cividis_color <- colorRamp2(breaks = c(-6, 0, 3),
+                            colors = cividis_3)
+
+turbo_color <- colorRamp2(breaks = seq(-9,9,1),
+                            colors = turbo(length(seq(-9,9,1))))
+
+# Colorbrewer2 PuBu: gray(0), 
+colorconvert = colorRamp2(c(0, 0.001, 0.4, 0.8,
+                             1.2, 1.6, 2,
+                             4, 6), 
+                           c("#d9d9d9", "#ece7f2", "#d0d1e6",
+                             "#a6bddb", "#74a9cf", "#3690c0",
+                             "#0570b0", "#045a8d", "#023858"))
+```
+
+
+
+
+
+
+
+
+
+### Add index file info
+Maybe read the whole list of index files (excel), and concatenate tables while adding GC# data . Then select only the relevant ones to do the left join.
+
+Let key.csv include name of index file to read from
+
+#### Concatenate all index files
+```{r index file concatenation, eval=FALSE, include=FALSE}
+# probably set path of a folder (via params?),
+# read all csv inside?
+# perhaps initialize empty df
+# then add file identifier
+# then rowbind
+
+GCdf <- bind_rows(GCdf, GC)
+```
+
+```{r import index files, eval=False}
+# import index files, skip top lines, read well data, mutate GC# col, concatenate, left join
+index <- read_csv("index.csv", skip = 15)
+
+# Keep only the Geo Mean, then keep only well, IgK, IgY, CCR6
+index <- index %>% 
+  select(
+    (
+      (contains("Well") | contains("Geo")) & 
+      (contains("Well") | contains("IgK") | contains("IgY") | contains("CCR6"))
+    )
+  ) 
+
+# Rename column (assuming real data ie wrong for test data)
+colnames(index) <- c("Well", "mIgK", "cIgY", "CCR6")
+
+# Replace NA = 0 (NA = mean was (-) number) and mutate file identifier
+index <- index %>% 
+  replace_na(list(mIgK = 0, cIgY = 0, CCR6 = 0)) %>% 
+  mutate()
+
+
+```
+
+
+#### Save unproductive reads >= 10 for cells (i.e. clones with paired HC&LC)
+In case we need to revisit these to deconvolute clones via passenger (i.e. unproductive) alleles. By definition these cells had pair of productive alleles, so take non rank_1 reads that are unproductive
+```{r export passenger alelles of clones }
+
+```
+
+
+
+
+

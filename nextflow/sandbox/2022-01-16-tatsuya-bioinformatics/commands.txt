@@ -1,0 +1,98 @@
+211210 PR 1.6 commands 
+
+PR1.6, ~1.3 million read, and has PB and MBs?
+
+
+#########
+pandaseq dyld:library not loaded --> required libtool to be installed
+
+
+#########
+
+#################################### SKIP ####################################
+# activate miseq environment
+conda activate miseq
+
+# move to the right directory
+cd miseq --> cd to whichever file
+
+# unzip
+gzip -d *.fastq.gz
+
+# remove PE1/2? (Q33 is related to phred33 system?)
+fastx_trimmer -Q33 -i 211203PR1_6_S1_R1_001.fastq -f 3 -o 211210PR1_6_R1t.fastq
+fastx_trimmer -Q33 -i 211203PR1_6_S1_R2_001.fastq -f 3 -o 211210PR1_6_R2t.fastq
+
+# combine fwd and rev reads
+pandaseq -f 211210PR1_6_R1t.fastq -r 211210PR1_6_R2t.fastq -O 0 -w 211210PR1_6_PS.fasta
+
+
+# split rev plate barcodes (to name plate# first)
+mkdir split1
+
+cat 211210PR1_6_PS.fasta | fastx_barcode_splitter.pl --bcfile plateBC.txt --eol --prefix ./split1/211210 --exact
+
+		
+
+### p1 should not be there
+Barcode	Count	Location
+P01	281	./split1/211210P01
+P02	0	./split1/211210P02
+P03	0	./split1/211210P03
+P04	0	./split1/211210P04
+P05	117776	./split1/211210P05
+P06	133163	./split1/211210P06
+P07	93804	./split1/211210P07
+P08	123302	./split1/211210P08
+P09	121816	./split1/211210P09
+P10	42096	./split1/211210P10
+P11	121851	./split1/211210P11
+P12	18321	./split1/211210P12
+P13	101789	./split1/211210P13
+P14	120865	./split1/211210P14
+P15	121173	./split1/211210P15
+P16	104178	./split1/211210P16
+unmatched	141431	./split1/211210unmatched
+total	1361846
+###
+
+# split fwd 96 well barcodes
+cd split1
+mkdir split2
+
+for f in 211210* ; do cat $f | fastx_barcode_splitter.pl --bcfile 96FBC.txt --bol --prefix ./split2/$f ; done
+
+
+# separate HC and LC by cutadapt specific PCR primers (recodedL-HC or LC), keep only the trimmed. output all in the same folder
+
+cd split2
+mkdir splithk
+
+For HC:
+for f in 211210P* ; do cutadapt -g aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC -e 0.2 $f --discard-untrimmed -o ./splithk/$f\H ; done
+
+For LC:
+for f in 211210P* ; do cutadapt -g aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG -e 0.2 $f --discard-untrimmed -o ./splithk/$f\K ; done
+	
+
+# collapse the reads
+cd splithk
+mkdir collapsed
+
+for f in 211210P* ; do fastx_collapser -i $f -o ./collapsed/$f ; done
+
+# take top 3
+cd collapsed
+mkdir head
+
+for f in 211210P* ; do head -n 6 $f > ./head/$f ; done
+
+# rename fasta inside head
+cd head
+mkdir final
+
+awk '/>/{sub(">","&"FILENAME"_")}1' 21* > ./final/211210PR1.6f.fasta
+
+
+
+
