@@ -54,31 +54,46 @@ include {
     MERGE_BCRS;
   } from './modules.nf' 
 
-workflow {
-  reads_ch = Channel.fromFilePairs(params.reads)
-  plate_bc = Channel.fromPath(params.plate_bc)
-  well_bc = Channel.fromPath(params.well_bc)
 
-  TRIM_COMBINE_MATES(reads_ch)
-  DEMULTIPLEX_PLATES(TRIM_COMBINE_MATES.out, plate_bc) \
-    | flatten() | filter{ file(it).size()>0 } \
-    | combine(well_bc) | set { dmplxd_plates_ch }
-  DEMULTIPLEX_WELLS(dmplxd_plates_ch) \
-    | flatten() | filter{ file(it).size()>0 } \
-    | set { dmplxd_wells_ch }
-  SPLIT_HEAVY( 
-    dmplxd_wells_ch, 
-    "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC", "H"  
-  )
-  SPLIT_LIGHT( 
-    dmplxd_wells_ch, 
-    "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"  
-  )
-  SPLIT_HEAVY.out.mix(SPLIT_LIGHT.out) | COLLAPSE_RANK_PRUNE \
-  | collect | MERGE_BCRS 
+workflow BCR_COUNTS {
+
+  take: data
+
+  main:
+    plate_bc = Channel.fromPath(params.plate_bc)
+    well_bc = Channel.fromPath(params.well_bc)
+    
+    TRIM_COMBINE_MATES(data)
+    DEMULTIPLEX_PLATES(TRIM_COMBINE_MATES.out, plate_bc) \
+      | flatten() | filter{ file(it).size()>0 } \
+      | combine(well_bc) | set { dmplxd_plates_ch }
+    DEMULTIPLEX_WELLS(dmplxd_plates_ch) \
+      | flatten() | filter{ file(it).size()>0 } \
+      | set { dmplxd_wells_ch }
+    SPLIT_HEAVY( 
+      dmplxd_wells_ch, 
+      "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC", "H"  
+    )
+    SPLIT_LIGHT( 
+      dmplxd_wells_ch, 
+      "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"  
+    )
+    TRIM_COMBINE_MATES.out | view()
+    SPLIT_HEAVY.out.mix(SPLIT_LIGHT.out) | COLLAPSE_RANK_PRUNE \
+    | collect | combine(data[0]) | MERGE_BCRS 
+  emit:
+    MERGE_BCRS.out
+
 }
 
+workflow {
 
+  reads_ch = Channel.fromFilePairs(params.reads)
+
+  BCR_COUNTS(reads_ch)
+  BCR_COUNTS.out | view()
+
+}
 
 
 

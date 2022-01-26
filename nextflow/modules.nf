@@ -75,7 +75,7 @@ process SPLIT_HK {
 
 
 /*
- * Process 1F: Collapse each heavy and light chain
+ * Process 1E: Collapse each heavy and light chain
  * demultiplexed files into  
  */
 process COLLAPSE_RANK_PRUNE {
@@ -89,11 +89,15 @@ process COLLAPSE_RANK_PRUNE {
   """
 }
 
+
+/*
+ * Process 1F: Merge the top ranked BCR's
+ */
 process MERGE_BCRS {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
   publishDir 'intermediate/final_sequences/'
-  input: path(all_coll_rank)
-  output: path("merged_bcrs.fasta")
+  input: tuple val(key), path(all_coll_rank)
+  output: path("${key}.fasta")
   script:
   """
   awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > merged_bcrs.fasta
