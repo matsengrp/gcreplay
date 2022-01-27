@@ -6,13 +6,13 @@
 process TRIM_COMBINE_MATES { 
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
   publishDir 'intermediate/trimmed/'
-  input: tuple val(key), path(reads)
+  input: tuple val(key), path(read1), path(read2)
   output: tuple val(key), path("${key}.fasta")
   script:
   """
-  fastx_trimmer -Q33 -i ${reads[0]} -f 3 -o t_${reads[0]}
-  fastx_trimmer -Q33 -i ${reads[1]} -f 3 -o t_${reads[1]}
-  pandaseq -f t_${reads[0]} -r t_${reads[1]} -O 0 -w ${key}.fasta
+  fastx_trimmer -Q33 -i ${read1} -f 3 -o t_${read1}
+  fastx_trimmer -Q33 -i ${read2} -f 3 -o t_${read2}
+  pandaseq -f t_${read1} -r t_${read2} -O 0 -w ${key}.fasta
   """
 }
 
@@ -96,8 +96,12 @@ process COLLAPSE_RANK_PRUNE {
 process MERGE_BCRS {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
   publishDir 'intermediate/final_sequences/'
-  input: tuple val(key), path(all_coll_rank)
+  input: 
+    tuple val(key), path(read2), path(read2)
+    path(all_coll_rank)
+  //input: path(all_coll_rank)
   output: path("${key}.fasta")
+  //output: path("merged_bcrs.fasta")
   script:
   """
   awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > merged_bcrs.fasta

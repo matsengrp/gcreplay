@@ -26,10 +26,17 @@ nextflow.enable.dsl = 2
  * Define the default parameters - example data get's run by default
  */ 
 
-params.reads        = "$baseDir/data/test/*_r{1,2}.fastq"
-params.plate_bc     = "$baseDir/data/test/plateBC.txt"
-params.well_bc      = "$baseDir/data/test/96FBC.txt"
-params.results      = "results"
+params.manifest = "$baseDir/data/test/manifest.csv"
+// if we're not using the default test, make the filespaths in the
+// manifest relative to the launch directory (assuming files are now local)
+if (params.manifest != "$baseDir/data/test/manifest.csv")
+    params.reads_prefix = "$launchDir"
+else // otherwise we need them relative to remote repo (baseDir)
+    params.reads_prefix = "$baseDir"
+
+params.plate_bc     = "$baseDir/data/barcodes/plateBC.txt"
+params.well_bc      = "$baseDir/data/barcodes/96FBC.txt"
+params.results      = "$launchDir/results/"
 
 
 log.info """\
@@ -57,13 +64,15 @@ include {
 
 workflow BCR_COUNTS {
 
-  take: data
+  take: 
+    filepair
 
   main:
-    plate_bc = Channel.fromPath(params.plate_bc)
-    well_bc = Channel.fromPath(params.well_bc)
-    
-    TRIM_COMBINE_MATES(data)
+
+    plate_bc = Channel.fromPath(params.plate_bc).first()
+    well_bc = Channel.fromPath(params.well_bc).first()
+
+    TRIM_COMBINE_MATES(filepair)
     DEMULTIPLEX_PLATES(TRIM_COMBINE_MATES.out, plate_bc) \
       | flatten() | filter{ file(it).size()>0 } \
       | combine(well_bc) | set { dmplxd_plates_ch }
@@ -78,9 +87,10 @@ workflow BCR_COUNTS {
       dmplxd_wells_ch, 
       "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"  
     )
-    TRIM_COMBINE_MATES.out | view()
     SPLIT_HEAVY.out.mix(SPLIT_LIGHT.out) | COLLAPSE_RANK_PRUNE \
-    | collect | combine(data[0]) | MERGE_BCRS 
+    | collect | set { all_ranked_ch }
+    MERGE_BCRS(filepair, all_ranked_ch)
+
   emit:
     MERGE_BCRS.out
 
@@ -88,10 +98,19 @@ workflow BCR_COUNTS {
 
 workflow {
 
-  reads_ch = Channel.fromFilePairs(params.reads)
-
-  BCR_COUNTS(reads_ch)
+  Channel.fromPath(params.manifest)
+    .splitCsv(header:true)
+    .map{ row -> 
+      tuple(
+        "$row.sample_id",
+        file("${params.reads_prefix}/${row.read1}"),
+        file("${params.reads_prefix}/${row.read2}"),
+      )
+    } | BCR_COUNTS
+    
   BCR_COUNTS.out | view()
+
+  // now for annotation
 
 }
 
