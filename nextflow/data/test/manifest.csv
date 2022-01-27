@@ -1,0 +1,3 @@
+sample_id,read1,read2
+test,data/test/test_PR1.6_r1.fastq,data/test/test_PR1.6_r2.fastq
+test2,data/test/test2_PR1.6_r1.fastq,data/test/test2_PR1.6_r2.fastq

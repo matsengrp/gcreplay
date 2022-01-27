@@ -99,12 +99,33 @@ process MERGE_BCRS {
   input: 
     tuple val(key), path(read2), path(read2)
     path(all_coll_rank)
-  //input: path(all_coll_rank)
   output: path("${key}.fasta")
-  //output: path("merged_bcrs.fasta")
+  script:
+  """
+  awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > ${key}.fasta
+  """
+}
+
+
+/*
+ * Process 2A: Annotate the top ranked seqs
+ */
+/*
+process PARTIS_ANNOTATION {
+  container 'quay.io/matsengrp/partis:dev'
+  publishDir 'intermediate/partis_annotation/'
+  input: 
+    tuple val(key), path(read2), path(read2)
+    path(all_coll_rank)
+  output: path("${key}.fasta")
   script:
   """
   awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > merged_bcrs.fasta
   """
 }
+*/
+
+
+
+
 
