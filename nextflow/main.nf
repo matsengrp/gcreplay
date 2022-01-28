@@ -34,8 +34,8 @@ if (params.manifest != "$baseDir/data/test/manifest.csv")
 else // otherwise we need them relative to remote repo (baseDir)
     params.reads_prefix = "$baseDir"
 
-params.plate_bc     = "$baseDir/data/barcodes/plateBC.txt"
-params.well_bc      = "$baseDir/data/barcodes/96FBC.txt"
+params.plate_barcodes     = "$baseDir/data/barcodes/plateBC.txt"
+params.well_barcodes      = "$baseDir/data/barcodes/96FBC.txt"
 params.results      = "$launchDir/results/"
 
 
@@ -66,30 +66,33 @@ workflow BCR_COUNTS {
 
   take: 
     filepair
+    //tuple val(sample_id), path(read1), path(read2)
 
   main:
 
-    plate_bc = Channel.fromPath(params.plate_bc).first()
-    well_bc = Channel.fromPath(params.well_bc).first()
-
     TRIM_COMBINE_MATES(filepair)
-    DEMULTIPLEX_PLATES(TRIM_COMBINE_MATES.out, plate_bc) \
+    //TRIM_COMBINE_MATES([sample_id, read1, read2])
+    DEMULTIPLEX_PLATES(TRIM_COMBINE_MATES.out) \
       | flatten() | filter{ file(it).size()>0 } \
-      | combine(well_bc) | set { dmplxd_plates_ch }
+      | set { dmplxd_plates_ch }
+
     DEMULTIPLEX_WELLS(dmplxd_plates_ch) \
       | flatten() | filter{ file(it).size()>0 } \
       | set { dmplxd_wells_ch }
+
     SPLIT_HEAVY( 
       dmplxd_wells_ch, 
       "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC", "H"  
     )
+
     SPLIT_LIGHT( 
       dmplxd_wells_ch, 
       "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"  
     )
+
     SPLIT_HEAVY.out.mix(SPLIT_LIGHT.out) | COLLAPSE_RANK_PRUNE \
     | collect | set { all_ranked_ch }
-    MERGE_BCRS(filepair, all_ranked_ch)
+    MERGE_BCRS(all_ranked_ch)
 
   emit:
     MERGE_BCRS.out
