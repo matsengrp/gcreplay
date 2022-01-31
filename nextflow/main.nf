@@ -105,7 +105,12 @@ workflow BCR_COUNTS {
 
 workflow {
 
-  
+  /*
+   * WHAT I WOULD LIKE TO BE DOING
+   * I would like to fire off a BCR_COUNTS workflow
+   * for each file in the manifest
+   */
+
   //Channel.fromPath(params.manifest)
   //  .splitCsv(header:true)
   //  .map{ row -> 
@@ -117,6 +122,16 @@ workflow {
   //  } | BCR_COUNTS
 
 
+  /*
+   * FOR NOW
+   * just call each one separately, I guess 
+   * b/c I don't think calliong a workflow 
+   * per record ina csv is possible, we may need
+   * to just effectively group the keys, file
+   * groupings throughout the BCR_COUNTS workflow
+   */
+
+  // Step 1
   Channel.fromFilePairs(params.reads)
     .map { key, files ->
         tuple( 
@@ -124,17 +139,13 @@ workflow {
             file(files[0]),
             file(files[1])
         )
-    }
-    .set { reads_ch }
+    } | BCR_COUNTS
 
-  BCR_COUNTS(reads_ch)
-  PARTIS_ANNOTATION(BCR_COUNTS.out, "/bin/partis")
 
-  
-
+  // Step 2
+  PARTIS_ANNOTATION(BCR_COUNTS.out)
 
   //BCR_COUNTS.out | view()
-
   // now for annotation
 
 }

@@ -115,15 +115,13 @@ process MERGE_BCRS {
 process PARTIS_ANNOTATION {
   container 'quay.io/matsengrp/partis:dev'
   publishDir 'intermediate/partis_annotation/'
-  input: 
-    path(merged_fasta)
-    val partis
-  output: path("./out/egnrd/single-chain/*.tsv")
+  input: path(merged_fasta)
+  output: path("out/engrd/single-chain/*.tsv")
   script:
   """
   wd=\$PWD
   cd /partis
-  initial-annotate.sh \${wd}/${merged_fasta} /tmp/out ${params.partis_anno_dir}germlines/
+  initial-annotate.sh \${wd}/${merged_fasta} \${wd}/out ${params.partis_anno_dir}germlines/
   """
 }
   //cd /partis
