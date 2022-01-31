@@ -26,17 +26,20 @@ nextflow.enable.dsl = 2
  * Define the default parameters - example data get's run by default
  */ 
 
-params.manifest = "$baseDir/data/test/manifest.csv"
+// params.manifest = "$baseDir/data/test/manifest.csv"
+//if (params.manifest != "$baseDir/data/test/manifest.csv")
+//    params.reads_prefix = "$launchDir"
+//else // otherwise we need them relative to remote repo (baseDir)
+//    params.reads_prefix = "$baseDir"
+
 // if we're not using the default test, make the filespaths in the
 // manifest relative to the launch directory (assuming files are now local)
-if (params.manifest != "$baseDir/data/test/manifest.csv")
-    params.reads_prefix = "$launchDir"
-else // otherwise we need them relative to remote repo (baseDir)
-    params.reads_prefix = "$baseDir"
 
-params.plate_barcodes     = "$baseDir/data/barcodes/plateBC.txt"
-params.well_barcodes      = "$baseDir/data/barcodes/96FBC.txt"
-params.results      = "$launchDir/results/"
+params.reads            = "$baseDir/data/test/test_PR1.6_r{1,2}.fastq"
+params.plate_barcodes   = "$baseDir/data/barcodes/plateBC.txt"
+params.well_barcodes    = "$baseDir/data/barcodes/96FBC.txt"
+params.partis_anno_dir  = "$baseDir/data/partis_annotation/"
+params.results          = "$launchDir/results/"
 
 
 log.info """\
@@ -59,6 +62,7 @@ include {
     SPLIT_HK as SPLIT_LIGHT;
     COLLAPSE_RANK_PRUNE;
     MERGE_BCRS;
+    PARTIS_ANNOTATION;
   } from './modules.nf' 
 
 
@@ -101,17 +105,35 @@ workflow BCR_COUNTS {
 
 workflow {
 
-  Channel.fromPath(params.manifest)
-    .splitCsv(header:true)
-    .map{ row -> 
-      tuple(
-        "$row.sample_id",
-        file("${params.reads_prefix}/${row.read1}"),
-        file("${params.reads_prefix}/${row.read2}"),
-      )
-    } | BCR_COUNTS
-    
-  BCR_COUNTS.out | view()
+  
+  //Channel.fromPath(params.manifest)
+  //  .splitCsv(header:true)
+  //  .map{ row -> 
+  //    tuple(
+  //      "$row.sample_id",
+  //      file("${params.reads_prefix}/${row.read1}"),
+  //      file("${params.reads_prefix}/${row.read2}"),
+  //    )
+  //  } | BCR_COUNTS
+
+
+  Channel.fromFilePairs(params.reads)
+    .map { key, files ->
+        tuple( 
+            key,
+            file(files[0]),
+            file(files[1])
+        )
+    }
+    .set { reads_ch }
+
+  BCR_COUNTS(reads_ch)
+  PARTIS_ANNOTATION(BCR_COUNTS.out, "/bin/partis")
+
+  
+
+
+  //BCR_COUNTS.out | view()
 
   // now for annotation
 

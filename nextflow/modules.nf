@@ -101,10 +101,10 @@ process MERGE_BCRS {
     //val(key)
     path(all_coll_rank)
   //output: path("${key}.fasta")
-  output: path("foo.fasta")
+  output: path("merged.fasta")
   script:
   """
-  awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > foo.fasta
+  awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > merged.fasta
   """
 }
 
@@ -112,20 +112,23 @@ process MERGE_BCRS {
 /*
  * Process 2A: Annotate the top ranked seqs
  */
-/*
 process PARTIS_ANNOTATION {
   container 'quay.io/matsengrp/partis:dev'
-  //publishDir 'intermediate/partis_annotation/'
+  publishDir 'intermediate/partis_annotation/'
   input: 
-    tuple val(key), path(read2), path(read2)
-    path(all_coll_rank)
-  output: path("${key}.fasta")
+    path(merged_fasta)
+    val partis
+  output: path("./out/egnrd/single-chain/*.tsv")
   script:
   """
-  awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > merged_bcrs.fasta
+  wd=\$PWD
+  cd /partis
+  initial-annotate.sh \${wd}/${merged_fasta} /tmp/out ${params.partis_anno_dir}germlines/
   """
 }
-*/
+  //cd /partis
+// ls bin/partis
+// ls /fh/fast/matsen_e/shared/gcreplay/nextflow/data/partis_annotation/germlines/
 
 
 
