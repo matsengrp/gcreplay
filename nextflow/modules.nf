@@ -29,7 +29,7 @@ process DEMULTIPLEX_PLATES {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
   //publishDir 'intermediate/plate_splits/'
   input: tuple val(key), path(key_fasta)
-  output: path "${key}.*"
+  output: tuple val(key), path("${key}.*")
   script:
   """
   cat ${key_fasta} | fastx_barcode_splitter.pl \
@@ -44,8 +44,8 @@ process DEMULTIPLEX_PLATES {
 process DEMULTIPLEX_WELLS {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
   //publishDir 'intermediate/well_splits/'
-  input: path(plate)
-  output: path "${plate}.*"
+  input: tuple val(key), path(plate)
+  output: tuple val(key), path("${plate}.*")
   script:
   """
   cat ${plate} | fastx_barcode_splitter.pl \
@@ -64,10 +64,10 @@ process SPLIT_HK {
   //publishDir 'intermediate/hk_splits/'
   label 'multithread'
   input: 
-    path(well) 
+    tuple val(key), path(well) 
     val(motif)
     val(chain)
-  output: path "${well}.${chain}"
+  output: tuple val(key), path("${well}.${chain}")
   script:
   """
   cutadapt --cores 8 -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
@@ -82,8 +82,8 @@ process SPLIT_HK {
 process COLLAPSE_RANK_PRUNE {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
   //publishDir 'intermediate/coll_rank/'
-  input: path(well_chain)
-  output: path("${well_chain}.coll_rank")
+  input: tuple val(key), path(well_chain)
+  output: tuple val(key), path("${well_chain}.coll_rank")
   script:
   """
   fastx_collapser -i ${well_chain} | head -n 6 > ${well_chain}.coll_rank
@@ -96,15 +96,13 @@ process COLLAPSE_RANK_PRUNE {
  */
 process MERGE_BCRS {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
-  publishDir "$params.results/ranked_bcr_sequences_per_well/"
-  input: 
-    //val(key)
-    path(all_coll_rank)
+  //publishDir "$params.results/ranked_bcr_sequences_per_well/"
+  input: tuple val(key), path(all_coll_rank)
   //output: path("${key}.fasta")
-  output: path("merged.fasta")
+  output: tuple val(key), path("${key}.fasta")
   script:
   """
-  awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > merged.fasta
+  awk '/>/{sub(">","&"FILENAME"_")}1' ${all_coll_rank} > ${key}.fasta
   """
 }
 
@@ -114,8 +112,8 @@ process MERGE_BCRS {
  */
 process PARTIS_ANNOTATION {
   container 'quay.io/matsengrp/partis:dev'
-  publishDir 'intermediate/partis_annotation/'
-  input: path(merged_fasta)
+  publishDir "$params.results/partis_annotation/"
+  input: tuple val(key), path(merged_fasta)
   output: path("out/engrd/single-chain/*.tsv")
   script:
   """
@@ -124,9 +122,6 @@ process PARTIS_ANNOTATION {
   initial-annotate.sh \${wd}/${merged_fasta} \${wd}/out ${params.partis_anno_dir}germlines/
   """
 }
-  //cd /partis
-// ls bin/partis
-// ls /fh/fast/matsen_e/shared/gcreplay/nextflow/data/partis_annotation/germlines/
 
 
 
