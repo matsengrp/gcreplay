@@ -28,6 +28,31 @@ example command line shown below.
     $ git checkout 1_nextflow_infrastructure
     $ nextflow run nextflow/main.nf -profile docker -resume
 
+```
+N E X T F L O W  ~  version 21.04.3
+Launching `main.nf` [deadly_legentil] - revision: 2ed283eecb
+G C Re - F L O W!
+Matsen, Victora Labs
+Fred Hutchinson CRC, Seattle WA
+Rockefeller University, New York NY.
+================================
+
+executor >  slurm (37871)
+[fa/5eb808] process > BCR_COUNTS:TRIM_COMBINE_MATES (6)      [100%] 8 of 8, cached: 3 ✔
+[b4/4d007b] process > BCR_COUNTS:DEMULTIPLEX_PLATES (8)      [100%] 8 of 8, cached: 3 ✔
+[24/35cb6a] process > BCR_COUNTS:DEMULTIPLEX_WELLS (107)     [100%] 109 of 109, cached: 32 ✔
+[9a/6d6604] process > BCR_COUNTS:SPLIT_HEAVY (9414)          [100%] 9442 of 9442 ✔
+[dc/e940b3] process > BCR_COUNTS:SPLIT_LIGHT (9429)          [100%] 9442 of 9442 ✔
+[46/195631] process > BCR_COUNTS:COLLAPSE_RANK_PRUNE (18856) [100%] 18884 of 18884 ✔
+[36/197533] process > BCR_COUNTS:MERGE_BCRS (6)              [100%] 8 of 8 ✔
+[f3/9ea99d] process > PARTIS_ANNOTATION (8)                  [100%] 8 of 8 ✔
+Completed at: 06-Feb-2022 22:21:22
+Duration    : 44m 27s
+CPU hours   : 24.1 (2% cached)
+Succeeded   : 37'871
+Cached      : 38
+```
+
 ## Pipeline Description
 
 (Currently) This pipeline processes reads from a paired-end MiSeq run and generally 
@@ -38,6 +63,7 @@ performs the following steps;
 (4) Collapse identical sequences, while retaining and ordering rank of each sequence per well
 (5) Prune to keep the top N sequences observed from each well
 (6) Merge the results, formatting for [partis]() annotation.
+(7) partis annotation
 
 
 ## Input files
@@ -49,9 +75,9 @@ The CalliNGS-NF pipeline needs as the input following files:
 
 ## Pipeline parameters
 
-#### `--reads` 
+#### `--manifest` 
    
-* Specifies the location of the reads FASTQ file(s).
+* TODO
 
 #### `plate_barcodes`
 
