@@ -8,7 +8,8 @@ ifn=$1
 odir=$2
 gldir=$3
 
-for rstr in engrd all; do
+# for rstr in engrd all; do
+for rstr in engrd; do
     common="--paired-loci --no-pairing-info --species mouse --airr-output"
     if [ "$rstr" == "engrd" ]; then
 	common="$common --no-insertions-or-deletions --leave-default-germline --initial-germline-dir $gldir"
