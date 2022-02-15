@@ -1,0 +1,127 @@
+[91mrun[0m ./bin/split-loci.py /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6.fasta --outdir /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd
+  split-loci.py output exists and --overwrite was not set, so not doing anything: /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd
+  [93mwarning[0m parameters exist for some (igh igk) but not all (igl) loci, so not auto-caching parameters into /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/
+[44mannotate[0m [94migh[0m:
+[91mrun[0m ./bin/partis annotate --locus igh --species mouse --airr-output --no-insertions-or-deletions --leave-default-germline --initial-germline-dir /fh/fast/matsen_e/shared/gcreplay/nextflow/data/partis_annotation/germlines/ --infname /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/igh.fa --outfname /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/single-chain/partition-igh.yaml --refuse-to-cache-parameters --parameter-dir /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igh --sw-cachefname /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igh/sw-cache.yaml
+  note: writing both partis .yaml to /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/single-chain/partition-igh.yaml and airr .tsv to /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/single-chain/partition-igh.tsv
+annotating    (with /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igh/hmm)
+smith-waterman
+  vsearch: 2061 / 2066 v annotations (5 failed) with 1 v gene in 0.7 sec
+        reading sw results from /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igh/sw-cache.yaml
+      info for 2061 / 2066 = 0.998   (removed: 5 failed, 0 duplicates)
+      kept 145 (0.070) unproductive
+        water time: 0.5
+hmm
+        hmm prep time: 0.2
+    running 48 procs
+                    calcd:         vtb 2061        fwd    0
+             min-max time:  0.2 - 0.3 sec
+    reading output
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 0 ([0, 0, 0, 0]) so set annotation to failed for ['PR-1-6.211203.P01.B10.H.R.3-1']
+  --no-insertions-or-deletions: total insertion len 2 ([2, 0]) not equal to total del len 3 ([3, 0, 0, 0]) so set annotation to failed for ['PR-1-6.211203.P14.G04.H.R.3-24']
+  --no-insertions-or-deletions: total insertion len 57 ([57, 0]) not equal to total del len 11 ([3, 0, 0, 8]) so set annotation to failed for ['PR-1-6.211203.P05.B11.H.R.1-1']
+  --no-insertions-or-deletions: total insertion len 5 ([5, 0]) not equal to total del len 3 ([3, 0, 0, 0]) so set annotation to failed for ['PR-1-6.211203.P13.C12.H.R.1-136']
+  --no-insertions-or-deletions: total insertion len 5 ([5, 0]) not equal to total del len 3 ([3, 0, 0, 0]) so set annotation to failed for ['PR-1-6.211203.P13.C12.H.R.2-79']
+  --no-insertions-or-deletions: total insertion len 5 ([5, 0]) not equal to total del len 3 ([3, 0, 0, 0]) so set annotation to failed for ['PR-1-6.211203.P13.C12.H.R.3-4']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 1 ([0, 0, 0, 1]) so set annotation to failed for ['PR-1-6.211203.P16.A10.H.R.3-4']
+  --no-insertions-or-deletions: total insertion len 11 ([11, 0]) not equal to total del len 2 ([2, 0, 0, 0]) so set annotation to failed for ['PR-1-6.211203.P08.G11.H.R.1-7']
+  --no-insertions-or-deletions: total insertion len 20 ([20, 0]) not equal to total del len 9 ([3, 0, 0, 6]) so set annotation to failed for ['PR-1-6.211203.unmatched.F08.H.R.2-1']
+  --no-insertions-or-deletions: total insertion len 11 ([11, 0]) not equal to total del len 2 ([2, 0, 0, 0]) so set annotation to failed for ['PR-1-6.211203.P08.G11.H.R.3-1']
+        read 2061 hmm output lines with 2050 sequences in 2050 events  (11 failures)
+          [91mwarning[0m no valid paths: PR-1-6.211203.P08.D12.H.R.1-1
+         infra time: 0.9
+      hmm step time: 3.7
+   writing airr annotations to /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/single-chain/partition-igh.tsv
+      total time: 6.6
+[44mannotate[0m [94migk[0m:
+[91mrun[0m ./bin/partis annotate --locus igk --species mouse --airr-output --no-insertions-or-deletions --leave-default-germline --initial-germline-dir /fh/fast/matsen_e/shared/gcreplay/nextflow/data/partis_annotation/germlines/ --infname /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/igk.fa --outfname /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/single-chain/partition-igk.yaml --refuse-to-cache-parameters --parameter-dir /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igk --sw-cachefname /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igk/sw-cache.yaml
+  note: writing both partis .yaml to /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/single-chain/partition-igk.yaml and airr .tsv to /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/single-chain/partition-igk.tsv
+annotating    (with /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igk/hmm)
+smith-waterman
+  vsearch: 3073 / 3095 v annotations (22 failed) with 1 v gene in 0.9 sec
+        reading sw results from /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igk/sw-cache.yaml
+      info for 3084 / 3095 = 0.996   (removed: 11 failed, 0 duplicates)
+      kept 432 (0.140) unproductive
+        water time: 1.2
+hmm
+        hmm prep time: 0.3
+    running 48 procs
+                    calcd:         vtb 3084        fwd    0
+             min-max time:  0.2 - 0.3 sec
+    reading output
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 7 ([7, 0]) so set annotation to failed for ['PR-1-6.211203.P10.C10.K.R.3-26']
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 0 ([0, 0]) so set annotation to failed for ['PR-1-6.211203.P13.C12.K.R.2-24']
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 9 ([9, 0]) so set annotation to failed for ['PR-1-6.211203.P07.A12.H.R.1-1']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 5 ([5, 0]) so set annotation to failed for ['PR-1-6.211203.P12.H11.K.R.1-1']
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 0 ([0, 0]) so set annotation to failed for ['PR-1-6.211203.P08.C06.K.R.3-35']
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 0 ([0, 0]) so set annotation to failed for ['PR-1-6.211203.P14.A10.K.R.3-40']
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 0 ([0, 0]) so set annotation to failed for ['PR-1-6.211203.P14.D08.K.R.3-10']
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 0 ([0, 0]) so set annotation to failed for ['PR-1-6.211203.P08.G06.K.R.2-38']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P14.A11.K.R.2-24']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([2, 2]) so set annotation to failed for ['PR-1-6.211203.P14.C04.K.R.1-383']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([2, 0]) so set annotation to failed for ['PR-1-6.211203.P14.D09.K.R.2-10']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P14.E12.H.R.1-265']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P15.B01.K.R.1-618']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P15.C09.K.R.1-338']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P15.F03.K.R.3-3']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 6 ([4, 2]) so set annotation to failed for ['PR-1-6.211203.P16.A02.K.R.2-29']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P16.E05.K.R.1-367']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P14.A11.K.R.3-19']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([2, 2]) so set annotation to failed for ['PR-1-6.211203.P14.C04.K.R.2-9']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([2, 0]) so set annotation to failed for ['PR-1-6.211203.P14.D09.K.R.3-5']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([2, 2]) so set annotation to failed for ['PR-1-6.211203.P14.F01.K.R.1-246']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P15.B01.K.R.2-16']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P15.C09.K.R.2-4']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P15.F04.K.R.1-605']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 6 ([4, 2]) so set annotation to failed for ['PR-1-6.211203.P16.A02.K.R.3-12']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P16.E05.K.R.2-18']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P16.F11.K.R.1-377']
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 5 ([2, 3]) so set annotation to failed for ['PR-1-6.211203.P05.F12.K.R.1-461']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([2, 2]) so set annotation to failed for ['PR-1-6.211203.P14.C04.K.R.3-5']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P14.F08.K.R.1-656']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([2, 2]) so set annotation to failed for ['PR-1-6.211203.P14.F01.K.R.2-95']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P15.B01.K.R.3-14']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P15.C09.K.R.3-4']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P15.F04.K.R.2-66']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P16.A03.K.R.1-156']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P16.E05.K.R.3-10']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P16.F11.K.R.2-5']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 1 ([1, 0]) so set annotation to failed for ['PR-1-6.211203.P14.B03.K.R.1-449']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P14.F03.K.R.2-13']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 1 ([1, 0]) so set annotation to failed for ['PR-1-6.211203.P14.G08.K.R.1-330']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([2, 0]) so set annotation to failed for ['PR-1-6.211203.P09.E06.K.R.3-18']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P16.A05.K.R.1-602']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P16.D04.K.R.2-38']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 6 ([6, 0]) so set annotation to failed for ['PR-1-6.211203.P16.F12.K.R.2-37']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([2, 2]) so set annotation to failed for ['PR-1-6.211203.P14.B03.K.R.2-17']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P14.F03.K.R.3-11']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 1 ([1, 0]) so set annotation to failed for ['PR-1-6.211203.P14.G08.K.R.3-38']
+  --no-insertions-or-deletions: total insertion len 1 ([0, 1]) not equal to total del len 0 ([0, 0]) so set annotation to failed for ['PR-1-6.211203.P09.H06.K.R.2-22']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P15.H02.K.R.2-35']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P16.A05.K.R.2-27']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P16.B11.K.R.1-536']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P16.D04.K.R.3-26']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 6 ([6, 0]) so set annotation to failed for ['PR-1-6.211203.P16.F12.K.R.3-17']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([2, 2]) so set annotation to failed for ['PR-1-6.211203.P14.B03.K.R.3-7']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P14.G09.K.R.1-348']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 1 ([1, 0]) so set annotation to failed for ['PR-1-6.211203.P15.E03.K.R.2-25']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([2, 0]) so set annotation to failed for ['PR-1-6.211203.P15.F07.K.R.1-392']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 2 ([0, 2]) so set annotation to failed for ['PR-1-6.211203.P16.A05.K.R.3-23']
+  --no-insertions-or-deletions: total insertion len 0 ([0, 0]) not equal to total del len 4 ([4, 0]) so set annotation to failed for ['PR-1-6.211203.P16.B11.K.R.2-96']
+  --no-insertions-or-deletions: total insertion len 6 ([0, 6]) not equal to total del len 7 ([7, 0]) so set annotation to failed for ['PR-1-6.211203.P13.C08.K.R.2-36']
+        read 3084 hmm output lines with 3016 sequences in 3016 events  (68 failures)
+          [91mwarning[0m no valid paths: PR-1-6.211203.P10.C04.K.R.3-3 PR-1-6.211203.P10.C04.K.R.2-5 PR-1-6.211203.P14.E05.K.R.3-18 PR-1-6.211203.P10.D03.K.R.2-8 PR-1-6.211203.P15.F10.K.R.2-31 PR-1-6.211203.P10.D03.K.R.3-7 PR-1-6.211203.P10.C04.K.R.1-219 PR-1-6.211203.P10.D03.K.R.1-467
+         infra time: 4.9
+      hmm step time: 8.4
+   writing airr annotations to /fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/single-chain/partition-igk.tsv
+      total time: 13.0
+[94migl[0m: parameter dir missing, skipping annotate (/fh/fast/matsen_e/shared/gcreplay/nextflow/work/f5/79ae122d0bf3d44a0d948affe75d7e/PR-1-6/engrd/parameters/igl)
+    [93mwarning[0m zero length annotation list in check_concordance_of_cpath_and_annotations()
+    [93mwarning[0m all pid groups are length 1 in check_droplet_id_groups(). Maybe you're missing pairing info?
+     synchronized/fixed 0 pairs where one had no pair info after cleaning: [94mh[0m 0  [95mk[0m 0  [92ml[0m 0
+[94migh+igk[0m: synchronizing heavy and light chain cluster paths
+    [93mwarning[0m zero sequences remain after removing un/badly paired seqs. Maybe you're missing pairing info?
+[94migh+igl[0m: synchronizing heavy and light chain cluster paths
+    no single chain output
+   N clusters with all seqs:
+      total time: 24.9
