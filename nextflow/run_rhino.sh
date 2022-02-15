@@ -13,5 +13,5 @@ nextflow run main.nf \
         --well_barcodes "data/barcodes/96FBC.txt" \
         --results "results/$(date -I)" \
         -profile fred_hutch_rhino \
-        -with-dag "$(date -I)/dag.svg" \
+        -with-dag "results/$(date -I)/dag.svg" \
         -resume

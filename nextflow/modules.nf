@@ -5,6 +5,7 @@ nextflow.enable.dsl =2
  */
 process TRIM_COMBINE_MATES { 
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir "$params.results/trimmed_combined_fasta/" 
   label 'multithread'
   input: tuple val(key), val(date), path(read1), path(read2)
   output: tuple val(key), val(date), path("${key}.fasta")
@@ -26,6 +27,7 @@ process TRIM_COMBINE_MATES {
 //path plate_barcodes
 process DEMULTIPLEX_PLATES {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir "$params.results/demultiplexed_plates_fasta/" 
   input: tuple val(key), val(date), path(key_fasta)
   output: tuple val(key), path("${key}.${date}.*")
   script:
@@ -41,12 +43,13 @@ process DEMULTIPLEX_PLATES {
  */
 process DEMULTIPLEX_WELLS {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir "$params.results/demultiplexed_wells_fasta/"
   input: tuple val(key), path(plate)
   output: tuple val(key), path("${plate}.*")
   script:
   """
   cat ${plate} | fastx_barcode_splitter.pl \
-    --bcfile ${params.reads_prefix}/${params.well_barcodes} --bol --prefix ${plate}. --exact
+    --bcfile ${params.reads_prefix}/${params.well_barcodes} --bol --prefix ${plate}.
   """
 }
 
@@ -58,6 +61,7 @@ process DEMULTIPLEX_WELLS {
  */
 process SPLIT_HK {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir "$params.results/split_HK/"
   label 'multithread'
   input: 
     tuple val(key), path(well) 
@@ -78,12 +82,20 @@ process SPLIT_HK {
  */
 process COLLAPSE_RANK_PRUNE {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
+  publishDir "$params.results/rank_collapsed/"
   input: tuple val(key), path(well_chain)
   output: tuple val(key), path("${well_chain}.R")
   script:
-  """
-  fastx_collapser -i ${well_chain} | head -n 6 > ${well_chain}.R
-  """
+  if( params.top_n_rank != 0 )
+    """
+    fastx_collapser -i ${well_chain} | head -n ${params.top_n_rank} > ${well_chain}.R
+    """
+  // TODO
+  //else if( params.n_threshold != 0 )
+  //  """
+  //  fastx_collapser -i ${well_chain} > collapsed_well_chain.fasta
+  //  ./threshold-counts.py --fasta collapsed_well_chain.fasta --out ${well_chain}.R
+  //  """
 }
 
 
@@ -94,7 +106,6 @@ process MERGE_BCRS {
   container 'quay.io/matsengrp/gcreplay-pipeline:trim_combine_demultiplex'
   publishDir "$params.results/ranked_bcr_sequences_per_well/"
   input: tuple val(key), path(all_coll_rank)
-  //output: path("${key}.fasta")
   output: tuple val(key), path("${key}.fasta")
   script:
   """
@@ -107,7 +118,6 @@ process MERGE_BCRS {
  * Process 2A: Annotate the top ranked seqs
  */
 process PARTIS_ANNOTATION {
-  errorStrategy 'ignore'
   container 'quay.io/matsengrp/partis:dev'
   publishDir "$params.results/partis_annotation/"
   input: tuple val(key), path(merged_fasta)
@@ -119,3 +129,4 @@ process PARTIS_ANNOTATION {
   initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${key} ${params.partis_anno_dir}germlines/
   """
 }
+//cd /partis && mkdir \${wd}/${key}

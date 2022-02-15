@@ -26,20 +26,37 @@ nextflow.enable.dsl = 2
  * Define the default parameters - example data get's run by default
  */ 
 
+// csv with columns 
 params.manifest = "$baseDir/data/test/manifest.csv"
+
+// if we're not using the default test, make the filespaths in the
+// manifest relative to the launch directory (assuming files are now local)
 if (params.manifest != "$baseDir/data/test/manifest.csv")
     params.reads_prefix = "$launchDir"
 else
     params.reads_prefix = "$baseDir"
 
+// all plate barcodes.
 params.plate_barcodes   = "$baseDir/data/barcodes/test_plateBC.txt"
+
+// all the 96 well barcodes. 
 params.well_barcodes    = "$baseDir/data/barcodes/test_96FBC.txt"
 
-// if we're not using the default test, make the filespaths in the
-// manifest relative to the launch directory (assuming files are now local)
 
+// temp - where do you want the partis annotation, specfically.
 params.partis_anno_dir  = "$baseDir/data/partis_annotation/"
+
+// the directory you would like to plave all the results
 params.results          = "$launchDir/results/"
+
+// keep n lines of a sequence collapsed fasta.
+// either this or the parameter below must be zero
+// TODO do the multiplication by 2 yourself in the process script block
+params.top_n_rank       = 6
+
+// keep all sequences above
+// TODO implement 
+params.n_threshhold     = 0
 
 
 log.info """\
