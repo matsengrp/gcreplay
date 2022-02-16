@@ -1,4 +1,3 @@
-sample_id,date,read1,read2
 PR-1-1,210923,data/_ignore/miseq/PR1.1/210923TA_S1_R1_001.fastq,data/_ignore/miseq/PR1.1/210923TA_S1_R2_001.fastq
 PR-1-2,211014,data/_ignore/miseq/PR1.2/211014PR1_2C_S1_R1_001.fastq,data/_ignore/miseq/PR1.2/211014PR1_2C_S1_R2_001.fastq
 PR-1-3,211014,data/_ignore/miseq/PR1.3/211014PR1_3HK_S1_L001_R1_001.fastq,data/_ignore/miseq/PR1.3/211014PR1_3HK_S1_L001_R2_001.fastq
