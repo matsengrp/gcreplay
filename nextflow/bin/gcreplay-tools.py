@@ -7,11 +7,11 @@ it'll be a simple click CLI with all the logic right here.
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from plotnine import *
-from matplotlib_venn import venn2, venn3_circles
+#import matplotlib.pyplot as plt
+#from plotnine import *
+#from matplotlib_venn import venn2, venn3_circles
 from Bio import SeqIO
-from Bio import motifs
+#from Bio import motifs
 from Bio.Seq import Seq
 import click
 from click import Choice, Path, command, group, option, argument
