@@ -90,13 +90,16 @@ process COLLAPSE_RANK_PRUNE {
     """
     fastx_collapser -i ${well_chain} | head -n ${params.top_n_rank} > ${well_chain}.R
     """
-  // TODO
-  //else if( params.n_threshold != 0 )
-  //  """
-  //  fastx_collapser -i ${well_chain} > collapsed_well_chain.fasta
-  //  ./threshold-counts.py --fasta collapsed_well_chain.fasta --out ${well_chain}.R
-  //  """
 }
+
+// TODO ^^  you dont really need to do this (below) .. until we care about getting thrown
+// Sequences
+// 
+//else if( params.n_threshold != 0 )
+//  """
+//  fastx_collapser -i ${well_chain} > collapsed_well_chain.fasta
+//  ./threshold-counts.py --fasta collapsed_well_chain.fasta --out ${well_chain}.R
+//  """
 
 
 /*

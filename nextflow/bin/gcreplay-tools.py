@@ -178,8 +178,8 @@ def test_sequence_counts_stub():
 
     pass
 
-
-def threshold_fasta_sequence_abundance(fasta):
+# TODO - not until we're catching failed BCR's
+def threshold_fasta_sequence_abundance_stub(fasta):
     """
     str -> str
 
@@ -195,7 +195,8 @@ def infer_igh_isotypes(bcr_sequence, num_mm=1):
     in the cell database - allowing for `num_mm` mismatches. This function
     will modify the passed in dataframe and will return the first match it finds
     """
-    
+   
+    # Motifs associated with full input BCR including constant region
     motif_map = {
         "IgM": ["atgtcttccccct"],
         "IgG1" : ["atggtgaccctggg"],
@@ -229,20 +230,17 @@ def infer_mutations(cell_data: pd.DataFrame) -> None:
     pass
 
 
-# TODO
 def merge_heavy_light_chains(
         cell_df: pd.DataFrame, 
         key_file: pd.DataFrame
 ) -> pd.DataFrame:
     """
-        
     """
 
     GC_df = pd.DataFrame()
     for idx, row in key_file.iterrows():
         key_row = row.row.split(".")
         key_col = [int(c) for c in row.col.split(".")]
-        #print(f"(locus == 'IGH') & (barcode == {row.hc_barcode}) & (column.isin({key_col})) & (row.isin({key_row}))")
 
         HC = cell_df.query(
             f"(locus == 'IGH') & (barcode == {row.hc_barcode}) & (column.isin({key_col})) & (row.isin({key_row}))",
@@ -262,18 +260,10 @@ def merge_heavy_light_chains(
 
         GC_df = GC_df.append(GC)
    
-    # TODO we're missing just to compared to tatsuya, I believe - check this
-
+    # TODO we're missing just 2 mismatches compared to tatsuya, I believe - check this
     GC_df.loc[:, "ID_HK"] = [f"{i}K" for i in GC_df["ID_HC"]]
 
     return GC_df
-    
-
-    
-
-
-
-
 
 
 #################################
@@ -304,7 +294,7 @@ def cli():
 # TODO option, filter unproductive cells
 # TODO option, mm in isotype inference
 # TODO option, 
-@cli.command()
+@cli.command("wrangle-annotation")
 @click.option(
     '--igh-airr', 
     type=Path(exists=True),
@@ -329,8 +319,14 @@ def cli():
     required=True,
     help='the key file for merging heavy and light chains'
 )
+@click.option(
+    "--output",
+    "-o",
+    required=True,
+    help="Path to write the fasta.",
+)
 def wrangle_annotation(
-    igh_airr, igk_airr, input_fasta, key_file
+    igh_airr, igk_airr, input_fasta, key_file, output
 ):
     """
     Curate and wrangle the partis annotation of ranked BCR's
@@ -416,10 +412,109 @@ def wrangle_annotation(
     ]
    
     # TODO shall we export those which are not rank 1, count 10?
+    # TODO make these parameters. I guess rank one is kind of innevitable
     partis_airr.query("(rank == 1) & (counts >= 10)", engine="python", inplace=True)
     for well, well_df in partis_airr.groupby("ID"):
         assert len(well_df) == 1
 
-    GC_df = merge_heavy_light_chains(partis_airr, pd.read_csv(key_file)
-    
+    GC_df = merge_heavy_light_chains(partis_airr, pd.read_csv(key_file))
+
+    GC_df.to_csv(output, index=False)
+
+
+@cli.command("gc-df-to-fasta")
+@click.option(
+    '--gc-hk-df',
+    '--gc-df',
+    type=Path(exists=True),
+    required=True,
+    help="Germinal center cell database - output \
+            using the `wrangle_partis_annotation` command."
+)
+@click.option(
+    '--header-col', 
+    '-h', 
+    multiple=True,
+    type=str,
+    default=["ID_HK"],
+    help="A column from the germinal center df you \
+            would like to concatinate to the header."
+)
+@click.option(
+    '--sequence-col', 
+    '-s', 
+    multiple=True,
+    type=str,
+    default=["seq_nt_HC", "seq_nt_LC"],
+    help="A column from the germinal center df you \
+            would like to concatinate to the sequences."
+)
+@click.option(
+    "--output",
+    "-o",
+    required=False,
+    default="HK.fasta",
+    help="Path to write the fasta.",
+)
+@click.option(
+    '-n','--add-naive', 
+    type=click.BOOL, 
+    default=True
+)
+def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
+    """
+    A function to concatinate specified columns from
+    the germinal center dataframe (output by
+    `wrangle_partis_annotation` command) for both headers
+    and sequences.
+    """
+
+    # gather the concatinated columns for headers
+    gc_hk_df = pd.read_csv(gc_hk_df)
+    headers = gc_hk_df[list(header_col)].apply(lambda x:"".join(x), axis=1)
+    sequences = gc_hk_df[list(sequence_col)].apply(lambda x:"".join(x), axis=1)
+
+    # write fasta
+    with open(output, "w") as fasta:
+        if add_naive: fasta.write(f">naive\n{naive_hk_bcr_nt}\n")
+        for header, sequence in zip(headers, sequences):
+            fasta.write(f">{header}\n{sequence}\n")
+
+
+@cli.command("query-df")
+@click.option(
+    '--dataframe',
+    '-df',
+    type=Path(exists=True),
+    required=True,
+    help="dataframe (csv) to query"
+)
+@click.option(
+    '--query-string', 
+    '-q',
+    type=str,
+    required=True,
+    help='the key file for merging heavy and light chains'
+)
+@click.option(
+    "--output",
+    "-o",
+    required=False,
+    default="HK.fasta",
+    help="Path to write the fasta.",
+)
+def query_df(dataframe, query_string, output):
+    """
+    Simply, a CLI wrapper for pandas DataFrame.query.
+    """
+    df = pd.read_csv(dataframe)
+    print(query_string)
+    df.query(query_string).to_csv(output, index=False)
+
+
+# TODO We need this until we get setup.py
+# for a real mf python package.
+if __name__ == '__main__':
+    cli()
+
 
