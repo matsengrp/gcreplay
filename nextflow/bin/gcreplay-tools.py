@@ -7,7 +7,11 @@ it'll be a simple click CLI with all the logic right here.
 
 import numpy as np
 import pandas as pd
+#import matplotlib.pyplot as plt
+#from plotnine import *
+#from matplotlib_venn import venn2, venn3_circles
 from Bio import SeqIO
+#from Bio import motifs
 from Bio.Seq import Seq
 import click
 from click import Choice, Path, command, group, option, argument
@@ -254,7 +258,7 @@ def merge_heavy_light_chains(
         GC["cell_type_HC"] = row.cell_type
         GC["plate_num_HC"] = row.plate
 
-        GC_df = GC_df.concat(GC)
+        GC_df = GC_df.append(GC)
    
     # TODO we're missing just 2 mismatches compared to tatsuya, I believe - check this
     GC_df.loc[:, "ID_HK"] = [f"{i}K" for i in GC_df["ID_HC"]]
