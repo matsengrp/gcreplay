@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 @file: gcreplay-tools
 
@@ -7,43 +8,110 @@ it'll be a simple click CLI with all the logic right here.
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from plotnine import *
-from matplotlib_venn import venn2, venn3_circles
+#import matplotlib.pyplot as plt
+#from plotnine import *
+#from matplotlib_venn import venn2, venn3_circles
 from Bio import SeqIO
+#from Bio import motifs
+from Bio.Seq import Seq
 import click
+from click import Choice, Path, command, group, option, argument
+import regex
 import re
+
+
+#################################
+# GLOBALS
+#################################
+
+# TODO we should probably just store the important sequences in fasta
+naive_hk_bcr_nt = ("GAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCT"
+    "CAGACTCTGTCCCTCACCTGTTCTGTCACTGGCGACTCCATCACCAGTGGTTACTGGAACTGGA"
+    "TCCGGAAATTCCCAGGGAATAAACTTGAGTACATGGGGTACATAAGCTACAGTGGTAGCACTTA"
+    "CTACAATCCATCTCTCAAAAGTCGAATCTCCATCACTCGAGACACATCCAAGAACCAGTACTAC"
+    "CTGCAGTTGAATTCTGTGACTACTGAGGACACAGCCACATATTACTGTGCAAGGGACTTCGATG"
+    "TCTGGGGCGCAGGGACCACGGTCACCGTCTCCTCAGACATTGTGATGACtCAGTCTCAAAAATT"
+    "CATGTCCACATCAGTAGGAGACAGGGTCAGCGTCACCTGCAAGGCCAGTCAGAATGTGGGTACT"
+    "AATGTAGCCTGGTATCAACAGAAACCAGGGCAATCTCCTAAAGCACTGATTTACTCGGCATCCT"
+    "ACAGGTACAGTGGAGTCCCTGATCGCTTCACAGGCAGTGGATCTGGGACAGATTTCACTCTCAC"
+    "CATCAGCAATGTGCAGTCTGAAGACTTGGCAGAGTATTTCTGTCAGCAATATAACAGCTATCCT"
+    "CTCACGTTCGGCTCGGGGACtAAGCTaGAAATAAAA")
+
+naive_hk_bcr_aa = ("EVQLQESGPSLVKPSQTLSLTCSVTGDSITSGYWNWIRKFPGNKLEYMGYISYSG"
+    "STYYNPSLKSRISITRDTSKNQYYLQLNSVTTEDTATYYCARDFDVWGAGTTVTVSSDIVMTQS"
+    "QKFMSTSVGDRVSVTCKASQNVGTNVAWYQQKPGQSPKALIYSASYRYSGVPDRFTGSGSGTDF"
+    "TLTISNVQSEDLAEYFCQQYNSYPLTFGSGTKLEIK")
+
+partis_airr_to_drop = [
+    "j_sequence_end",
+    "j_germline_start",
+    "j_germline_end",  
+    "rev_comp",
+    "junction",
+    "clone_id",
+    "vj_in_frame",
+    "stop_codon",
+    "np1",
+    "np2",
+    "duplicate_count",
+    "cdr3_start",
+    "cdr3_end",
+    "cell_id",
+    "v_support",
+    "v_identity",
+    "v_sequence_start",
+    "v_sequence_end",
+    "v_germline_start",
+    "v_germline_end",
+    "d_support",
+    "d_identity",
+    "d_sequence_start",
+    "d_sequence_end",
+    "d_germline_start",
+    "d_germline_end",
+    "j_support",
+    "j_identity",
+    "j_sequence_start",
+    "j_sequence_end",
+    "j_germline_start",
+    "j_germline_end",
+]
+
+# TODO
+isotype_motifs = {
+    
+}
 
 #################################
 # HELPERS
 #################################
 
-# DEFine a function that collapses a numpy array, like the one below
-def collapser()
-    """
-    it's got to take a 
-    it's got to return a list
-    lambda c:[c for c in partis_airr.columns if c not in ["counts", "rank", "num"]
-             [np.max(x.Score),
-                 df.loc[x.Score.idxmax(),'Element'],
-                 df.loc[x.Score.idxmax(),'Case'],
-                 np.min(x.Evaluation)])
-    """
+def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
+    """convert a fasta file pointer to dataframe after 
+    parsing the id with some function returning
+    the columns defined (less the sequence column)"""
     
-    # def apply(fn, x)
+    columns = [
+        'sequence_id', 
+        'plate', 
+        'barcode',
+        'well', 
+        'row',
+        'column',
+        'chain', 
+        'rank', 
+        'counts', 
+        'seq_input'
+    ]
 
-    #return (
-    #    df.groupby('Group').apply(
-
-    #      # lambda x: -> []
-
-    #      .apply(pd.Series)
-    #      .rename(columns={0:'Max_score_value',
-    #                       1:'Max_score_element',
-    #                   2:'Max_score_case',
-    #                   3:'Min_evaluation'})
-    #      .reset_index()
-    #)
+    ret  = pd.DataFrame({c:[] for c in columns})
+    with open(fasta_fp) as fasta_file:  # Will close handle cleanly
+        for seq_record in SeqIO.parse(fasta_file, 'fasta'):  # (generator)
+            bcr_meta = id_parse_fn(seq_record.id)
+            if bcr_meta != -1:
+                bcr_meta["seq_input"] = str(seq_record.seq)
+                ret = ret.append(pd.Series(bcr_meta), ignore_index=True)
+    return ret
 
 
 def parse_nextflow_header(header: str):
@@ -55,58 +123,24 @@ def parse_nextflow_header(header: str):
     bcr_ranking, bcr_count  = rank_count.split("-")
     
     return {
-        "identifier":header, 
+        "sequence_id":header, 
+        "date":date,
         "plate":plate, 
+        "barcode":int(plate[1:]),
         "well":well, 
+        "row": well[0],
+        "column": int(well[1:]),
         "chain":chain, 
         "rank":int(bcr_ranking), 
-        "count":int(bcr_count)
+        "counts":int(bcr_count)
     }
-
-
-# probably dont need this? 
-def parse_tatsuya_header(header: str):
-    """parse fasta header and return rank, counts, well, plate, and chain, 
-    we do not expect the `>` to be included in the header"""
-    if "unmatched" in header: return -1
-    
-    prefix, rank_count = header.split("_")
-    bcr_ranking, bcr_count  = rank_count.split("-")
-    
-    # pattern match for plate, well, chain
-    plate = re.search(r'([P][0-9]+)', prefix).group(0)
-    well = re.search(r'([A-L][0-9]+)', prefix).group(0)
-    chain = prefix[-1]
-    return {
-        "identifier":header, 
-        "plate":plate, 
-        "well":well, 
-        "chain":chain, 
-        "rank":int(bcr_ranking), 
-        "count":int(bcr_count)
-    }
-
-
-def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs)    
-    """convert a fasta file pointer to dataframe after parsing the id with some function returning
-    the columns defined (less the sequence column)"""
-    
-    columns = ['identifier', 'plate', 'well', 'chain', 'rank', 'count', 'sequence']
-    ret  = pd.DataFrame({c:[] for c in columns})
-    with open(fasta_fp) as fasta_file:  # Will close handle cleanly
-        for seq_record in SeqIO.parse(fasta_file, 'fasta'):  # (generator)
-            bcr_meta = id_parse_fn(seq_record.id)
-            if bcr_meta != -1:
-                bcr_meta["sequence"] = str(seq_record.seq)
-                ret = ret.append(pd.Series(bcr_meta), ignore_index=True)
-    return ret
 
 
 def plot_venn_stub(
     df1:pd.DataFrame, 
     df2:pd.DataFrame, 
     feature_groups:list, 
-    out="venn.png"
+    out="venn.png",
     **kwargs    
 ):
     """
@@ -127,7 +161,6 @@ def plot_venn_stub(
     pass
 
 
-
 def test_sequence_counts_stub():
     """
     TODO
@@ -146,15 +179,92 @@ def test_sequence_counts_stub():
 
     pass
 
-
-def threshold_fasta_sequence_abundance(fasta):
+# TODO - not until we're catching failed BCR's
+def threshold_fasta_sequence_abundance_stub(fasta):
     """
+    str -> str
+
     This function should take in a collapsed fasta, parse it into a dataframe,
     and output a fasta 
     """
     pass
 
 
+# TODO
+def infer_igh_isotypes(bcr_sequence, num_mm=1):
+    """Use fuzzy string matching to infer the isotype of bcr sequences
+    in the cell database - allowing for `num_mm` mismatches. This function
+    will modify the passed in dataframe and will return the first match it finds
+    """
+   
+    # Motifs associated with full input BCR including constant region
+    motif_map = {
+        "IgM": ["atgtcttccccct"],
+        "IgG1" : ["atggtgaccctggg"],
+        "IgG2" : ["ggctcctcggtgactcta", "tcggtgactctagg", "gtgtggagatacaactgg"],
+        "igG3" : ["cccttggtccctggctgcggtgacacat", "cacatctggatcctcggtgaca"],
+        "IgA" : ["tctgcgagaaatcccaccatcta"]
+    }
+
+    # match and return first valid isotype
+    for key, value in motif_map.items():
+        for motif in value:
+            m = regex.findall("({m}){{e<={nm}}}".format(m=motif, nm=num_mm), bcr_sequence.lower())
+            if len(m) > 0:
+                return key
+    # TODO Log
+    print(f"WARNING: no isotype match for: {bcr_sequence}")
+
+    # if no istype motif is found
+    return np.nan
+
+
+def _test_infer_igh_isotypes() -> None:
+    assert infer_igh_isotypes("cctgaagtctgcgagaaatcccaccatctatctta") == "IgA"
+    assert infer_igh_isotypes("cctgaagtctgcgagatatcccaccatctatctta") == "IgA"
+
+
+# TODO
+def infer_mutations(cell_data: pd.DataFrame) -> None:
+    """
+    """
+    pass
+
+
+def merge_heavy_light_chains(
+        cell_df: pd.DataFrame, 
+        key_file: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    """
+
+    GC_df = pd.DataFrame()
+    for idx, row in key_file.iterrows():
+        key_row = row.row.split(".")
+        key_col = [int(c) for c in row.col.split(".")]
+
+        HC = cell_df.query(
+            f"(locus == 'IGH') & (barcode == {row.hc_barcode}) & (column.isin({key_col})) & (row.isin({key_row}))",
+            engine="python"
+        )
+        LC = cell_df.query(
+            f"(locus == 'IGK') & (barcode == {row.lc_barcode}) & (column.isin({key_col})) & (row.isin({key_row}))",
+            engine="python"
+        )
+
+        GC = HC.merge(LC, on="well", suffixes=("_HC", "_LC"))
+        GC["mouse_HC"] = row.mouse
+        GC["GC_num_HC"] = row.gc
+        GC["node_HC"] = row.node
+        GC["cell_type_HC"] = row.cell_type
+        GC["plate_num_HC"] = row.plate
+
+        GC_df = GC_df.append(GC)
+   
+    # TODO we're missing just 2 mismatches compared to tatsuya, I believe - check this
+    GC_df.loc[:, "ID_HK"] = [f"{i}K" for i in GC_df["ID_HC"]]
+
+    return GC_df
 
 
 #################################
@@ -162,26 +272,250 @@ def threshold_fasta_sequence_abundance(fasta):
 #################################
 
 """
-$ python hello.py --count=3
-Your name: John
-Hello John!
-Hello John!
-Hello John!
+# Usage example 
+python gcreplay-tools.py wrangle-annotation \
+        --igh-airr 2022-02-09/partis_annotation/PR-1-6/engrd/single-chain/partition-igh.tsv \
+        --igk-airr 2022-02-09/partis_annotation/PR-1-6/engrd/single-chain/partition-igk.tsv \
+        --input-fasta 2022-02-09/ranked_bcr_sequences_per_well/PR-1-6.fasta
 """
 
-@click.command()
-@click.option('--count', default=1, help='Number of greetings.')
-@click.option('--name', prompt='Your name',
-              help='The person to greet.')
-def hello(count, name):
-    """Simple program that greets NAME for a total of COUNT times."""
-    for x in range(count):
-        click.echo(f"Hello {name}!")
 
+# entry point
+@group(context_settings={"help_option_names": ["-h", "--help"]})
+def cli():
+    """
+    Welcome to the gcreplay-tools CLI!
+
+    Here we present a few useful utilities for the 
+    processing and analysis of BCR's extracted from
+    a gcreplay experiment.
+    """
+    pass
+
+# TODO option, filter unproductive cells
+# TODO option, mm in isotype inference
+# TODO option, 
+@cli.command("wrangle-annotation")
+@click.option(
+    '--igh-airr', 
+    type=Path(exists=True),
+    required=True,
+    help='igh airr output from partis'
+)
+@click.option(
+    '--igk-airr', 
+    type=Path(exists=True),
+    required=True,
+    help='igk airr output from partis'
+)
+@click.option(
+    '--input-fasta', 
+    type=Path(exists=True),
+    required=True,
+    help='the fasta fed into partis for annotation'
+)
+@click.option(
+    '--key-file', 
+    type=Path(exists=True),
+    required=True,
+    help='the key file for merging heavy and light chains'
+)
+@click.option(
+    "--output",
+    "-o",
+    required=True,
+    help="Path to write the fasta.",
+)
+def wrangle_annotation(
+    igh_airr, igk_airr, input_fasta, key_file, output
+):
+    """
+    Curate and wrangle the partis annotation of ranked BCR's
+    for a single "PR" experiment.
+    """
+
+    # read in the airr formatted files into dataframes
+    partis_igk = pd.read_csv(igk_airr, sep="\t") 
+    partis_igh = pd.read_csv(igh_airr, sep="\t") 
+
+    # filter out the failed annotations
+    partis_igk.query("seqs_aa.notna()", engine="python", inplace=True)
+    partis_igh.query("seqs_aa.notna()", engine="python", inplace=True)
+
+
+    # TODO raise more useful error
+    # explain that we expect some non-coding
+    # nt at the end of each sequence
+    for seq in partis_igh["seqs_aa"]:
+        assert seq.endswith("X")
+
+    # if the assertion is true we can simply 
+    # strip the 'X' from all aa sequences
+    partis_igh.loc[:, "seq_aa"] = [s[:-1] for s in partis_igh["seqs_aa"]]
+    partis_igh = partis_igh.drop("seqs_aa", axis=1)
+    partis_igk = partis_igk.rename({"seqs_aa": "seq_aa"}, axis=1)
+    
+    # merge the igk and igh annotations
+    partis_airr = partis_igk.append(partis_igh)
+    partis_airr.loc[:, "seq_nt"] = [seq.lower() for seq in partis_airr["sequence"]]
+
+    # drop unnecessary columns
+    partis_airr.drop(partis_airr_to_drop, axis=1, inplace=True)
+
+
+    # parse the fasta to merge in the important information 
+    # TODO add plate int to this as 'barcode', keep plate for the hell of it
+    parsed_input_fasta = bcr_fasta_to_df(input_fasta, parse_nextflow_header)
+    
+
+    # Merge in the parsed fasta columns 
+    # TODO once we're getting rid of unmatched we can do a left join? assert this.
+    partis_airr = partis_airr.merge(parsed_input_fasta, how="inner", on="sequence_id")
+    partis_airr["ID"] = [
+        f"{r.date}{r.plate}{r.well}{r.chain}"
+        for i, r in partis_airr.iterrows()
+    ]
+
+
+    partis_airr = partis_airr.rename(
+        {
+            "v_call":"V",
+            "d_call":"D",
+            "j_call":"J",
+            "productive":"Productive",
+            "junction_aa":"AAjunction",
+            "sequence_id" : "fasta_header"
+        },
+        axis=1
+    )
+
+    # compute lengths
+    partis_airr.loc[:, "seq_nt_length"] = [len(seq) for seq in partis_airr["seq_nt"]]
+    partis_airr.loc[:, "seq_aa_length"] = [len(seq) for seq in partis_airr["seq_aa"]]
+
+    query_string = "(locus == 'IGH' & seq_nt_length == 337) | (locus == 'IGK' & seq_nt_length == 321)"
+
+    # Trim the rest of partis IGH
+    partis_airr.query(query_string, engine="python", inplace=True)
+    seq_nts = []
+    for idx, row in partis_airr.iterrows():
+        seq_nts.append(row.seq_nt[:-1] if row.locus == "IGH" else row.seq_nt)
+    partis_airr.loc[:, "seq_nt"] = seq_nts
+
+    # re-compute lengths
+    partis_airr.loc[:, "seq_nt_length"] = [len(seq) for seq in partis_airr["seq_nt"]]
+    partis_airr.loc[:, "seq_aa_length"] = [len(seq) for seq in partis_airr["seq_aa"]]
+
+    partis_airr.loc[:, "isotype"] = [
+        infer_igh_isotypes(row.seq_input) 
+        if row.locus == "IGH" else "IgK"
+        for idx, row in partis_airr.iterrows()
+    ]
+   
+    # TODO shall we export those which are not rank 1, count 10?
+    # TODO make these parameters. I guess rank one is kind of innevitable
+    partis_airr.query("(rank == 1) & (counts >= 10)", engine="python", inplace=True)
+    for well, well_df in partis_airr.groupby("ID"):
+        assert len(well_df) == 1
+
+    GC_df = merge_heavy_light_chains(partis_airr, pd.read_csv(key_file))
+
+    GC_df.to_csv(output, index=False)
+
+
+@cli.command("gc-df-to-fasta")
+@click.option(
+    '--gc-hk-df',
+    '--gc-df',
+    type=Path(exists=True),
+    required=True,
+    help="Germinal center cell database - output \
+            using the `wrangle_partis_annotation` command."
+)
+@click.option(
+    '--header-col', 
+    '-h', 
+    multiple=True,
+    type=str,
+    default=["ID_HK"],
+    help="A column from the germinal center df you \
+            would like to concatinate to the header."
+)
+@click.option(
+    '--sequence-col', 
+    '-s', 
+    multiple=True,
+    type=str,
+    default=["seq_nt_HC", "seq_nt_LC"],
+    help="A column from the germinal center df you \
+            would like to concatinate to the sequences."
+)
+@click.option(
+    "--output",
+    "-o",
+    required=False,
+    default="HK.fasta",
+    help="Path to write the fasta.",
+)
+@click.option(
+    '-n','--add-naive', 
+    type=click.BOOL, 
+    default=True
+)
+def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
+    """
+    A function to concatinate specified columns from
+    the germinal center dataframe (output by
+    `wrangle_partis_annotation` command) for both headers
+    and sequences.
+    """
+
+    # gather the concatinated columns for headers
+    gc_hk_df = pd.read_csv(gc_hk_df)
+    headers = gc_hk_df[list(header_col)].apply(lambda x:"".join(x), axis=1)
+    sequences = gc_hk_df[list(sequence_col)].apply(lambda x:"".join(x), axis=1)
+
+    # write fasta
+    with open(output, "w") as fasta:
+        if add_naive: fasta.write(f">naive\n{naive_hk_bcr_nt}\n")
+        for header, sequence in zip(headers, sequences):
+            fasta.write(f">{header}\n{sequence}\n")
+
+
+@cli.command("query-df")
+@click.option(
+    '--dataframe',
+    '-df',
+    type=Path(exists=True),
+    required=True,
+    help="dataframe (csv) to query"
+)
+@click.option(
+    '--query-string', 
+    '-q',
+    type=str,
+    required=True,
+    help='the key file for merging heavy and light chains'
+)
+@click.option(
+    "--output",
+    "-o",
+    required=False,
+    default="HK.fasta",
+    help="Path to write the fasta.",
+)
+def query_df(dataframe, query_string, output):
+    """
+    Simply, a CLI wrapper for pandas DataFrame.query.
+    """
+    df = pd.read_csv(dataframe)
+    print(query_string)
+    df.query(query_string).to_csv(output, index=False)
+
+
+# TODO We need this until we get setup.py
+# for a real mf python package.
 if __name__ == '__main__':
-    hello()
-
-
-
+    cli()
 
 

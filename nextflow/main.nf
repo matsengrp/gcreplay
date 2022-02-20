@@ -80,6 +80,7 @@ include {
     COLLAPSE_RANK_PRUNE;
     MERGE_BCRS;
     PARTIS_ANNOTATION;
+    PARTIS_WRANGLE;
   } from './modules.nf' 
 
 
@@ -92,11 +93,11 @@ workflow BCR_COUNTS {
 
     TRIM_COMBINE_MATES(filepair)
     DEMULTIPLEX_PLATES(TRIM_COMBINE_MATES.out) \
-      | transpose() | filter{ file(it[1]).size()>0 } \
+      | transpose() | filter{ file(it[2]).size()>0 } \
       | set { dmplxd_plates_ch }
     
     DEMULTIPLEX_WELLS(dmplxd_plates_ch) \
-      | transpose() | filter{ file(it[1]).size()>0 } \
+      | transpose() | filter{ file(it[2]).size()>0 } \
       | set { dmplxd_wells_ch }
 
     SPLIT_HEAVY( 
@@ -110,7 +111,8 @@ workflow BCR_COUNTS {
     )
 
     SPLIT_HEAVY.out.mix(SPLIT_LIGHT.out) | COLLAPSE_RANK_PRUNE \
-        | groupTuple() | MERGE_BCRS
+        //| groupTuple(by:[0,1]) | view()
+        | groupTuple(by:[0,1]) | MERGE_BCRS
 
   emit:
     MERGE_BCRS.out
@@ -131,6 +133,7 @@ workflow {
     .map{ row -> 
       tuple(
         "$row.sample_id",
+        file("${params.reads_prefix}/${row.key_file}"),
         "$row.date",
         file("${params.reads_prefix}/${row.read1}"),
         file("${params.reads_prefix}/${row.read2}"),
@@ -138,7 +141,7 @@ workflow {
     } | BCR_COUNTS
 
   // Step 2
-  PARTIS_ANNOTATION(BCR_COUNTS.out)
+  PARTIS_ANNOTATION(BCR_COUNTS.out) | PARTIS_WRANGLE
 
   // Step 3
   // | PREP_ANNOTATION
