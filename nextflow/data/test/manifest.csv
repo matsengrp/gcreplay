@@ -1,2 +1,2 @@
-sample_id,date,read1,read2
-test1-6,211210,data/test/test_PR1.6_r1.fastq,data/test/test_PR1.6_r2.fastq
+sample_id,key_file,date,read1,read2
+test1-6,data/key_files/PR1_6-key.csv,211210,data/test/test_PR1.6_r1.fastq,data/test/test_PR1.6_r2.fastq
