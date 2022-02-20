@@ -7,7 +7,8 @@ set -eu
 
 # 
 
-for PR in 1 2 3 4 5 6 7 8
+# for PR in 1 2 3 4 5 6 7 8
+for PR in 1 
 do
     # PR=6
     RESDIR=../../results/2022-02-09/

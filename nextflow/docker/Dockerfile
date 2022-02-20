@@ -36,6 +36,9 @@ RUN python3 -m pip install --upgrade \
     gctree \
     biopython
 
+# TODO phylip -> https://evolution.genetics.washington.edu/phylip/install.html ?
+# TODO new version of gctree intall from github ?
+
 # install libgtextutils
 RUN curl -L 'https://github.com/agordon/libgtextutils/releases/download/0.7/libgtextutils-0.7.tar.gz' \
   --output libgtextutils-0.7.tar.gz \
