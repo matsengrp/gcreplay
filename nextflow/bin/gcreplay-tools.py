@@ -3,7 +3,7 @@
 @file: gcreplay-tools
 
 Right now a sandbox for throwing code into
-it'll be a simple click CLI with all the logic right here. 
+it'll be a simple click CLI with all the logic right here.
 """
 
 import numpy as np
@@ -47,7 +47,7 @@ naive_hk_bcr_aa = ("EVQLQESGPSLVKPSQTLSLTCSVTGDSITSGYWNWIRKFPGNKLEYMGYISYSG"
 partis_airr_to_drop = [
     "j_sequence_end",
     "j_germline_start",
-    "j_germline_end",  
+    "j_germline_end",
     "rev_comp",
     "junction",
     "clone_id",
@@ -81,7 +81,7 @@ partis_airr_to_drop = [
 
 # TODO
 isotype_motifs = {
-    
+
 }
 
 #################################
@@ -89,20 +89,20 @@ isotype_motifs = {
 #################################
 
 def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
-    """convert a fasta file pointer to dataframe after 
+    """convert a fasta file pointer to dataframe after
     parsing the id with some function returning
     the columns defined (less the sequence column)"""
-    
+
     columns = [
-        'sequence_id', 
-        'plate', 
+        'sequence_id',
+        'plate',
         'barcode',
-        'well', 
+        'well',
         'row',
         'column',
-        'chain', 
-        'rank', 
-        'counts', 
+        'chain',
+        'rank',
+        'counts',
         'seq_input'
     ]
 
@@ -117,33 +117,33 @@ def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
 
 
 def parse_nextflow_header(header: str):
-    """parse fasta header and return rank, counts, well, plate, and chain, 
+    """parse fasta header and return rank, counts, well, plate, and chain,
     we do not expect the `>` to be included in the header"""
     if "unmatched" in header: return -1
-    
+
     pr, date, plate, well, chain, _, rank_count = header.split(".")
     bcr_ranking, bcr_count  = rank_count.split("-")
-    
+
     return {
-        "sequence_id":header, 
+        "sequence_id":header,
         "date":date,
-        "plate":plate, 
+        "plate":plate,
         "barcode":int(plate[1:]),
-        "well":well, 
+        "well":well,
         "row": well[0],
         "column": int(well[1:]),
-        "chain":chain, 
-        "rank":int(bcr_ranking), 
+        "chain":chain,
+        "rank":int(bcr_ranking),
         "counts":int(bcr_count)
     }
 
 
 def plot_venn_stub(
-    df1:pd.DataFrame, 
-    df2:pd.DataFrame, 
-    feature_groups:list, 
+    df1:pd.DataFrame,
+    df2:pd.DataFrame,
+    feature_groups:list,
     out="venn.png",
-    **kwargs    
+    **kwargs
 ):
     """
     plot a venn diagram of differences between grouped column features
@@ -187,7 +187,7 @@ def threshold_fasta_sequence_abundance_stub(fasta):
     str -> str
 
     This function should take in a collapsed fasta, parse it into a dataframe,
-    and output a fasta 
+    and output a fasta
     """
     pass
 
@@ -198,7 +198,7 @@ def infer_igh_isotypes(bcr_sequence, num_mm=1):
     in the cell database - allowing for `num_mm` mismatches. This function
     will modify the passed in dataframe and will return the first match it finds
     """
-   
+
     # Motifs associated with full input BCR including constant region
     motif_map = {
         "IgM": ["atgtcttccccct"],
@@ -234,7 +234,7 @@ def infer_mutations(cell_data: pd.DataFrame) -> None:
 
 
 def merge_heavy_light_chains(
-        cell_df: pd.DataFrame, 
+        cell_df: pd.DataFrame,
         key_file: pd.DataFrame
 ) -> pd.DataFrame:
     """
@@ -262,7 +262,7 @@ def merge_heavy_light_chains(
         GC["plate_num_HC"] = row.plate
 
         GC_df = GC_df.append(GC)
-   
+
     # TODO we're missing just 2 mismatches compared to tatsuya, I believe - check this
     GC_df.loc[:, "ID_HK"] = [f"{i}K" for i in GC_df["ID_HC"]]
 
@@ -274,7 +274,7 @@ def merge_heavy_light_chains(
 #################################
 
 """
-# Usage example 
+# Usage example
 python gcreplay-tools.py wrangle-annotation \
         --igh-airr 2022-02-09/partis_annotation/PR-1-6/engrd/single-chain/partition-igh.tsv \
         --igk-airr 2022-02-09/partis_annotation/PR-1-6/engrd/single-chain/partition-igk.tsv \
@@ -288,7 +288,7 @@ def cli():
     """
     Welcome to the gcreplay-tools CLI!
 
-    Here we present a few useful utilities for the 
+    Here we present a few useful utilities for the
     processing and analysis of BCR's extracted from
     a gcreplay experiment.
     """
@@ -296,28 +296,28 @@ def cli():
 
 # TODO option, filter unproductive cells
 # TODO option, mm in isotype inference
-# TODO option, 
+# TODO option,
 @cli.command("wrangle-annotation")
 @click.option(
-    '--igh-airr', 
+    '--igh-airr',
     type=Path(exists=True),
     required=True,
     help='igh airr output from partis'
 )
 @click.option(
-    '--igk-airr', 
+    '--igk-airr',
     type=Path(exists=True),
     required=True,
     help='igk airr output from partis'
 )
 @click.option(
-    '--input-fasta', 
+    '--input-fasta',
     type=Path(exists=True),
     required=True,
     help='the fasta fed into partis for annotation'
 )
 @click.option(
-    '--key-file', 
+    '--key-file',
     type=Path(exists=True),
     required=True,
     help='the key file for merging heavy and light chains'
@@ -337,8 +337,8 @@ def wrangle_annotation(
     """
 
     # read in the airr formatted files into dataframes
-    partis_igk = pd.read_csv(igk_airr, sep="\t") 
-    partis_igh = pd.read_csv(igh_airr, sep="\t") 
+    partis_igk = pd.read_csv(igk_airr, sep="\t")
+    partis_igh = pd.read_csv(igh_airr, sep="\t")
 
     # filter out the failed annotations
     partis_igk.query("seqs_aa.notna()", engine="python", inplace=True)
@@ -351,12 +351,12 @@ def wrangle_annotation(
     for seq in partis_igh["seqs_aa"]:
         assert seq.endswith("X")
 
-    # if the assertion is true we can simply 
+    # if the assertion is true we can simply
     # strip the 'X' from all aa sequences
     partis_igh.loc[:, "seq_aa"] = [s[:-1] for s in partis_igh["seqs_aa"]]
     partis_igh = partis_igh.drop("seqs_aa", axis=1)
     partis_igk = partis_igk.rename({"seqs_aa": "seq_aa"}, axis=1)
-    
+
     # merge the igk and igh annotations
     partis_airr = partis_igk.append(partis_igh)
     partis_airr.loc[:, "seq_nt"] = [seq.lower() for seq in partis_airr["sequence"]]
@@ -365,12 +365,12 @@ def wrangle_annotation(
     partis_airr.drop(partis_airr_to_drop, axis=1, inplace=True)
 
 
-    # parse the fasta to merge in the important information 
+    # parse the fasta to merge in the important information
     # TODO add plate int to this as 'barcode', keep plate for the hell of it
     parsed_input_fasta = bcr_fasta_to_df(input_fasta, parse_nextflow_header)
-    
 
-    # Merge in the parsed fasta columns 
+
+    # Merge in the parsed fasta columns
     # TODO once we're getting rid of unmatched we can do a left join? assert this.
     partis_airr = partis_airr.merge(parsed_input_fasta, how="inner", on="sequence_id")
     partis_airr["ID"] = [
@@ -409,11 +409,11 @@ def wrangle_annotation(
     partis_airr.loc[:, "seq_aa_length"] = [len(seq) for seq in partis_airr["seq_aa"]]
 
     partis_airr.loc[:, "isotype"] = [
-        infer_igh_isotypes(row.seq_input) 
+        infer_igh_isotypes(row.seq_input)
         if row.locus == "IGH" else "IgK"
         for idx, row in partis_airr.iterrows()
     ]
-   
+
     # TODO shall we export those which are not rank 1, count 10?
     # TODO make these parameters. I guess rank one is kind of innevitable
     partis_airr.query("(rank == 1) & (counts >= 10)", engine="python", inplace=True)
@@ -435,22 +435,22 @@ def wrangle_annotation(
             using the `wrangle_partis_annotation` command."
 )
 @click.option(
-    '--header-col', 
-    '-h', 
+    '--header-col',
+    '-h',
     multiple=True,
     type=str,
     default=["ID_HK"],
     help="A column from the germinal center df you \
-            would like to concatinate to the header."
+            would like to concatenate to the header."
 )
 @click.option(
-    '--sequence-col', 
-    '-s', 
+    '--sequence-col',
+    '-s',
     multiple=True,
     type=str,
     default=["seq_nt_HC", "seq_nt_LC"],
     help="A column from the germinal center df you \
-            would like to concatinate to the sequences."
+            would like to concatenate to the sequences."
 )
 @click.option(
     "--output",
@@ -460,19 +460,19 @@ def wrangle_annotation(
     help="Path to write the fasta.",
 )
 @click.option(
-    '-n','--add-naive', 
-    type=click.BOOL, 
+    '-n','--add-naive',
+    type=click.BOOL,
     default=True
 )
 def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
     """
-    A function to concatinate specified columns from
+    A function to concatenate specified columns from
     the germinal center dataframe (output by
     `wrangle_partis_annotation` command) for both headers
     and sequences.
     """
 
-    # gather the concatinated columns for headers
+    # gather the concatenated columns for headers
     gc_hk_df = pd.read_csv(gc_hk_df)
     headers = gc_hk_df[list(header_col)].apply(lambda x:"".join(x), axis=1)
     sequences = gc_hk_df[list(sequence_col)].apply(lambda x:"".join(x), axis=1)
@@ -493,7 +493,7 @@ def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
     help="dataframe (csv) to query"
 )
 @click.option(
-    '--query-string', 
+    '--query-string',
     '-q',
     type=str,
     required=True,
@@ -519,5 +519,3 @@ def query_df(dataframe, query_string, output):
 # for a real mf python package.
 if __name__ == '__main__':
     cli()
-
-
