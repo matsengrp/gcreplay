@@ -167,12 +167,12 @@ process PARTIS_WRANGLE {
 }
 
 
-process QUERY_GCTREE_WRANGLE {
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-  publishDir "$params.results/gctree_wrangle/"
-  input: path(single_mouse_gc_df)
-  script:
-    """
-    """
-
-}
+//process QUERY_GCTREE_WRANGLE {
+//  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
+//  publishDir "$params.results/gctree_wrangle/"
+//  input: path(single_mouse_gc_df)
+//  script:
+//    """
+//    """
+//
+//}
