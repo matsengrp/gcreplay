@@ -4,7 +4,7 @@ nextflow.enable.dsl =2
  * Process 1A: trim the first three bases of the paired end reads.
  */
 process TRIM_COMBINE_MATES { 
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
   publishDir "$params.results/trimmed_combined_fasta/" 
   label 'multithread'
   input: tuple val(key), val(key_file), val(date), path(read1), path(read2)
@@ -26,7 +26,7 @@ process TRIM_COMBINE_MATES {
  */
 //path plate_barcodes
 process DEMULTIPLEX_PLATES {
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
   publishDir "$params.results/demultiplexed_plates_fasta/" 
   input: tuple val(key), val(key_file), val(date), path(key_fasta)
   output: tuple val(key), val(key_file), path("${key}.${date}.*")
@@ -42,7 +42,7 @@ process DEMULTIPLEX_PLATES {
  * Process 1C: Demultiplex each plate into the 96 wells per plate
  */
 process DEMULTIPLEX_WELLS {
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
   publishDir "$params.results/demultiplexed_wells_fasta/"
   input: tuple val(key), val(key_file), path(plate)
   output: tuple val(key), val(key_file), path("${plate}.*")
@@ -60,7 +60,7 @@ process DEMULTIPLEX_WELLS {
  * for common motifs
  */
 process SPLIT_HK {
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
   publishDir "$params.results/split_HK/"
   label 'multithread'
   input: 
@@ -69,10 +69,10 @@ process SPLIT_HK {
     val(chain)
   output: tuple val(key), val(key_file), path("${well}.${chain}")
   script:
-  """
-  echo \$PATH
-  cutadapt --cores 8 -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
-  """
+    """
+    ls /opt/miniconda/
+    cutadapt --cores 8 -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
+    """
 }
 
 
@@ -81,7 +81,7 @@ process SPLIT_HK {
  * demultiplexed files into  
  */
 process COLLAPSE_RANK_PRUNE {
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
   publishDir "$params.results/rank_collapsed/"
   input: tuple val(key), val(key_file), path(well_chain)
   output: tuple val(key), val(key_file), path("${well_chain}.R")
@@ -106,7 +106,7 @@ process COLLAPSE_RANK_PRUNE {
  * Process 1F: Merge the top ranked BCR's
  */
 process MERGE_BCRS {
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
   publishDir "$params.results/ranked_bcr_sequences_per_well/"
   input: tuple val(key), val(key_file), path(all_coll_rank)
   output: tuple val(key), val(key_file), path("${key}.fasta")
@@ -140,23 +140,39 @@ process PARTIS_ANNOTATION {
  * Process 2B: Wrangle and parse the annotations
  */
 process PARTIS_WRANGLE {
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
   publishDir "$params.results/pr_merged_hk_dfs/"
   input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
-  output: path("${key}-gc-df-hk.csv")
+  output: path "gc-group*.csv"
+  //output: path("${key}-gc-df-hk.csv"), path(key_file)
+  
   script:
     """  
-    echo $key
-    echo $key_file
     IGH_AIRR=${partis_out}/engrd/single-chain/partition-igh.tsv
     IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
 
     # wrangle annotation -> gc merged dataframe
-    gcreplay-tools.py wrangle-annotation \
+    ./gcreplay-tools.py wrangle-annotation \
         --igh-airr \$IGH_AIRR \
         --igk-airr \$IGK_AIRR \
         --input-fasta $merged_fasta \
         --key-file $key_file \
         -o ${key}-gc-df-hk.csv
+    
+    # now, split the wrangled df into single mouse / gc
+    ./gcreplay-tools.py df-groupby \
+        -df gc-df.csv \
+        -o gc-group
     """
+}
+
+
+process QUERY_GCTREE_WRANGLE {
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
+  publishDir "$params.results/gctree_wrangle/"
+  input: path(single_mouse_gc_df)
+  script:
+    """
+    """
+
 }

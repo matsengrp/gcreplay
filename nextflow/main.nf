@@ -111,7 +111,6 @@ workflow BCR_COUNTS {
     )
 
     SPLIT_HEAVY.out.mix(SPLIT_LIGHT.out) | COLLAPSE_RANK_PRUNE \
-        //| groupTuple(by:[0,1]) | view()
         | groupTuple(by:[0,1]) | MERGE_BCRS
 
   emit:
@@ -141,7 +140,8 @@ workflow {
     } | BCR_COUNTS
 
   // Step 2
-  PARTIS_ANNOTATION(BCR_COUNTS.out) | PARTIS_WRANGLE
+  PARTIS_ANNOTATION(BCR_COUNTS.out) | PARTIS_WRANGLE | view()
+  
 
   // Step 3
   // | PREP_ANNOTATION
