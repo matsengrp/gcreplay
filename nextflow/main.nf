@@ -37,10 +37,10 @@ else
     params.reads_prefix = "$baseDir"
 
 // all plate barcodes.
-params.plate_barcodes   = "$baseDir/data/barcodes/test_plateBC.txt"
+params.plate_barcodes   = "$baseDir/data/test/test_plateBC.txt"
 
 // all the 96 well barcodes. 
-params.well_barcodes    = "$baseDir/data/barcodes/test_96FBC.txt"
+params.well_barcodes    = "$baseDir/data/test/test_96FBC.txt"
 
 
 // temp - where do you want the partis annotation, specfically.

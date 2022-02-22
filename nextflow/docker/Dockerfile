@@ -26,17 +26,46 @@ RUN apt-get install -qqy mesa-utils libgl1-mesa-glx  libglib2.0-0
 RUN apt-get install -qqy libfontconfig1 libxrender1 libdbus-1-3 libxkbcommon-x11-0 libxi6
 RUN apt-get install -qqy libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0
 RUN apt-get install -qqy libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0 libxcb-shape0
-ARG TMPDIR="/tmp"
+# ARG TMPDIR="/tmp"
 
-# need to use conda bc of phylip
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ARG PATH="/root/miniconda3/bin:${PATH}"
+# For this to work with a singularity wrapper
+# we have top move it somewhere other than root
+ENV PATH="/opt/miniconda3/bin:${PATH}"
+ARG PATH="/opt/miniconda3/bin:${PATH}"
+
 RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && mkdir /root/.conda \
+    && mkdir /opt/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh 
+    ./Miniconda3-py38_4.8.3-Linux-x86_64.sh -b -p /opt/miniconda3 \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
+
+# need to use conda bc of phylip
+#ENV PATH="/root/miniconda3/bin:${PATH}"
+#ARG PATH="/root/miniconda3/bin:${PATH}"
+#
+#RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+#RUN wget \
+#    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+#    && mkdir /root/.conda \
+#    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+#    && rm -f Miniconda3-latest-Linux-x86_64.sh
+
+#ENV PATH="/opt/miniconda3/bin:${PATH}"
+#ARG PATH="/opt/miniconda3/bin:${PATH}"
+
+#chmod --recursive a+rw /opt/miniconda3 && \
+#RUN apt-get update && \
+#    apt-get install -y \
+#    apt-get clean && \
+#    rm -rf rm -rf /var/lib/apt/lists/* && \
+#    wget https://repo.anaconda.com/miniconda/Miniconda3-py38_4.8.3-Linux-x86_64.sh && \
+#    chmod +x Miniconda3-py38_4.8.3-Linux-x86_64.sh && \
+#    ./Miniconda3-py38_4.8.3-Linux-x86_64.sh -b -p /opt/miniconda3 && \
+#    ln -s /opt/miniconda3/bin/conda /usr/bin/conda \
+#    rm -rf /var/lib/apt/lists/* && \
+#    rm /Miniconda3-py38_4.8.3-Linux-x86_64.sh
 
 # install pip
 RUN conda install pip

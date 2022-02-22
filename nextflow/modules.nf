@@ -70,7 +70,6 @@ process SPLIT_HK {
   output: tuple val(key), val(key_file), path("${well}.${chain}")
   script:
     """
-    ls /opt/miniconda/
     cutadapt --cores 8 -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
     """
 }
@@ -143,27 +142,28 @@ process PARTIS_WRANGLE {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
   publishDir "$params.results/pr_merged_hk_dfs/"
   input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
-  output: path "gc-group*.csv"
+  output: path "${key}-gc-group*.csv"
   //output: path("${key}-gc-df-hk.csv"), path(key_file)
   
-  script:
-    """  
-    IGH_AIRR=${partis_out}/engrd/single-chain/partition-igh.tsv
-    IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
+  """  
+  IGH_AIRR=${partis_out}/engrd/single-chain/partition-igh.tsv
+  IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
 
-    # wrangle annotation -> gc merged dataframe
-    ./gcreplay-tools.py wrangle-annotation \
-        --igh-airr \$IGH_AIRR \
-        --igk-airr \$IGK_AIRR \
-        --input-fasta $merged_fasta \
-        --key-file $key_file \
-        -o ${key}-gc-df-hk.csv
-    
-    # now, split the wrangled df into single mouse / gc
-    ./gcreplay-tools.py df-groupby \
-        -df gc-df.csv \
-        -o gc-group
-    """
+  # wrangle annotation -> gc merged dataframe
+  gcreplay-tools.py wrangle-annotation \
+      --igh-airr \$IGH_AIRR \
+      --igk-airr \$IGK_AIRR \
+      --input-fasta $merged_fasta \
+      --key-file $key_file \
+      -o ${key}-gc-df-hk.csv
+  
+  head ${key}-gc-df-hk.csv
+  
+  # now, split the wrangled df into single mouse / gc
+  gcreplay-tools.py df-groupby \
+      -df ${key}-gc-df-hk.csv \
+      -o ${key}-gc-group
+  """
 }
 
 

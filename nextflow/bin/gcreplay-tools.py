@@ -233,7 +233,7 @@ def merge_heavy_light_chains(
         GC["cell_type_HC"] = row.cell_type
         GC["plate_num_HC"] = row.plate
 
-        GC_df = GC_df.append(GC)
+        GC_df = pd.concat([GC_df, GC])
    
     # TODO we're missing just 2 mismatches compared to tatsuya, I believe - check this
     GC_df.loc[:, "ID_HK"] = [f"{i}K" for i in GC_df["ID_HC"]]
@@ -487,13 +487,15 @@ def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
     default="grouped",
     help="prefix of filename before group string",
 )
-def get_columns(dataframe, columns, output_prefix):
+def df_groupby(dataframe, columns, output_prefix):
     """
     Simply, a CLI wrapper for pandas DataFrame.groupby on certain columns.
     """
     df = pd.read_csv(dataframe)
     for group, groupdf in df.groupby(list(columns)):
         group_string = "-".join([str(gi) for gi in group])
+
+        print(f"writing to: {output_prefix}-{group_string}.csv")
         groupdf.to_csv(f"{output_prefix}-{group_string}.csv", index=False)
 
 
