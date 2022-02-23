@@ -5,7 +5,7 @@ nextflow.enable.dsl =2
  */
 process TRIM_COMBINE_MATES { 
   container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-  publishDir "$params.results/trimmed_combined_fasta/" 
+  // publishDir "$params.results/trimmed_combined_fasta/" 
   label 'multithread'
   input: tuple val(key), val(key_file), val(date), path(read1), path(read2)
   output: tuple val(key), val(key_file), val(date), path("${key}.fasta")
@@ -27,7 +27,7 @@ process TRIM_COMBINE_MATES {
 //path plate_barcodes
 process DEMULTIPLEX_PLATES {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-  publishDir "$params.results/demultiplexed_plates_fasta/" 
+  // publishDir "$params.results/demultiplexed_plates_fasta/" 
   input: tuple val(key), val(key_file), val(date), path(key_fasta)
   output: tuple val(key), val(key_file), path("${key}.${date}.*")
   script:
@@ -43,7 +43,7 @@ process DEMULTIPLEX_PLATES {
  */
 process DEMULTIPLEX_WELLS {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-  publishDir "$params.results/demultiplexed_wells_fasta/"
+  // publishDir "$params.results/demultiplexed_wells_fasta/"
   input: tuple val(key), val(key_file), path(plate)
   output: tuple val(key), val(key_file), path("${plate}.*")
   script:
@@ -61,7 +61,7 @@ process DEMULTIPLEX_WELLS {
  */
 process SPLIT_HK {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-  publishDir "$params.results/split_HK/"
+  // publishDir "$params.results/split_HK/"
   label 'multithread'
   input: 
     tuple val(key), val(key_file), path(well) 
@@ -81,7 +81,7 @@ process SPLIT_HK {
  */
 process COLLAPSE_RANK_PRUNE {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-  publishDir "$params.results/rank_collapsed/"
+  // publishDir "$params.results/rank_collapsed/"
   input: tuple val(key), val(key_file), path(well_chain)
   output: tuple val(key), val(key_file), path("${well_chain}.R")
   script:
@@ -106,7 +106,7 @@ process COLLAPSE_RANK_PRUNE {
  */
 process MERGE_BCRS {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-  publishDir "$params.results/ranked_bcr_sequences_per_well/"
+  // publishDir "$params.results/ranked_bcr_sequences_per_well/"
   input: tuple val(key), val(key_file), path(all_coll_rank)
   output: tuple val(key), val(key_file), path("${key}.fasta")
   script:
@@ -121,7 +121,7 @@ process MERGE_BCRS {
  */
 process PARTIS_ANNOTATION {
   container 'quay.io/matsengrp/partis:dev'
-  publishDir "$params.results/partis_annotation/"
+  // publishDir "$params.results/partis_annotation/"
   input: tuple val(key), val(key_file), path(merged_fasta)
   output: tuple val(key), val(key_file), path(merged_fasta), path("${key}/")
   script:
@@ -140,10 +140,9 @@ process PARTIS_ANNOTATION {
  */
 process PARTIS_WRANGLE {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-  publishDir "$params.results/pr_merged_hk_dfs/"
+  publishDir "$params.results/single_gc_wrangle/"
   input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
-  output: path "${key}-gc-group*.csv"
-  //output: path("${key}-gc-df-hk.csv"), path(key_file)
+  output: path "annotated-${key}*.csv"
   
   """  
   IGH_AIRR=${partis_out}/engrd/single-chain/partition-igh.tsv
@@ -157,22 +156,29 @@ process PARTIS_WRANGLE {
       --key-file $key_file \
       -o ${key}-gc-df-hk.csv
   
-  head ${key}-gc-df-hk.csv
-  
   # now, split the wrangled df into single mouse / gc
   gcreplay-tools.py df-groupby \
       -df ${key}-gc-df-hk.csv \
-      -o ${key}-gc-group
+      -o annotated-${key}
   """
 }
 
 
-//process QUERY_GCTREE_WRANGLE {
-//  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
-//  publishDir "$params.results/gctree_wrangle/"
-//  input: path(single_mouse_gc_df)
-//  script:
-//    """
-//    """
-//
-//}
+/*
+ * Process 3A: Wrangle and featurize nodes
+ */
+process GCTREE {
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest-3'
+  publishDir "$params.results/gctrees/"
+  label "mem_large"
+  // Fail silently
+  //errorStrategy 'ignore'
+  input: path(single_mouse_gc_df)
+  output: tuple path("*-gctree-infer-output/"), path("*-featurize-output/")
+  shell:
+  template "gctree_infer_featurize.sh"
+}
+
+
+
+

@@ -17,46 +17,33 @@
  * TODO finish all authors
  */
 
+
+
 /* 
  * Enable DSL 2 syntax
  */
 nextflow.enable.dsl = 2
 
+
+// TODO let's move all these to the config file, huh?
+// TODO we could just forget the example data, make them clone
+// TODO for testing we should just make stub's
 /*
  * Define the default parameters - example data get's run by default
  */ 
 
-// csv with columns 
-params.manifest = "$baseDir/data/test/manifest.csv"
-
-// if we're not using the default test, make the filespaths in the
-// manifest relative to the launch directory (assuming files are now local)
-if (params.manifest != "$baseDir/data/test/manifest.csv")
-    params.reads_prefix = "$launchDir"
-else
-    params.reads_prefix = "$baseDir"
-
-// all plate barcodes.
-params.plate_barcodes   = "$baseDir/data/test/test_plateBC.txt"
-
-// all the 96 well barcodes. 
-params.well_barcodes    = "$baseDir/data/test/test_96FBC.txt"
-
-
-// temp - where do you want the partis annotation, specfically.
-params.partis_anno_dir  = "$baseDir/data/partis_annotation/"
-
-// the directory you would like to plave all the results
-params.results          = "$launchDir/results/"
-
-// keep n lines of a sequence collapsed fasta.
-// either this or the parameter below must be zero
-// TODO do the multiplication by 2 yourself in the process script block
+params.reads_prefix     = "$projectDir"
+params.manifest         = "data/test/manifest.csv"
+params.plate_barcodes   = "data/barcodes/plateBC.txt"
+params.well_barcodes    = "data/barcodes/96FBC.txt"
+params.partis_anno_dir  = "$projectDir/data/partis_annotation/"
+params.results          = "$projectDir/results/"
 params.top_n_rank       = 6
+params.hdag_sub     = "data/hdag/MK_RS5NF_substitution.csv"
+params.hdag_mut     = "data/hdag/MK_RS5NF_mutability.csv"
+params.dms_vscores  = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
+params.dms_sites    = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 
-// keep all sequences above
-// TODO implement 
-params.n_threshhold     = 0
 
 
 log.info """\
@@ -81,6 +68,7 @@ include {
     MERGE_BCRS;
     PARTIS_ANNOTATION;
     PARTIS_WRANGLE;
+    GCTREE;
   } from './modules.nf' 
 
 
@@ -140,7 +128,9 @@ workflow {
     } | BCR_COUNTS
 
   // Step 2
-  PARTIS_ANNOTATION(BCR_COUNTS.out) | PARTIS_WRANGLE | view()
+  PARTIS_ANNOTATION(BCR_COUNTS.out) \
+    | PARTIS_WRANGLE \
+    | flatten() | GCTREE
   
 
   // Step 3

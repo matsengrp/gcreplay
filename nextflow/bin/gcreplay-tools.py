@@ -19,6 +19,9 @@ import click
 from click import Choice, Path, command, group, option, argument
 import regex
 
+import matplotlib
+matplotlib.use("Qt5Agg")
+
 
 #################################
 # GLOBALS
@@ -477,7 +480,7 @@ def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
     type=str,
     required=True,
     multiple=True,
-    default=["GC_num_HC", "mouse_HC", "cell_type_HC"],
+    default=["mouse_HC", "GC_num_HC", "cell_type_HC"],
     help='the key file for merging heavy and light chains'
 )
 @click.option(
@@ -494,8 +497,6 @@ def df_groupby(dataframe, columns, output_prefix):
     df = pd.read_csv(dataframe)
     for group, groupdf in df.groupby(list(columns)):
         group_string = "-".join([str(gi) for gi in group])
-
-        print(f"writing to: {output_prefix}-{group_string}.csv")
         groupdf.to_csv(f"{output_prefix}-{group_string}.csv", index=False)
 
 
@@ -567,8 +568,8 @@ def query_df(dataframe, query_string, output):
 ##### FEATURIZE NODES
 @cli.command("featurize-nodes")
 @click.argument("gctree_file", type=click.Path(exists=True))
-@click.argument("variant_scores", type=click.Path(exists=True))
-@click.argument("naive_sites", type=click.Path(exists=True))
+@click.argument("variant_scores", type=click.Path(exists=False))
+@click.argument("naive_sites", type=click.Path(exists=False))
 @click.option(
     "--igk_idx",
     "-k",
@@ -664,7 +665,7 @@ def node_featurize(
         for phenotype in phenotypes:
             node.add_feature(
                 phenotype,
-                None if has_stop else dms_df.loc[all_mutations, phenotype].sum(),
+                np.nan if has_stop else dms_df.loc[all_mutations, phenotype].sum(),
             )
             row.append(getattr(node, phenotype))
         dat.append(row)
@@ -718,6 +719,90 @@ def node_featurize(
     # write the new featurized tree to a pickle file
     with open(f"{output_dir}/gctree.p", "wb") as f:
         pickle.dump(tree, f)
+
+
+##### FEATURIZE SEQS
+@cli.command("featurize-seqs")
+@click.argument("hk_df", type=click.Path(exists=True))
+@click.argument(
+    "variant_scores", 
+    type=click.Path(exists=False),
+    default="https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
+)
+    
+@click.argument(
+    "naive_sites", 
+    type=click.Path(exists=False),
+    default="https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(exists=True),
+    default=".",
+    help="Path to write output files.",
+)
+def featurize_seqs(
+    hk_df,
+    output
+):
+    """ Primarily for PB/MB cells - add DMS features to the dataframe
+    including num mutations and additive Kd Scores for each sequence (row) in df
+
+    HK_DF: A dataframe with paired HK seqs
+    VARIANT_SCORES: Path to variant scores csv in DMS repository
+    NAIVE_SITES: Path to sites csv in DMS repository
+    """
+    # DMS single mutant scores
+    dms_df = pd.read_csv(
+        variant_scores, index_col="mutation", dtype=dict(position_IMGT=pd.Int16Dtype())
+    )
+    # remove linker sites
+    dms_df = dms_df[dms_df.chain != "link"]
+
+    # position maps for scFv
+    pos_df = pd.read_csv(
+        naive_sites,
+        dtype=dict(site=pd.Int16Dtype()),
+        index_col="site_scFv",
+    )
+    # position maps for heavy and light chain that can be used in gctree render
+    igh_pos_map = pos_df.loc[pos_df.chain == "H", "site"].reset_index(drop=True)
+    igk_pos_map = pos_df.loc[pos_df.chain == "L", "site"].reset_index(drop=True)
+
+    # TODO
+    pass
+
+
+##### MERGE FEATURIZED TREE SEQS
+@cli.command("merge-featurized-tree-seqs")
+@click.argument("hk_df", type=click.Path(exists=True))
+@click.argument("featurized_gctree_file", type=click.Path(exists=True))
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(exists=True),
+    default=".",
+    help="Path to write output files.",
+)
+def merge_featurized_tree_seqs(
+    hk_df,
+    featurized_gctree_file,
+    output
+):
+    """This function should take the original HK df containing
+    extant seqs for any single gctree inference, and the rank1 featurized
+    tree created using `gctree infer` &  `featurize_nodes`, 
+    It will then extract the DMS and Additive Kd info from the nodes,
+    merging all the information (including putative nodes) into
+    a final HK df containing all information
+
+    HK_DF: A dataframe with paired HK seqs
+    GCTREE_FILE: Path to pickled gctree.CollapsedTree object
+    """
+
+    # TODO
+    pass
 
 
 
