@@ -14,7 +14,7 @@
  * Tatsuya Araki
  * Duncan Ralph
  * Will DeWitt
- * TODO finish all authors
+ * Will Dumm
  */
 
 
@@ -39,10 +39,11 @@ params.well_barcodes    = "data/barcodes/96FBC.txt"
 params.partis_anno_dir  = "$projectDir/data/partis_annotation/"
 params.results          = "$projectDir/results/"
 params.top_n_rank       = 6
-params.hdag_sub     = "data/hdag/MK_RS5NF_substitution.csv"
-params.hdag_mut     = "data/hdag/MK_RS5NF_mutability.csv"
-params.dms_vscores  = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
-params.dms_sites    = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
+params.hdag_sub         = "data/hdag/MK_RS5NF_substitution.csv"
+params.hdag_mut         = "data/hdag/MK_RS5NF_mutability.csv"
+params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
+params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
+params.igk_idx          = 336
 
 
 

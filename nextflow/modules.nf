@@ -91,15 +91,6 @@ process COLLAPSE_RANK_PRUNE {
     """
 }
 
-// TODO ^^  you dont really need to do this (below) .. until we care about getting thrown
-// Sequences
-// 
-//else if( params.n_threshold != 0 )
-//  """
-//  fastx_collapser -i ${well_chain} > collapsed_well_chain.fasta
-//  ./threshold-counts.py --fasta collapsed_well_chain.fasta --out ${well_chain}.R
-//  """
-
 
 /*
  * Process 1F: Merge the top ranked BCR's
@@ -172,9 +163,9 @@ process GCTREE {
   publishDir "$params.results/gctrees/"
   label "mem_large"
   // Fail silently
-  //errorStrategy 'ignore'
+  errorStrategy 'ignore'
   input: path(single_mouse_gc_df)
-  output: tuple path("*-gctree-infer-output/"), path("*-featurize-output/")
+  output: tuple path("annotated-*-gctree-infer-output/*"), path("annotated-*-featurize-output/*")
   shell:
   template "gctree_infer_featurize.sh"
 }
