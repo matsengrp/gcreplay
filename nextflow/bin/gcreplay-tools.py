@@ -20,7 +20,7 @@ from click import Choice, Path, command, group, option, argument
 import regex
 
 import matplotlib
-matplotlib.use("Qt5Agg")
+#matplotlib.use("Qt5Agg")
 
 
 #################################
@@ -168,7 +168,7 @@ def infer_igh_isotypes(bcr_sequence, num_mm=1):
         "IgM": ["atgtcttccccct"],
         "IgG1" : ["atggtgaccctggg"],
         "IgG2" : ["ggctcctcggtgactcta", "tcggtgactctagg", "gtgtggagatacaactgg"],
-        "igG3" : ["cccttggtccctggctgcggtgacacat", "cacatctggatcctcggtgaca"],
+        "IgG3" : ["cccttggtccctggctgcggtgacacat", "cacatctggatcctcggtgaca"],
         "IgA" : ["tctgcgagaaatcccaccatcta"]
     }
 
@@ -240,6 +240,7 @@ def merge_heavy_light_chains(
    
     # TODO we're missing just 2 mismatches compared to tatsuya, I believe - check this
     GC_df.loc[:, "ID_HK"] = [f"{i}K" for i in GC_df["ID_HC"]]
+    GC_df = GC_df.query("chain_HC != chain_LC")
 
     return GC_df
 
@@ -400,6 +401,11 @@ def wrangle_annotation(
 
     GC_df = merge_heavy_light_chains(partis_airr, pd.read_csv(key_file))
 
+    # TODO This should be somewhere else, but it's a qc on number of Ns in a sequence.
+    throw_seq = [idx for idx, row in GC_df.iterrows() if (row.seq_nt_HC + row.seq_nt_LC).count("n") > 30] 
+    GC_df.drop(throw_seq, axis=0, inplace=True)
+    
+
     GC_df.to_csv(output, index=False)
 
 
@@ -542,6 +548,13 @@ def get_columns(dataframe, columns, output):
     type=Path(exists=True),
     required=True,
     help="dataframe (csv) to query"
+)
+@click.option(
+    '--max-n', 
+    '-n',
+    type=str,
+    required=True,
+    help='max number of ns allowed in seq_nt_HC'
 )
 @click.option(
     '--query-string', 

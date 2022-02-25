@@ -52,6 +52,7 @@ DMS_VSCORES=!{params.dms_vscores}
 
 # Gives you the DMS wild type sites
 DMS_SITES=!{params.dms_sites}
+export MPLBACKEND=Agg
 
 
 # ========================================================
@@ -68,10 +69,6 @@ if [[ "$CELL_TYPE" == "GC" ]];
 then
 
 # will not need to do this in the pipeline 
-#GC_NUM_HC=87                    # GC you would like to extract
-#QUERY="GC_num_HC==${GC_NUM_HC}" # The query on the dataset before fasta extraction
-#python gcreplay-tools.py query-df -df $GCDF -q $QUERY -o $GCDF
-#echo \(LOG\) done: query
 
 # convert some columns into headers and sequences for a basic fasta format conversion
 gcreplay-tools.py gc-df-to-fasta \
@@ -134,12 +131,7 @@ echo \(LOG\) done: Viz
 
 # PB/MB Cells
 # Just nead to add DMS info to the df.
-else
-
-mkdir -p ${GC_DEF}-gctree-infer-output/  # all trees
-echo something >> ${GC_DEF}-gctree-infer-output/null.txt
-mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
-touch ${GC_DEF}-featurize-output/null.txt     # featurized rank 1 trees? could cobine with below 
+#else
 
 fi
 
