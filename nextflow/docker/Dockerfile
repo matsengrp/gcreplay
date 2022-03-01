@@ -51,10 +51,8 @@ RUN pip install --upgrade \
     cutadapt \
     regex \
     click \
-    biopython
-
-# install branch specific version of gctree
-RUN pip install git+https://github.com/matsengrp/gctree.git@fit-on-history-dag
+    biopython \
+    gctree
 
 # install libgtextutils
 RUN curl -L 'https://github.com/agordon/libgtextutils/releases/download/0.7/libgtextutils-0.7.tar.gz' \
