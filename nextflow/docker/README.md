@@ -6,5 +6,4 @@ The pipline needs the following tools:
 - [pandaseq](https://github.com/neufeld/pandaseq)
 - [cutadapt](https://cutadapt.readthedocs.io/en/stable/installation.html)
 - [partis](https://github.com/psathyrella/partis)
-
-
+- [gctree](https://matsengrp.github.io/gctree)
