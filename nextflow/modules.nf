@@ -162,7 +162,7 @@ process GCTREE {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
   publishDir "$params.results/gctrees/"
   label "mem_large"
-  errorStrategy 'ignore'
+  //errorStrategy 'ignore'
   input: path(single_mouse_gc_df)
   output: tuple path("annotated-*-gctree-infer-output/*"), path("annotated-*-featurize-output/*") optional true
   shell:
