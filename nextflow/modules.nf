@@ -5,7 +5,7 @@ nextflow.enable.dsl =2
  */
 process TRIM_COMBINE_MATES { 
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
-  // publishDir "$params.results/trimmed_combined_fasta/" 
+  publishDir "$params.results/trimmed_combined_fasta/" 
   label 'multithread'
   input: tuple val(key), val(key_file), val(date), path(read1), path(read2)
   output: tuple val(key), val(key_file), val(date), path("${key}.fasta")
@@ -27,7 +27,7 @@ process TRIM_COMBINE_MATES {
 //path plate_barcodes
 process DEMULTIPLEX_PLATES {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
-  // publishDir "$params.results/demultiplexed_plates_fasta/" 
+  publishDir "$params.results/demultiplexed_plates_fasta/" 
   input: tuple val(key), val(key_file), val(date), path(key_fasta)
   output: tuple val(key), val(key_file), path("${key}.${date}.*")
   script:
@@ -43,7 +43,7 @@ process DEMULTIPLEX_PLATES {
  */
 process DEMULTIPLEX_WELLS {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
-  // publishDir "$params.results/demultiplexed_wells_fasta/"
+  publishDir "$params.results/demultiplexed_wells_fasta/"
   input: tuple val(key), val(key_file), path(plate)
   output: tuple val(key), val(key_file), path("${plate}.*")
   script:
@@ -61,7 +61,7 @@ process DEMULTIPLEX_WELLS {
  */
 process SPLIT_HK {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
-  // publishDir "$params.results/split_HK/"
+  publishDir "$params.results/split_HK/"
   label 'multithread'
   input: 
     tuple val(key), val(key_file), path(well) 
@@ -81,7 +81,7 @@ process SPLIT_HK {
  */
 process COLLAPSE_RANK_PRUNE {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
-  // publishDir "$params.results/rank_collapsed/"
+  publishDir "$params.results/rank_collapsed/"
   input: tuple val(key), val(key_file), path(well_chain)
   output: tuple val(key), val(key_file), path("${well_chain}.R")
   script:
@@ -97,7 +97,7 @@ process COLLAPSE_RANK_PRUNE {
  */
 process MERGE_BCRS {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
-  // publishDir "$params.results/ranked_bcr_sequences_per_well/"
+  publishDir "$params.results/ranked_bcr_sequences_per_well/"
   input: tuple val(key), val(key_file), path(all_coll_rank)
   output: tuple val(key), val(key_file), path("${key}.fasta")
   script:
@@ -112,7 +112,7 @@ process MERGE_BCRS {
  */
 process PARTIS_ANNOTATION {
   container 'quay.io/matsengrp/partis:dev'
-  // publishDir "$params.results/partis_annotation/"
+  publishDir "$params.results/partis_annotation/"
   input: tuple val(key), val(key_file), path(merged_fasta)
   output: tuple val(key), val(key_file), path(merged_fasta), path("${key}/")
   script:

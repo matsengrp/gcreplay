@@ -120,6 +120,7 @@ echo \(LOG\) done: gctree
 mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
 xvfb-run -a gcreplay-tools.py featurize-nodes \
     ${GC_DEF}-gctree-infer-output/gctree.inference.1.p \
+    ${GC_DEF}.idmap \
     ${DMS_VSCORES} \
     ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
