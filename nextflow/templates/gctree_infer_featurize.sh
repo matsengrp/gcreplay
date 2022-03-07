@@ -23,6 +23,7 @@ echo $GCDF
 
 # Strip the .csv suffix for clean def
 # Should be annotated-PR-<?>-<?>-<mouse_HC>-<GC_num_HC>-<cell_type_HC>
+# TODO remove 'annotated' prefix
 GC_DEF="$(basename $GCDF .csv)"
 
 # REQUIRED OUTPUTS
@@ -112,21 +113,21 @@ xvfb-run -a gctree infer outfile abundances.csv \
     --substitution $SUB \
     --root naive \
     --verbose \
-    --outbase ${GC_DEF}-gctree-infer-output/gctree \
+    --outbase ${GC_DEF}-output/gctree \
     | tee gctree.inference.log
 echo \(LOG\) done: gctree
 
 # Run will's featurize code
-mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
+#mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
 xvfb-run -a gcreplay-tools.py featurize-nodes \
     ${GC_DEF}-gctree-infer-output/gctree.inference.1.p \
     ${GC_DEF}.idmap \
     ${DMS_VSCORES} \
     ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
-    --output_dir ${GC_DEF}-featurize-output/
+    --output_dir ${GC_DEF}-output/
 
-mv $GC_DEF.idmap ${GC_DEF}-featurize-output/
+mv $GC_DEF.idmap ${GC_DEF}-output/
 echo \(LOG\) done: Viz
 
 

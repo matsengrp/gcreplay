@@ -117,8 +117,6 @@ process PARTIS_ANNOTATION {
   output: tuple val(key), val(key_file), path(merged_fasta), path("${key}/")
   script:
   """
-  echo $key
-  echo $key_file
   wd=\$PWD
   cd /partis
   initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${key} ${params.partis_anno_dir}germlines/
@@ -164,7 +162,7 @@ process GCTREE {
   label "mem_large"
   //errorStrategy 'ignore'
   input: path(single_mouse_gc_df)
-  output: tuple path("annotated-*-gctree-infer-output/*"), path("annotated-*-featurize-output/*") optional true
+  output: tuple path("annotated-*-output/*"), path("annotated-*-featurize-output/*") optional true
   shell:
   template "gctree_infer_featurize.sh"
 }
