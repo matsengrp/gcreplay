@@ -38,7 +38,7 @@ params.plate_barcodes   = "data/barcodes/plateBC.txt"
 params.well_barcodes    = "data/barcodes/96FBC.txt"
 params.partis_anno_dir  = "$projectDir/data/partis_annotation/"
 params.results          = "$projectDir/results/"
-params.top_n_rank       = 6
+params.bcr_count_thresh = 10
 params.hdag_sub         = "data/hdag/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/hdag/MK_RS5NF_mutability.csv"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
@@ -92,14 +92,14 @@ workflow BCR_COUNTS {
     SPLIT_HEAVY( 
       dmplxd_wells_ch, 
       "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC", "H"  
-    )
+    ) | filter{ file(it[2]).size()>0 } | set { heavy_ch }
 
     SPLIT_LIGHT( 
       dmplxd_wells_ch, 
       "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"  
-    )
+    ) | filter{ file(it[2]).size()>0 } | set { light_ch }
 
-    SPLIT_HEAVY.out.mix(SPLIT_LIGHT.out) | COLLAPSE_RANK_PRUNE \
+    heavy_ch.mix(light_ch) | COLLAPSE_RANK_PRUNE \
         | groupTuple(by:[0,1]) | MERGE_BCRS
 
   emit:

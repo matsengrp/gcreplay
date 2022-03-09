@@ -85,10 +85,12 @@ process COLLAPSE_RANK_PRUNE {
   input: tuple val(key), val(key_file), path(well_chain)
   output: tuple val(key), val(key_file), path("${well_chain}.R")
   script:
-  if( params.top_n_rank != 0 )
-    """
-    fastx_collapser -i ${well_chain} | head -n ${params.top_n_rank} > ${well_chain}.R
-    """
+  """
+  fastx_collapser -i ${well_chain} -o rank_collapsed.fasta
+  gcreplay-tools.py curate-high-count-seqs --fasta rank_collapsed.fasta \
+    --count-threshold ${params.bcr_count_thresh} \
+    -o ${well_chain}.R
+  """
 }
 
 

@@ -62,6 +62,8 @@ partis_airr_to_drop = [
 # HELPERS
 #################################
 
+
+
 def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
     """convert a fasta file pointer to dataframe after
     parsing the id with some function returning
@@ -111,6 +113,8 @@ def parse_nextflow_header(header: str):
         "rank": int(bcr_ranking),
         "counts": int(bcr_count)
     }
+
+
 
 
 def plot_venn_stub(
@@ -273,10 +277,35 @@ def cli():
     """
     pass
 
-# TODO option, filter unproductive cells
-# TODO option, mm in isotype inference
-# TODO option, counts threshold
-# entry point
+
+@cli.command("curate-high-count-seqs")
+@click.option(
+    '--fasta',
+    type=Path(exists=True),
+    required=True,
+    help='a sequence count rank collapsed fasta with header format <rank>-<count>'
+)
+@click.option(
+    '--count-threshold',
+    '-ct',
+    type=int,
+    required=True,
+    help='threshold of counts needed for a sequence to be included in output'
+)
+@click.option(
+    "--output",
+    "-o",
+    required=True,
+    help="Path to write the fasta.",
+)
+def curate_high_count_seqs(fasta: str, count_threshold: int, output: str):
+    """Keep n sequences from  collapsed_fasta"""
+
+    with open(fasta, "r") as f1, open(output, "w") as f2:
+        for seq_record in SeqIO.parse(f1, 'fasta'):  # (generator)
+            rank, count = str(seq_record.id).split("-")
+            if int(count) < count_threshold: break
+            f2.write(f">{seq_record.id}\n{seq_record.seq}\n")
 
 
 @cli.command("wrangle-annotation")
@@ -345,6 +374,7 @@ def wrangle_annotation(
 
     # drop unnecessary columns
     partis_airr.drop(partis_airr_to_drop, axis=1, inplace=True)
+
 
     # parse the fasta to merge in the important information
     # TODO add plate int to this as 'barcode', keep plate for the hell of it
@@ -554,13 +584,6 @@ def get_columns(dataframe, columns, output):
     type=Path(exists=True),
     required=True,
     help="dataframe (csv) to query"
-)
-@click.option(
-    '--max-n',
-    '-n',
-    type=str,
-    required=True,
-    help='max number of ns allowed in seq_nt_HC'
 )
 @click.option(
     '--query-string',
