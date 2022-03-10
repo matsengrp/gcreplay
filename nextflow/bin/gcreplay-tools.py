@@ -266,7 +266,6 @@ def sort_fasta(fasta: str, output: str):
             f2.write(f">{row.id}\n{row.seq}\n")
 
 
-
 @cli.command("curate-high-count-seqs")
 @click.option(
     '--fasta',
