@@ -105,6 +105,7 @@ process MERGE_BCRS {
   script:
   """
   awk '/>/{sub(">","&"FILENAME".")}1' ${all_coll_rank} > ${key}.fasta
+  # sort the fasta
   """
 }
 

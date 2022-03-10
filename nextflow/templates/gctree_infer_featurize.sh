@@ -39,6 +39,10 @@ MOUSE=${tokens[4]}
 GC_NUM=${tokens[5]}
 CELL_TYPE=${tokens[6]}
 
+# All key row specific results from this template should end up here
+OUTDIR="${tokens[1]}${tokens[2]}.${tokecs[3]}-m${MOUSE}-ct${CELL_TYPE}-gc${GC_NUM}"
+mkdir $OUTDIR
+
 
 # parameters for hdag mutation models (?)
 SUB=!{params.reads_prefix}/!{params.hdag_sub}
@@ -105,29 +109,30 @@ echo \(LOG\) done: dnapars
 
 # Run inference on sequences, 
 TMPDIR="/tmp"
-mkdir -p ${GC_DEF}-gctree-infer-output/  # all trees
+#mkdir -p ${GC_DEF}-gctree-infer-output/  # all trees
 xvfb-run -a gctree infer outfile abundances.csv \
     --idmapfile $GC_DEF.idmap \
     --isotype_mapfile $GC_DEF.isotypemap \
+    --chain_split ${IGK_IDX} \
     --mutability $MUT \
     --substitution $SUB \
     --root naive \
     --verbose \
-    --outbase ${GC_DEF}-output/gctree \
+    --outbase ${OUTDIR}/gctree \
     | tee gctree.inference.log
 echo \(LOG\) done: gctree
 
 # Run will's featurize code
 #mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
 xvfb-run -a gcreplay-tools.py featurize-nodes \
-    ${GC_DEF}-gctree-infer-output/gctree.inference.1.p \
+    ${OUTDIR}/gctree.inference.1.p \
     ${GC_DEF}.idmap \
     ${DMS_VSCORES} \
     ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
-    --output_dir ${GC_DEF}-output/
+    --output_dir ${OUTDIR}
 
-mv $GC_DEF.idmap ${GC_DEF}-output/
+mv $GC_DEF.idmap ${OUTDIR}/
 echo \(LOG\) done: Viz
 
 

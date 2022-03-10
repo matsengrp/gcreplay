@@ -12,7 +12,7 @@ GERMLINE_DIR=$3
 for rstr in engrd; do
 
     
-    common="--paired-loci --no-pairing-info --species mouse --airr-output --extra-annotation-columns seqs_aa:n_mutations"
+    common="--random-seed 23 --paired-loci --no-pairing-info --species mouse --airr-output --extra-annotation-columns seqs_aa:n_mutations"
 
     # if we're looking only at the engineered sequences, use the flags
     if [ "$rstr" == "engrd" ]; then
