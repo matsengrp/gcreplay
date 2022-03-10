@@ -104,8 +104,8 @@ process MERGE_BCRS {
   output: tuple val(key), val(key_file), path("${key}.fasta")
   script:
   """
-  awk '/>/{sub(">","&"FILENAME".")}1' ${all_coll_rank} > ${key}.fasta
-  # sort the fasta
+  awk '/>/{sub(">","&"FILENAME".")}1' ${all_coll_rank} > merged.fasta
+  gcreplay-tools.py sort-fasta --fasta merged.fasta -o ${key}.fasta
   """
 }
 

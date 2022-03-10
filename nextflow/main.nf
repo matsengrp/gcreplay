@@ -38,12 +38,12 @@ params.plate_barcodes   = "data/barcodes/plateBC.txt"
 params.well_barcodes    = "data/barcodes/96FBC.txt"
 params.partis_anno_dir  = "$projectDir/data/partis_annotation/"
 params.results          = "$projectDir/results/"
-params.bcr_count_thresh = 10
 params.hdag_sub         = "data/hdag/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/hdag/MK_RS5NF_mutability.csv"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.igk_idx          = 336
+params.bcr_count_thresh = 10
 
 
 

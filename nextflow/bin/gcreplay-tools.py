@@ -63,6 +63,16 @@ partis_airr_to_drop = [
 #################################
 
 
+def fasta_to_df(f):
+    """simply convert a fasta to dataframe"""
+
+    ids, seqs = [], []
+    with open(f) as fasta_file:
+        for seq_record in SeqIO.parse(fasta_file, 'fasta'):  # (generator)
+            ids.append(seq_record.id)
+            seqs.append(str(seq_record.seq))
+    return pd.DataFrame({"id":ids, "seq":seqs})
+
 
 def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
     """convert a fasta file pointer to dataframe after
@@ -114,51 +124,6 @@ def parse_nextflow_header(header: str):
         "counts": int(bcr_count)
     }
 
-
-
-
-def plot_venn_stub(
-    df1: pd.DataFrame,
-    df2: pd.DataFrame,
-    feature_groups: list,
-    out="venn.png",
-    **kwargs
-):
-    """
-    plot a venn diagram of differences between grouped column features
-    of two dataframes
-    """
-
-    #fig, ax = plt.subplots(figsize=[6,6])
-    #unique_bcr_qualities = ["plate", "well","chain", "sequence"]
-    #nf_well_bcrs = set(nextflow_input_bcrs.groupby(unique_bcr_qualities).groups)
-    #tat_well_bcrs = set(tatsuya_input_bcrs.groupby(unique_bcr_qualities).groups)
-    #v = venn2([nf_well_bcrs, tat_well_bcrs], ["nextflow", "tatsuya"], ax=ax)
-    #ax.set_title("venn diagram of well/plate/chain specific \nranked BCR seqs from both methods\npre-annotation")
-    #fig.savefig("input-sequence-differences.png")
-    #plt.tight_layout()
-    #plt.show()
-
-    pass
-
-
-def test_sequence_counts_stub():
-    """
-    TODO
-    """
-
-    #in_both = set.intersection(nf_well_bcrs, tat_well_bcrs)
-    #for rkd_bcr in iter(in_both):
-    #    queries = []
-    #    for i, attr in enumerate(unique_bcr_qualities):
-    #        queries.append(f"({attr} == '{rkd_bcr[i]}')")
-    #    query_string = " & ".join(queries)
-    #    nf_bcr = nextflow_input_bcrs.query(query_string, engine='python')
-    #    tat_bcr = tatsuya_input_bcrs.query(query_string, engine='python')
-    #    assert nf_bcr["count"].values[0] == tat_bcr["count"].values[0]
-    #print("success! Sequences that appear in both methods have the exact same count!")
-
-    pass
 
 
 # TODO
@@ -276,6 +241,30 @@ def cli():
     --help for more information on the parameters of interest.
     """
     pass
+
+
+@cli.command("sort-fasta")
+@click.option(
+    '--fasta',
+    type=Path(exists=True),
+    required=True,
+    help='a sequence count rank collapsed fasta with header format <rank>-<count>'
+)
+@click.option(
+    "--output",
+    "-o",
+    required=True,
+    help="Path to write the fasta.",
+)
+def sort_fasta(fasta: str, output: str):
+    """ sort a fasta file by sorting the headers using
+    pandas lexiconographical sort function """
+
+    fasta_df = fasta_to_df(fasta).sort_values(by="id")
+    with open(output, "w") as f2:
+        for idx, row in fasta_df.iterrows():
+            f2.write(f">{row.id}\n{row.seq}\n")
+
 
 
 @cli.command("curate-high-count-seqs")
