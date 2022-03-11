@@ -109,13 +109,6 @@ workflow BCR_COUNTS {
 
 workflow {
 
-  /*
-   * WHAT I WOULD LIKE TO BE DOING
-   * I would like to fire off a BCR_COUNTS workflow
-   * for each file in the manifest
-   */
-
-  // TODO add date to sequence id
   Channel.fromPath(params.manifest)
     .splitCsv(header:true)
     .map{ row -> 
@@ -128,20 +121,9 @@ workflow {
       )
     } | BCR_COUNTS
 
-  // Step 2
   PARTIS_ANNOTATION(BCR_COUNTS.out) \
-    | PARTIS_WRANGLE //\
-    //| flatten() | GCTREE
-  
-
-  // Step 3
-  // | PREP_ANNOTATION
-
-  // Step 4
-  // | GCTREE
-
-  // Step 5
-  // | DATABASE_WRANGLE
+    | PARTIS_WRANGLE \
+    | flatten() | GCTREE
 
 }
 

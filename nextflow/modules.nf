@@ -69,9 +69,9 @@ process SPLIT_HK {
     val(chain)
   output: tuple val(key), val(key_file), path("${well}.${chain}")
   script:
-    """
-    cutadapt --cores 8 -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
-    """
+  """
+  cutadapt --cores 8 -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
+  """
 }
 
 
@@ -165,7 +165,7 @@ process GCTREE {
   label "mem_large"
   //errorStrategy 'ignore'
   input: path(single_mouse_gc_df)
-  output: tuple path("annotated-*-output/*"), path("annotated-*-featurize-output/*") optional true
+  output: path("PR1*")
   shell:
   template "gctree_infer_featurize.sh"
 }

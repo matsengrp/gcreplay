@@ -40,8 +40,10 @@ GC_NUM=${tokens[5]}
 CELL_TYPE=${tokens[6]}
 
 # All key row specific results from this template should end up here
-OUTDIR="${tokens[1]}${tokens[2]}.${tokecs[3]}-m${MOUSE}-ct${CELL_TYPE}-gc${GC_NUM}"
+OUTDIR="${tokens[1]}${tokens[2]}.${tokens[3]}-${MOUSE}-${CELL_TYPE}-${GC_NUM}"
 mkdir $OUTDIR
+cp $GCDF $OUTDIR
+
 
 
 # parameters for hdag mutation models (?)
