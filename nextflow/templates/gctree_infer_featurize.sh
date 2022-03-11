@@ -115,7 +115,9 @@ TMPDIR="/tmp"
 xvfb-run -a gctree infer outfile abundances.csv \
     --idmapfile $GC_DEF.idmap \
     --isotype_mapfile $GC_DEF.isotypemap \
-    --chain_split ${IGK_IDX} \
+    --chain_split $IGK_IDX \
+    --ranking_coeffs 0.1 0.0001 0 \
+    --summarize_forest
     --mutability $MUT \
     --substitution $SUB \
     --root naive \
