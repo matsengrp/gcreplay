@@ -57,6 +57,21 @@ partis_airr_to_drop = [
     "j_germline_end",
 ]
 
+final_HK_col_order = [
+    "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
+    "delta_bind", "delta_expr", "delta_psr", "IgH_mutations", "IgK_mutations",
+    "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
+    "fasta_header_HC", "fasta_header_LC", "fasta_seq_HC", "fasta_seq_LC", 
+    "partis_sequence_HC", "partis_sequence_LC", "Productive_HC", "Productive_LC",
+    "V_HC", "V_LC", "D_HC", "D_LC", "J_HC", "J_LC",
+    "AAjunction_HC", "AAjunction_LC", "locus_HC", "locus_LC",
+    "seq_aa_HC", "seq_aa_LC", "n_mutations_HC", "n_mutations_LC",
+    "seq_nt_HC", "seq_nt_LC", "miseq_plate_HC", "miseq_plate_LC",
+    "barcode_HC", "barcode_LC", "row_HC", "row_LC", "column_HC", "column_LC",
+    "chain_HC", "chain_LC", "rank_HC", "rank_LC", "counts_HC", "counts_LC",
+    "seq_nt_length_HC", "seq_nt_length_LC", "seq_aa_length_HC", "seq_aa_length_LC",
+    # "date",
+]
 
 #################################
 # HELPERS
@@ -81,6 +96,7 @@ def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
 
     columns = [
         'sequence_id',
+        'ngs_date'
         'plate',
         'barcode',
         'well',
@@ -97,7 +113,7 @@ def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
         for seq_record in SeqIO.parse(fasta_file, 'fasta'):  # (generator)
             bcr_meta = id_parse_fn(seq_record.id)
             if bcr_meta != -1:
-                bcr_meta["seq_input"] = str(seq_record.seq)
+                bcr_meta["fasta_seq"] = str(seq_record.seq)
                 ret = ret.append(pd.Series(bcr_meta), ignore_index=True)
     return ret
 
@@ -386,7 +402,8 @@ def wrangle_annotation(
             "productive": "Productive",
             "junction_aa": "AAjunction",
             "sequence_id": "fasta_header",
-            "plate" : "miseq_plate"
+            "plate" : "miseq_plate",
+            "sequence" : "partis_sequence"
         },
         axis=1
     )
@@ -413,7 +430,7 @@ def wrangle_annotation(
         len(seq) for seq in partis_airr["seq_aa"]]
 
     partis_airr.loc[:, "isotype"] = [
-        infer_igh_isotypes(row.seq_input)
+        infer_igh_isotypes(row.fasta_seq)
         if row.locus == "IGH" else "IgK"
         for idx, row in partis_airr.iterrows()
     ]
@@ -432,72 +449,8 @@ def wrangle_annotation(
     GC_df.drop(throw_seq, axis=0, inplace=True)
 
     # clean up
-    ret = GC_df.loc[:,
-        [
-            "ID_HK",
-            "well",
-            "HK_key_plate",
-            "HK_key_mouse",
-            "HK_key_gc",
-            "HK_key_node_HC",
-            "HK_key_cell_type",
-            "delta_bind",
-            "delta_expr",
-            "delta_psr",
-            "IgH_mutations",
-            "IgK_mutations",
-            "ngs_date",
-            "fasta_header_HC",
-            "fasta_header_LC",
-            "fasta_seq_HC",
-            "fasta_seq_LC",
-            "partis_sequence_HC",
-            "partis_sequence_LC",
-            "Productive_HC",
-            "Productive_LC",
-            "V_HC",
-            "V_LC",
-            "D_HC",
-            "D_LC",
-            "J_HC",
-            "J_LC",
-            "AAjunction_HC",
-            "AAjunction_LC",
-            "locus_HC",
-            "locus_LC",
-            "seq_aa_HC",
-            "seq_aa_LC",
-            "n_mutations_HC",
-            "n_mutations_LC",
-            "seq_nt_HC",
-            "seq_nt_LC",
-            "miseq_plate_HC",
-            "miseq_plate_LC",
-            "barcode_HC",
-            "barcode_LC",
-            "row_HC",
-            "row_LC",
-            "column_HC",
-            "column_LC",
-            "chain_HC",
-            "chain_LC",
-            "rank_HC",
-            "rank_LC",
-            "counts_HC",
-            "counts_LC",
-            "seq_nt_length_HC",
-            "seq_nt_length_LC",
-            "seq_aa_length_HC",
-            "seq_aa_length_LC",
-            "isotype_HC",
-            "isotype_LC",
-            "ID_HC",
-            "ID_LC",
-        ]
-    ]
-    
-
-
+    # TODO date?
+    ret = GC_df.loc[:,[c for c in final_HK_col_order if c in GC_df.columns]]
     ret.to_csv(output, index=False)
 
 
@@ -565,6 +518,29 @@ def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
             fasta.write(f">{header}\n{sequence}\n")
 
 
+##### SAMPLE DATAFRAME
+@cli.command("sample-10-df")
+@click.option(
+    '--dataframe',
+    '-df',
+    type=Path(exists=True),
+    required=True,
+    help="dataframe (csv) to query"
+)
+@click.option(
+    "--output",
+    "-o",
+    required=True,
+)
+def sample_10_df(dataframe, output):
+    """
+    Simply, a CLI wrapper for pandas DataFrame.sample on certain columns.
+    """
+    df = pd.read_csv(dataframe)
+    df.sample(min(10, len(df))).to_csv(output, index=False)
+
+
+
 ##### GROUBY DATAFRAME
 @cli.command("df-groupby")
 @click.option(
@@ -580,9 +556,10 @@ def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
     type=str,
     required=True,
     multiple=True,
-    default=["mouse_HC", "GC_num_HC", "cell_type_HC"],
+    default=["HK_key_mouse", "HK_key_gc", "HK_key_cell_type"],
     help='the key file for merging heavy and light chains'
 )
+@click.option("--sample", type=int, default=None, help="Heavy chain reading frame.")
 @click.option(
     "--output-prefix",
     "-o",
@@ -590,14 +567,17 @@ def gc_df_to_fasta(gc_hk_df, header_col, sequence_col, output, add_naive):
     default="grouped",
     help="prefix of filename before group string",
 )
-def df_groupby(dataframe, columns, output_prefix):
+def df_groupby(dataframe, columns, sample, output_prefix):
     """
     Simply, a CLI wrapper for pandas DataFrame.groupby on certain columns.
     """
     df = pd.read_csv(dataframe)
     for group, groupdf in df.groupby(list(columns)):
         group_string = "-".join([str(gi) for gi in group])
-        groupdf.to_csv(f"{output_prefix}-{group_string}.csv", index=False)
+        if sample != None:
+            groupdf.sample(min(10,len(groupdf))).to_csv(f"{output_prefix}-{group_string}.csv", index=False)
+        else:
+            groupdf.to_csv(f"{output_prefix}-{group_string}.csv", index=False)
 
 
 ##### QUERY DATAFRAME
@@ -694,6 +674,7 @@ def query_df(dataframe, query_string, output):
 def node_featurize(
     gctree_file,
     idmapfile,
+    gcmapfile,
     variant_scores,
     naive_sites,
     igk_idx,
@@ -809,6 +790,7 @@ def node_featurize(
         "LBR",
     ] + phenotypes
     df = pd.DataFrame(dat, columns=columns).set_index("name")
+
     df.to_csv(f"{output_dir}/node_data.csv")
 
     # render tree with colormapped features
@@ -943,7 +925,10 @@ def featurize_seqs(
     # write dataframe
     col_names = ["IgH_mutations", "IgK_mutations"] + phenotypes
     df = pd.DataFrame(dat, columns=col_names)
-    pd.concat([df, hk_df], axis=1).to_csv(f"{output}", index=False)
+    ret = pd.concat([df, hk_df], axis=1)
+    ret = ret.loc[:, [c for c in final_HK_col_order if c in ret.columns]]
+    ret.to_csv(f"{output}", index=False)
+
 
 
 

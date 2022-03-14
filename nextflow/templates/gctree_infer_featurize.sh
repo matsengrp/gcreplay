@@ -41,9 +41,13 @@ CELL_TYPE=${tokens[6]}
 
 # All key row specific results from this template should end up here
 OUTDIR="${tokens[1]}${tokens[2]}.${tokens[3]}-${MOUSE}-${CELL_TYPE}-${GC_NUM}"
-mkdir $OUTDIR
-cp $GCDF $OUTDIR
 
+# ADD DMS DATA TO OBSERVED BCR SEQS
+gcreplay-tools-dev.py featurize-seqs \
+    $GCDF \
+    --igk_idx 336 \
+    --output featurized-$GCDF
+mkdir $OUTDIR && cp featurized-$GCDF $OUTDIR
 
 
 # parameters for hdag mutation models (?)
@@ -117,7 +121,7 @@ xvfb-run -a gctree infer outfile abundances.csv \
     --isotype_mapfile $GC_DEF.isotypemap \
     --chain_split $IGK_IDX \
     --ranking_coeffs 0.1 0.0001 0 \
-    --summarize_forest
+    --summarize_forest \
     --mutability $MUT \
     --substitution $SUB \
     --root naive \
@@ -125,6 +129,7 @@ xvfb-run -a gctree infer outfile abundances.csv \
     --outbase ${OUTDIR}/gctree \
     | tee gctree.inference.log
 echo \(LOG\) done: gctree
+
 
 # Run will's featurize code
 #mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
@@ -142,7 +147,10 @@ echo \(LOG\) done: Viz
 
 # PB/MB Cells
 # Just nead to add DMS info to the df.
-#else
+# else
+
+
+
 
 fi
 
