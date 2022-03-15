@@ -61,7 +61,7 @@ final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
     "delta_bind", "delta_expr", "delta_psr", "IgH_mutations", "IgK_mutations",
     "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
-    "fasta_header_HC", "fasta_header_LC", "fasta_seq_HC", "fasta_seq_LC", 
+    "fasta_header_HC", "fasta_header_LC", "fasta_seq_HC", "fasta_seq_LC",
     "partis_sequence_HC", "partis_sequence_LC", "Productive_HC", "Productive_LC",
     "V_HC", "V_LC", "D_HC", "D_LC", "J_HC", "J_LC",
     "AAjunction_HC", "AAjunction_LC", "locus_HC", "locus_LC",
@@ -761,6 +761,7 @@ def node_featurize(
             isotype,
             node.LBI,
             node.LBR,
+            sum(descendant.abundance for descendant in node.traverse())
         ]
         for phenotype in phenotypes:
             node.add_feature(
@@ -788,6 +789,7 @@ def node_featurize(
         "isotype",
         "LBI",
         "LBR",
+        "descendant_abundance",
     ] + phenotypes
     df = pd.DataFrame(dat, columns=columns).set_index("name")
 
@@ -829,7 +831,7 @@ def node_featurize(
 
 
 # WSD note: pending discussion, but I think we may not need this, so commenting out
-# JGG note: the dms stuff should be moved to it's own testable function for use with this 
+# JGG note: the dms stuff should be moved to it's own testable function for use with this
 # and node festurize above?,
 # then the rest can be integrated into the wrangle_annotation() function above
 ##### FEATURIZE SEQS
