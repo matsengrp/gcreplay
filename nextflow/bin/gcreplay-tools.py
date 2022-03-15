@@ -761,6 +761,7 @@ def node_featurize(
             isotype,
             node.LBI,
             node.LBR,
+            sum(descendant.abundance for descendant in node.traverse())
         ]
         for phenotype in phenotypes:
             node.add_feature(
@@ -788,6 +789,7 @@ def node_featurize(
         "isotype",
         "LBI",
         "LBR",
+        "descendant_abundance",
     ] + phenotypes
     df = pd.DataFrame(dat, columns=columns).set_index("name")
 
