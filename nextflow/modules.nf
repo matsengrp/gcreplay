@@ -150,10 +150,10 @@ process PARTIS_WRANGLE {
   
   # now, split the wrangled df into single mouse / gc
   gcreplay-tools.py df-groupby \
+      --sample 10 \
       -df ${key}-gc-df-hk.csv \
       -o annotated-${key}
   """
-  //--sample 10 \
 }
 
 
@@ -166,10 +166,29 @@ process GCTREE {
   label "mem_large"
   //errorStrategy 'ignore'
   input: path(single_mouse_gc_df)
-  output: path("PR1*")
+  output: path("PR*")
   shell:
   template "gctree_infer_featurize.sh"
 }
+
+
+/*
+ * Process 3B: Merge all results
+ */
+process MERGE_RESULTS {
+  container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
+  publishDir "$params.results/merged-results/"
+  label "mem_large"
+  //errorStrategy 'ignore'
+  input: path(all_results)
+  output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
+  shell:
+  """
+  gcreplay-tools.py merge-results
+  """
+}
+
+
 
 
 

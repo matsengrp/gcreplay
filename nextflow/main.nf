@@ -70,6 +70,7 @@ include {
     PARTIS_ANNOTATION;
     PARTIS_WRANGLE;
     GCTREE;
+    MERGE_RESULTS;
   } from './modules.nf' 
 
 
@@ -122,8 +123,9 @@ workflow {
     } | BCR_COUNTS
 
   PARTIS_ANNOTATION(BCR_COUNTS.out) \
-    | PARTIS_WRANGLE // \
-    // | flatten() | GCTREE
+    | PARTIS_WRANGLE \
+    | flatten() | GCTREE \
+    | collect | MERGE_RESULTS
 
 }
 

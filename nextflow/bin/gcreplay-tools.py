@@ -10,6 +10,7 @@ it'll be a simple click CLI with all the logic right here.
 
 import re
 import pickle
+import glob
 
 import numpy as np
 import pandas as pd
@@ -674,7 +675,6 @@ def query_df(dataframe, query_string, output):
 def node_featurize(
     gctree_file,
     idmapfile,
-    gcmapfile,
     variant_scores,
     naive_sites,
     igk_idx,
@@ -932,41 +932,47 @@ def featurize_seqs(
 
 
 ##### MERGE FEATURIZED TREE SEQS
-#@cli.command("merge-featurized-tree-seqs")
-#@click.option("glob_pattern", type=str, default="PR")
-#@click.option(
-#    "--output-gcdf",
-#    "-ogcdf",
-#    type=click.Path(exists=True),
-#    default=".",
-#    help="Path to write output files.",
-#)
-#@click.option(
-#    "--output-gctree",
-#    "-ogctree",
-#    type=click.Path(exists=True),
-#    default=".",
-#    help="Path to write output files.",
-#)
-#def merge_featurized_tree_seqs(
-#    glob_patern,
-#    output_gcdf,
-#    output_gctree
-#):
-#    """
-#    """
-#    
-#    gcdf, gctree = pd.DataFrame(), pd.DataFrame()
-#    for gct_out in glob.glob(glob_pattern):
-#
-#
-#        pass
-#
-#        # parse directory name
-#        # open the gcdf file -> featurized-annotated-PR-1-6-8-88-GC.csv
-#        # open the node table -> node_data.csv
-#        # extract relevent node and assert same for all gctree
-        
+@cli.command("merge-results")
+@click.option("--glob-pattern", type=str, default="PR*")
+@click.option(
+    "--output-gcdf",
+    "-ogcdf",
+    type=click.Path(exists=False),
+    default="observed-seqs.csv",
+    help="Path to write output files.",
+)
+@click.option(
+    "--output-gctree",
+    "-ogctree",
+    type=click.Path(exists=False),
+    default="gctree-node-data.csv",
+    help="Path to write output files.",
+)
+def merge_results(
+    glob_pattern,
+    output_gcdf,
+    output_gctree
+):
+    """
+    merge all the gc results.
+    """
+    
+    gcdf, gctree = pd.DataFrame(), pd.DataFrame()
+    for gct_out in glob.glob(glob_pattern):
+        gcdf = pd.concat([gcdf, pd.read_csv(f"{gct_out}/observed_seqs.csv")])
+        PR, mouse, node, gc, ct = gct_out.split("-")
+
+        if ct == "GC":
+            node_data = pd.read_csv(f"{gct_out}/node_data.csv")
+            node_data["PR"] = PR
+            node_data["HK_key_mouse"] = mouse
+            node_data["HK_key_node"] = node
+            node_data["HK_key_gc"] = gc
+            node_data["HK_key_cell_type"] = ct
+            gctree = pd.concat([gctree, node_data])
+
+    gcdf.to_csv(output_gcdf, index=False)
+    gctree.to_csv(output_gctree, index=False)
 
 
 # TODO We need this until we get setup.py

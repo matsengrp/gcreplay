@@ -44,7 +44,7 @@ CELL_TYPE=${tokens[7]}
 OUTDIR="${tokens[1]}${tokens[2]}.${tokens[3]}-${MOUSE}-${NODE}-${GC_NUM}-${CELL_TYPE}"
 
 # ADD DMS DATA TO OBSERVED BCR SEQS
-gcreplay-tools-dev.py featurize-seqs \
+gcreplay-tools.py featurize-seqs \
     $GCDF \
     --igk_idx 336 \
     --output observed_seqs.csv

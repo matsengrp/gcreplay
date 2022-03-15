@@ -10,6 +10,7 @@ it'll be a simple click CLI with all the logic right here.
 
 import re
 import pickle
+import glob
 
 import numpy as np
 import pandas as pd
@@ -61,7 +62,7 @@ final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
     "delta_bind", "delta_expr", "delta_psr", "IgH_mutations", "IgK_mutations",
     "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
-    "fasta_header_HC", "fasta_header_LC", "fasta_seq_HC", "fasta_seq_LC",
+    "fasta_header_HC", "fasta_header_LC", "fasta_seq_HC", "fasta_seq_LC", 
     "partis_sequence_HC", "partis_sequence_LC", "Productive_HC", "Productive_LC",
     "V_HC", "V_LC", "D_HC", "D_LC", "J_HC", "J_LC",
     "AAjunction_HC", "AAjunction_LC", "locus_HC", "locus_LC",
@@ -556,7 +557,7 @@ def sample_10_df(dataframe, output):
     type=str,
     required=True,
     multiple=True,
-    default=["HK_key_mouse", "HK_key_gc", "HK_key_cell_type"],
+    default=["HK_key_mouse", "HK_key_node", "HK_key_gc", "HK_key_cell_type"],
     help='the key file for merging heavy and light chains'
 )
 @click.option("--sample", type=int, default=None, help="Heavy chain reading frame.")
@@ -674,7 +675,6 @@ def query_df(dataframe, query_string, output):
 def node_featurize(
     gctree_file,
     idmapfile,
-    gcmapfile,
     variant_scores,
     naive_sites,
     igk_idx,
@@ -761,7 +761,6 @@ def node_featurize(
             isotype,
             node.LBI,
             node.LBR,
-            sum(descendant.abundance for descendant in node.traverse())
         ]
         for phenotype in phenotypes:
             node.add_feature(
@@ -789,7 +788,6 @@ def node_featurize(
         "isotype",
         "LBI",
         "LBR",
-        "descendant_abundance",
     ] + phenotypes
     df = pd.DataFrame(dat, columns=columns).set_index("name")
 
@@ -831,7 +829,7 @@ def node_featurize(
 
 
 # WSD note: pending discussion, but I think we may not need this, so commenting out
-# JGG note: the dms stuff should be moved to it's own testable function for use with this
+# JGG note: the dms stuff should be moved to it's own testable function for use with this 
 # and node festurize above?,
 # then the rest can be integrated into the wrangle_annotation() function above
 ##### FEATURIZE SEQS
@@ -933,37 +931,48 @@ def featurize_seqs(
 
 
 
-
-# WSD note: pending discussion, but I think we may not need this, so commenting out
 ##### MERGE FEATURIZED TREE SEQS
-@cli.command("merge-id-map-to-tree-data")
-@click.argument("hk_df", type=click.Path(exists=True))
-@click.argument("featurized_gctree_file", type=click.Path(exists=True))
+@cli.command("merge-results")
+@click.option("--glob-pattern", type=str, default="PR*")
 @click.option(
-    "--output",
-    "-o",
-    type=click.Path(exists=True),
-    default=".",
+    "--output-gcdf",
+    "-ogcdf",
+    type=click.Path(exists=False),
+    default="observed-seqs.csv",
     help="Path to write output files.",
 )
-def merge_featurized_tree_seqs(
-    hk_df,
-    featurized_gctree_file,
-    output
+@click.option(
+    "--output-gctree",
+    "-ogctree",
+    type=click.Path(exists=False),
+    default="gctree-node-data.csv",
+    help="Path to write output files.",
+)
+def merge_results(
+    glob_pattern,
+    output_gcdf,
+    output_gctree
 ):
-    """This function should take the original HK df containing
-    extant seqs for any single gctree inference, and the rank1 featurized
-    tree created using `gctree infer` &  `featurize_nodes`,
-    It will then extract the DMS and Additive Kd info from the nodes,
-    merging all the information (including putative nodes) into
-    a final HK df containing all information
-
-    HK_DF: A dataframe with paired HK seqs
-    GCTREE_FILE: Path to pickled gctree.CollapsedTree object
     """
+    merge all the gc results.
+    """
+    
+    gcdf, gctree = pd.DataFrame(), pd.DataFrame()
+    for gct_out in glob.glob(glob_pattern):
+        gcdf = pd.concat([gcdf, pd.read_csv(f"{gct_out}/observed_seqs.csv")])
+        PR, mouse, node, gc, ct = gct_out.split("-")
 
-    # TODO
-    pass
+        if ct == "GC":
+            node_data = pd.read_csv(f"{gct_out}/node_data.csv")
+            node_data["PR"] = PR
+            node_data["HK_key_mouse"] = mouse
+            node_data["HK_key_node"] = node
+            node_data["HK_key_gc"] = gc
+            node_data["HK_key_cell_type"] = ct
+            gctree = pd.concat([gctree, node_data])
+
+    gcdf.to_csv(output_gcdf, index=False)
+    gctree.to_csv(output_gctree, index=False)
 
 
 # TODO We need this until we get setup.py
