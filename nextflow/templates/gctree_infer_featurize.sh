@@ -36,19 +36,21 @@ GC_DEF="$(basename $GCDF .csv)"
 tokens=(${GC_DEF//\-/ })
 PR="${tokens[1]}-${tokens[2]}-${tokens[3]}"
 MOUSE=${tokens[4]}
-GC_NUM=${tokens[5]}
-CELL_TYPE=${tokens[6]}
+NODE=${tokens[5]}
+GC_NUM=${tokens[6]}
+CELL_TYPE=${tokens[7]}
 
 # All key row specific results from this template should end up here
-OUTDIR="${tokens[1]}${tokens[2]}.${tokens[3]}-${MOUSE}-${CELL_TYPE}-${GC_NUM}"
+OUTDIR="${tokens[1]}${tokens[2]}.${tokens[3]}-${MOUSE}-${NODE}-${GC_NUM}-${CELL_TYPE}"
 
 # ADD DMS DATA TO OBSERVED BCR SEQS
 gcreplay-tools-dev.py featurize-seqs \
     $GCDF \
     --igk_idx 336 \
-    --output featurized-$GCDF
-mkdir $OUTDIR && cp featurized-$GCDF $OUTDIR
+    --output observed_seqs.csv
 
+# ADD FEATURIZED SEQS TO
+mkdir $OUTDIR && cp observed_seqs.csv $OUTDIR
 
 # parameters for hdag mutation models (?)
 SUB=!{params.reads_prefix}/!{params.hdag_sub}

@@ -122,8 +122,8 @@ workflow {
     } | BCR_COUNTS
 
   PARTIS_ANNOTATION(BCR_COUNTS.out) \
-    | PARTIS_WRANGLE \
-    | flatten() | GCTREE
+    | PARTIS_WRANGLE // \
+    // | flatten() | GCTREE
 
 }
 

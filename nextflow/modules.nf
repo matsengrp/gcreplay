@@ -114,7 +114,7 @@ process MERGE_BCRS {
  * Process 2A: Annotate the top ranked seqs
  */
 process PARTIS_ANNOTATION {
-  container 'quay.io/matsengrp/partis:dev'
+  container 'quay.io/matsengrp/partis:main'
   publishDir "$params.results/partis_annotation/"
   input: tuple val(key), val(key_file), path(merged_fasta)
   output: tuple val(key), val(key_file), path(merged_fasta), path("${key}/")
@@ -141,7 +141,7 @@ process PARTIS_WRANGLE {
   IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
 
   # wrangle annotation -> gc merged dataframe
-  gcreplay-tools-dev.py wrangle-annotation \
+  gcreplay-tools.py wrangle-annotation \
       --igh-airr \$IGH_AIRR \
       --igk-airr \$IGK_AIRR \
       --input-fasta $merged_fasta \
@@ -149,11 +149,11 @@ process PARTIS_WRANGLE {
       -o ${key}-gc-df-hk.csv
   
   # now, split the wrangled df into single mouse / gc
-  gcreplay-tools-dev.py df-groupby \
+  gcreplay-tools.py df-groupby \
       -df ${key}-gc-df-hk.csv \
-      --sample 10 \
       -o annotated-${key}
   """
+  //--sample 10 \
 }
 
 
