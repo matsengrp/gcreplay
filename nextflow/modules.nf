@@ -141,7 +141,7 @@ process PARTIS_WRANGLE {
   IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
 
   # wrangle annotation -> gc merged dataframe
-  gcreplay-tools-dev.py wrangle-annotation \
+  gcreplay-tools.py wrangle-annotation \
       --igh-airr \$IGH_AIRR \
       --igk-airr \$IGK_AIRR \
       --input-fasta $merged_fasta \

@@ -208,13 +208,15 @@ def merge_heavy_light_chains(
     for idx, row in key_file.iterrows():
         key_row = row.row.split(".")
         key_col = [int(c) for c in row.col.split(".")]
+        key_hc_barcodes = [int(c) for c in str(row.hc_barcode).split(".")]
+        key_lc_barcodes = [int(c) for c in str(row.lc_barcode).split(".")]
 
         HC = cell_df.query(
-            f"(locus == 'IGH') & (barcode == {row.hc_barcode}) & (column.isin({key_col})) & (row.isin({key_row}))",
+            f"(locus == 'IGH') & (barcode.isin({key_hc_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
             engine="python"
         )
         LC = cell_df.query(
-            f"(locus == 'IGK') & (barcode == {row.lc_barcode}) & (column.isin({key_col})) & (row.isin({key_row}))",
+            f"(locus == 'IGK') & (barcode.isin({key_lc_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
             engine="python"
         )
 
