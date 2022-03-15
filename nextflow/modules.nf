@@ -141,7 +141,7 @@ process PARTIS_WRANGLE {
   IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
 
   # wrangle annotation -> gc merged dataframe
-  gcreplay-tools.py wrangle-annotation \
+  gcreplay-tools-dev.py wrangle-annotation \
       --igh-airr \$IGH_AIRR \
       --igk-airr \$IGK_AIRR \
       --input-fasta $merged_fasta \
@@ -179,7 +179,6 @@ process MERGE_RESULTS {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
   publishDir "$params.results/merged-results/"
   label "mem_large"
-  //errorStrategy 'ignore'
   input: path(all_results)
   output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
   shell:

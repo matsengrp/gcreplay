@@ -60,17 +60,19 @@ partis_airr_to_drop = [
 
 final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
-    "delta_bind", "delta_expr", "delta_psr", "IgH_mutations", "IgK_mutations",
+    "delta_bind", "delta_expr", "delta_psr", "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
     "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
-    "fasta_header_HC", "fasta_header_LC", "fasta_seq_HC", "fasta_seq_LC", 
-    "partis_sequence_HC", "partis_sequence_LC", "Productive_HC", "Productive_LC",
+    "Productive_HC", "Productive_LC",
     "V_HC", "V_LC", "D_HC", "D_LC", "J_HC", "J_LC",
     "AAjunction_HC", "AAjunction_LC", "locus_HC", "locus_LC",
-    "seq_aa_HC", "seq_aa_LC", "n_mutations_HC", "n_mutations_LC",
-    "seq_nt_HC", "seq_nt_LC", "miseq_plate_HC", "miseq_plate_LC",
+    "miseq_plate_HC", "miseq_plate_LC",
     "barcode_HC", "barcode_LC", "row_HC", "row_LC", "column_HC", "column_LC",
     "chain_HC", "chain_LC", "rank_HC", "rank_LC", "counts_HC", "counts_LC",
     "seq_nt_length_HC", "seq_nt_length_LC", "seq_aa_length_HC", "seq_aa_length_LC",
+    "fasta_header_HC", "fasta_header_LC", "fasta_seq_HC", "fasta_seq_LC", 
+    "partis_sequence_HC", "partis_sequence_LC",
+    "seq_aa_HC", "seq_aa_LC",
+    "seq_nt_HC", "seq_nt_LC", 
     # "date",
 ]
 
@@ -206,13 +208,15 @@ def merge_heavy_light_chains(
     for idx, row in key_file.iterrows():
         key_row = row.row.split(".")
         key_col = [int(c) for c in row.col.split(".")]
+        key_hc_barcodes = [int(c) for c in str(row.hc_barcode).split(".")]
+        key_lc_barcodes = [int(c) for c in str(row.lc_barcode).split(".")]
 
         HC = cell_df.query(
-            f"(locus == 'IGH') & (barcode == {row.hc_barcode}) & (column.isin({key_col})) & (row.isin({key_row}))",
+            f"(locus == 'IGH') & (barcode.isin({key_hc_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
             engine="python"
         )
         LC = cell_df.query(
-            f"(locus == 'IGK') & (barcode == {row.lc_barcode}) & (column.isin({key_col})) & (row.isin({key_row}))",
+            f"(locus == 'IGK') & (barcode.isin({key_lc_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
             engine="python"
         )
 
@@ -750,10 +754,8 @@ def node_featurize(
             node.up.name if node.up else None,
             node.abundance,
             idmap[node.name] if node.name in idmap else "",
-            node.sequence[:igk_idx],
-            str(igh_aa),
-            node.sequence[igk_idx:],
-            str(igk_aa),
+            len(igh_mutations),
+            len(igk_mutations),
             ",".join(igh_mutations),
             ",".join(igk_mutations),
             not igh_has_stop,
@@ -761,6 +763,11 @@ def node_featurize(
             isotype,
             node.LBI,
             node.LBR,
+            sum(descendant.abundance for descendant in node.traverse()),
+            node.sequence[:igk_idx],
+            str(igh_aa),
+            node.sequence[igk_idx:],
+            str(igk_aa),
         ]
         for phenotype in phenotypes:
             node.add_feature(
@@ -777,10 +784,8 @@ def node_featurize(
         "parent_name",
         "abundance",
         "sampled_cell_ids",
-        "IgH_nt_sequence",
-        "IgH_aa_sequence",
-        "IgK_nt_sequence",
-        "IgK_aa_sequence",
+        "n_mutations_HC",
+        "n_mutations_LC",
         "IgH_mutations",
         "IgK_mutations",
         "IgH_productive",
@@ -788,6 +793,11 @@ def node_featurize(
         "isotype",
         "LBI",
         "LBR",
+        "descendant_abundance",
+        "IgH_nt_sequence",
+        "IgH_aa_sequence",
+        "IgK_nt_sequence",
+        "IgK_aa_sequence",
     ] + phenotypes
     df = pd.DataFrame(dat, columns=columns).set_index("name")
 
@@ -964,11 +974,11 @@ def merge_results(
 
         if ct == "GC":
             node_data = pd.read_csv(f"{gct_out}/node_data.csv")
-            node_data["PR"] = PR
-            node_data["HK_key_mouse"] = mouse
-            node_data["HK_key_node"] = node
-            node_data["HK_key_gc"] = gc
-            node_data["HK_key_cell_type"] = ct
+            node_data.insert(0, "PR", PR)
+            node_data.insert(1, "HK_key_mouse", mouse)
+            node_data.insert(2, "HK_key_node", node)
+            node_data.insert(3, "HK_key_gc", gc)
+            node_data.insert(4, "HK_key_cell_type", ct)
             gctree = pd.concat([gctree, node_data])
 
     gcdf.to_csv(output_gcdf, index=False)
