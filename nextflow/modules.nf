@@ -150,10 +150,10 @@ process PARTIS_WRANGLE {
   
   # now, split the wrangled df into single mouse / gc
   gcreplay-tools.py df-groupby \
-      --sample 10 \
       -df ${key}-gc-df-hk.csv \
       -o annotated-${key}
   """
+  //--sample 10 \
 }
 
 

@@ -118,6 +118,7 @@ def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
             if bcr_meta != -1:
                 bcr_meta["fasta_seq"] = str(seq_record.seq)
                 ret = ret.append(pd.Series(bcr_meta), ignore_index=True)
+                #ret = pd.concat([ret, pd.Series(bcr_meta)], ignore_index=True)
     return ret
 
 
@@ -219,6 +220,9 @@ def merge_heavy_light_chains(
             f"(locus == 'IGK') & (barcode.isin({key_lc_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
             engine="python"
         )
+
+        # now we need to curate the highest count
+        # for well, well_df in HC.groupby("well"):
 
         GC = HC.merge(LC, on="well", suffixes=("_HC", "_LC"))
         GC["HK_key_mouse"] = row.mouse
@@ -394,6 +398,7 @@ def wrangle_annotation(
     # TODO once we're getting rid of unmatched we can do a left join? assert this.
     partis_airr = partis_airr.merge(
         parsed_input_fasta, how="inner", on="sequence_id")
+
     partis_airr["ID"] = [
         f"{r.ngs_date}{r.plate}{r.well}{r.chain}"
         for i, r in partis_airr.iterrows()
@@ -440,13 +445,58 @@ def wrangle_annotation(
         for idx, row in partis_airr.iterrows()
     ]
 
+    # Some cells are spread across wells.
+    # This means we need to merge the counts across plates 
+    # where wells are identical
+
+    # TODO This is kinda dirty
+    # I feel like going forward we should enforce a single cell per well
+
+    print(partis_airr)
+    assert len(partis_airr) == len(set(partis_airr.index))
+
+    key_file_df = pd.read_csv(key_file)
+    for idx, row in key_file_df.iterrows():
+        for chain, column in zip(["IGH" ,"IGK"], ["hc_barcode", "lc_barcode"]):
+            key_chain_barcodes = [int(c) for c in str(row[column]).split(".")]
+
+            if len(key_chain_barcodes) > 1:
+        
+                # Let's make sure this code isn't effecting any unwanted
+                # normal GC's. I assume it won't
+                assert row.gc == 20
+
+                key_row = row.row.split(".")
+                key_col = [int(c) for c in row.col.split(".")]
+
+                C = partis_airr.query(f"(locus == '{chain}') & (barcode.isin({key_chain_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
+                    engine="python"
+                )
+
+                to_throw = set(C.index.values)
+                for well, well_multiplate_df in C.groupby("well"):
+
+                    well_summed_seqs = well_multiplate_df.groupby("fasta_seq").sum()
+                    sorted_sum_well_seqs = well_summed_seqs.sort_values("counts", ascending=False)
+                    winning_seq = sorted_sum_well_seqs.index.values[0]
+                    winning_counts = sorted_sum_well_seqs.counts.values[0]
+                    winning_original_entries = well_multiplate_df.query(f"fasta_seq == '{winning_seq}'")
+                    winning_index = winning_original_entries.index.values[0]
+                    to_throw.remove(winning_index)
+                    partis_airr.loc[winning_index, "counts"] = winning_counts
+                    partis_airr.loc[winning_index, "rank"] = 1
+
+                # now drop all the non winning BCR's
+                partis_airr.drop(to_throw, axis=0, inplace=True)
+
     # TODO shall we export those which are not rank 1, count 10?
     # TODO make these parameters. I guess rank one is kind of innevitable
     partis_airr.query("(rank == 1)", engine="python", inplace=True)
     for well, well_df in partis_airr.groupby("ID"):
         assert len(well_df) == 1
 
-    GC_df = merge_heavy_light_chains(partis_airr, pd.read_csv(key_file))
+    # Merge heavy and light chain
+    GC_df = merge_heavy_light_chains(partis_airr, key_file_df)
 
     # TODO This should be somewhere else, but it's a qc on number of Ns in a sequence.
     throw_seq = [idx for idx, row in GC_df.iterrows() if (
