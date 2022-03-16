@@ -4,25 +4,42 @@ A Nextflow pipeline for running the analysis of germinal center replay
 (gcreplay) experimental analysis.
 
 
-## Quickstart 
+## Quickstart
 
-Install `Nextflow` by using the following command: 
+Install `Nextflow` by using the following command:
 
-    $ curl -s https://get.nextflow.io | bash 
-    
+    $ curl -s https://get.nextflow.io | bash
+
 Download the `Docker` Desktop, there exists several distibutions packaged for
 various linux flavors
 
     $ curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
 
-Note: the [Dockerfile](docker/Dockerfile) contains all the required dependencies. 
-Add the `-profile docker` to enable the containerised execution to the 
-example command line shown below. 
+Note: the [Dockerfile](docker/Dockerfile) contains all the required dependencies.
+Add the `-profile docker` to enable the containerised execution to the
+example command line shown below.
 
-Launch the pipeline execution with the following command: 
+Launch the pipeline execution with the following command:
 
     $ git clone git@github.com:matsengrp/gcreplay.git && cd gcreplay
     $ nextflow run nextflow/main.nf -profile docker -resume
+
+## Obtain results
+
+if you haven't already cloned, simply [install git lfs](https://git-lfs.github.com/)
+
+    $ sudo apt install git-lfs
+    $ git clone git@github.com:matsengrp/gcreplay.git && cd gcreplay
+
+If you've already cloned, install git lfs, move into the repo and
+
+    $ git lfs install
+
+The final observed BCR and gctree results will then be in the [results](nextflow/results/) directory,
+named by date of the pipeline execution producing each respective set
+of results.
+
+## Rhino Cluster
 
 If you have obtained the necessary NGS files, and would like to run the full pipeline
 on the fred hutch rhino cluster, you might run a script like the following
@@ -45,7 +62,7 @@ nextflow run main.nf \
         -resume
 ```
 
-Running the full pipeline will 
+Running the full pipeline will
 print a summary to stdout
 
 
@@ -79,13 +96,13 @@ Cached      : 36'788
 
 Above we see a description of the pipeline run. Total there were ~ 40K jobs, taking
 sum total of ~ 400 CPU hours in the duration of about an hour and a half when run on
-the Fred Hutchinson HPC. 
+the Fred Hutchinson HPC.
 
 ## Pipeline Description
 
-(Currently) This pipeline processes reads from a paired-end MiSeq run and generally 
-performs the following steps; 
-(1) trim and combine paired end files 
+(Currently) This pipeline processes reads from a paired-end MiSeq run and generally
+performs the following steps;
+(1) trim and combine paired end files
 (2) demultiplex both plates _and_ wells
 (3) Split Heavy and light chain reads per well
 (4) Collapse identical sequences, while retaining and ordering rank of each sequence per well
@@ -94,7 +111,7 @@ performs the following steps;
 (7) [partis](TODO) annotation
 (8) curation, cleaning, and merging of Heavy and Light Chains
 (9) [gctree](TODO) lineage inference using HDAG.
-(10) merge the results
+(10) Merge the results
 
 
 ## Input files
