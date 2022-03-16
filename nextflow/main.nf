@@ -14,49 +14,37 @@
  * Tatsuya Araki
  * Duncan Ralph
  * Will DeWitt
- * TODO finish all authors
+ * Will Dumm
  */
+
+
 
 /* 
  * Enable DSL 2 syntax
  */
 nextflow.enable.dsl = 2
 
+
+// TODO let's move all these to the config file, huh?
+// TODO we could just forget the example data, make them clone
+// TODO for testing we should just make stub's
 /*
  * Define the default parameters - example data get's run by default
  */ 
 
-// csv with columns 
-params.manifest = "$baseDir/data/test/manifest.csv"
+params.reads_prefix     = "$projectDir"
+params.manifest         = "data/test/manifest.csv"
+params.plate_barcodes   = "data/barcodes/plateBC.txt"
+params.well_barcodes    = "data/barcodes/96FBC.txt"
+params.partis_anno_dir  = "$projectDir/data/partis_annotation/"
+params.results          = "$projectDir/results/"
+params.hdag_sub         = "data/hdag/MK_RS5NF_substitution.csv"
+params.hdag_mut         = "data/hdag/MK_RS5NF_mutability.csv"
+params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
+params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
+params.igk_idx          = 336
+params.bcr_count_thresh = 10
 
-// if we're not using the default test, make the filespaths in the
-// manifest relative to the launch directory (assuming files are now local)
-if (params.manifest != "$baseDir/data/test/manifest.csv")
-    params.reads_prefix = "$launchDir"
-else
-    params.reads_prefix = "$baseDir"
-
-// all plate barcodes.
-params.plate_barcodes   = "$baseDir/data/barcodes/test_plateBC.txt"
-
-// all the 96 well barcodes. 
-params.well_barcodes    = "$baseDir/data/barcodes/test_96FBC.txt"
-
-
-// temp - where do you want the partis annotation, specfically.
-params.partis_anno_dir  = "$baseDir/data/partis_annotation/"
-
-// the directory you would like to plave all the results
-params.results          = "$launchDir/results/"
-
-// keep n lines of a sequence collapsed fasta.
-// either this or the parameter below must be zero
-// TODO do the multiplication by 2 yourself in the process script block
-params.top_n_rank       = 6
-
-// keep all sequences above
-// TODO implement 
-params.n_threshhold     = 0
 
 
 log.info """\
@@ -81,6 +69,8 @@ include {
     MERGE_BCRS;
     PARTIS_ANNOTATION;
     PARTIS_WRANGLE;
+    GCTREE;
+    MERGE_RESULTS;
   } from './modules.nf' 
 
 
@@ -103,15 +93,14 @@ workflow BCR_COUNTS {
     SPLIT_HEAVY( 
       dmplxd_wells_ch, 
       "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC", "H"  
-    )
+    ) | filter{ file(it[2]).size()>0 } | set { heavy_ch }
 
     SPLIT_LIGHT( 
       dmplxd_wells_ch, 
       "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"  
-    )
+    ) | filter{ file(it[2]).size()>0 } | set { light_ch }
 
-    SPLIT_HEAVY.out.mix(SPLIT_LIGHT.out) | COLLAPSE_RANK_PRUNE \
-        //| groupTuple(by:[0,1]) | view()
+    heavy_ch.mix(light_ch) | COLLAPSE_RANK_PRUNE \
         | groupTuple(by:[0,1]) | MERGE_BCRS
 
   emit:
@@ -121,13 +110,6 @@ workflow BCR_COUNTS {
 
 workflow {
 
-  /*
-   * WHAT I WOULD LIKE TO BE DOING
-   * I would like to fire off a BCR_COUNTS workflow
-   * for each file in the manifest
-   */
-
-  // TODO add date to sequence id
   Channel.fromPath(params.manifest)
     .splitCsv(header:true)
     .map{ row -> 
@@ -140,17 +122,10 @@ workflow {
       )
     } | BCR_COUNTS
 
-  // Step 2
-  PARTIS_ANNOTATION(BCR_COUNTS.out) | PARTIS_WRANGLE
-
-  // Step 3
-  // | PREP_ANNOTATION
-
-  // Step 4
-  // | GCTREE
-
-  // Step 5
-  // | DATABASE_WRANGLE
+  PARTIS_ANNOTATION(BCR_COUNTS.out) \
+    | PARTIS_WRANGLE \
+    | flatten() | GCTREE \
+    | collect | MERGE_RESULTS
 
 }
 
