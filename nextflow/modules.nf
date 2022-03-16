@@ -162,7 +162,7 @@ process PARTIS_WRANGLE {
  */
 process GCTREE {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
-  publishDir "$params.results/gctrees/"
+  publishDir "$params.results/gctrees/", mode: "copy"
   label "mem_large"
   //errorStrategy 'ignore'
   input: path(single_mouse_gc_df)
@@ -177,7 +177,7 @@ process GCTREE {
  */
 process MERGE_RESULTS {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
-  publishDir "$params.results/merged-results/"
+  publishDir "$params.results/merged-results/", mode: "copy"
   label "mem_large"
   input: path(all_results)
   output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
