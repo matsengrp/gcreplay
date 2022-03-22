@@ -1,2 +1,0 @@
-gctree-node-data.csv filter=lfs diff=lfs merge=lfs -text
-observed-seqs.csv filter=lfs diff=lfs merge=lfs -text
