@@ -630,7 +630,7 @@ def df_groupby(dataframe, columns, sample, output_prefix):
     for group, groupdf in df.groupby(list(columns)):
         group_string = "-".join([str(gi) for gi in group])
         if sample != None:
-            groupdf.sample(min(10,len(groupdf))).to_csv(f"{output_prefix}-{group_string}.csv", index=False)
+            groupdf.sort_values(by="ID_HK").sample(min(10,len(groupdf)), random_state=1).to_csv(f"{output_prefix}-{group_string}.csv", index=False)
         else:
             groupdf.to_csv(f"{output_prefix}-{group_string}.csv", index=False)
 
@@ -726,6 +726,11 @@ def query_df(dataframe, query_string, output):
     default=".",
     help="Path to write output files.",
 )
+@click.option(
+    '-rid', '--render-idlabel',
+    type=click.BOOL,
+    default=True
+)
 def node_featurize(
     gctree_file,
     idmapfile,
@@ -737,6 +742,7 @@ def node_featurize(
     tau,
     tau0,
     output_dir,
+    render_idlabel
 ):
     """Featurizes a gctree.CollapsedTree object using DMS data, outputing a new
     pickled tree object, a csv of node data, and rendered trees according to features.
@@ -875,6 +881,7 @@ def node_featurize(
             f"{output_dir}/{phenotype}.svg",
             # scale=None, branch_margin=-7,
             scale=20,
+            idlabel=render_idlabel,
             frame=igh_frame,
             frame2=igk_frame,
             chain_split=igk_idx,

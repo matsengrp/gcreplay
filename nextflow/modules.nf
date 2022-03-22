@@ -149,11 +149,11 @@ process PARTIS_WRANGLE {
       -o ${key}-gc-df-hk.csv
   
   # now, split the wrangled df into single mouse / gc
+  # --sample 10 TODO add this option to pipeline params
   gcreplay-tools.py df-groupby \
       -df ${key}-gc-df-hk.csv \
       -o annotated-${key}
   """
-  //--sample 10 \
 }
 
 
