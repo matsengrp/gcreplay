@@ -1,15 +1,15 @@
 /*
  * This Source Code Form is subject to the terms of the GNU GENERAL PUBLIC LICENCE
- * License, v. 3.0. 
+ * License, v. 3.0.
  */
 
 
-/* 
+/*
  * 'gcre-flow' - A Nextflow pipeline for running gc analysis workflow
- * 
+ *
  * Fred Hutchinson Cancer Research Center, Seattle WA.
  * Rockefeller University, New York NY.
- * 
+ *
  * Jared Galloway
  * Tatsuya Araki
  * Duncan Ralph
@@ -19,7 +19,7 @@
 
 
 
-/* 
+/*
  * Enable DSL 2 syntax
  */
 nextflow.enable.dsl = 2
@@ -30,7 +30,7 @@ nextflow.enable.dsl = 2
 // TODO for testing we should just make stub's
 /*
  * Define the default parameters - example data get's run by default
- */ 
+ */
 
 params.reads_prefix     = "$projectDir"
 params.manifest         = "data/test/manifest.csv"
@@ -38,8 +38,8 @@ params.plate_barcodes   = "data/barcodes/plateBC.txt"
 params.well_barcodes    = "data/barcodes/96FBC.txt"
 params.partis_anno_dir  = "$projectDir/data/partis_annotation/"
 params.results          = "$projectDir/results/"
-params.hdag_sub         = "data/hdag/MK_RS5NF_substitution.csv"
-params.hdag_mut         = "data/hdag/MK_RS5NF_mutability.csv"
+params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
+params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.igk_idx          = 336
@@ -49,17 +49,17 @@ params.bcr_count_thresh = 10
 
 log.info """\
 G C Re - F L O W!
-Matsen, Victora Labs 
+Matsen, Victora Labs
 Fred Hutchinson CRC, Seattle WA
 Rockefeller University, New York NY.
 ================================
 """
 
-/* 
- * Import modules 
+/*
+ * Import modules
  */
 
-include { 
+include {
     TRIM_COMBINE_MATES;
     DEMULTIPLEX_PLATES;
     DEMULTIPLEX_WELLS;
@@ -71,12 +71,12 @@ include {
     PARTIS_WRANGLE;
     GCTREE;
     MERGE_RESULTS;
-  } from './modules.nf' 
+  } from './modules.nf'
 
 
 workflow BCR_COUNTS {
 
-  take: 
+  take:
     filepair
 
   main:
@@ -85,19 +85,19 @@ workflow BCR_COUNTS {
     DEMULTIPLEX_PLATES(TRIM_COMBINE_MATES.out) \
       | transpose() | filter{ file(it[2]).size()>0 } \
       | set { dmplxd_plates_ch }
-    
+
     DEMULTIPLEX_WELLS(dmplxd_plates_ch) \
       | transpose() | filter{ file(it[2]).size()>0 } \
       | set { dmplxd_wells_ch }
 
-    SPLIT_HEAVY( 
-      dmplxd_wells_ch, 
-      "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC", "H"  
+    SPLIT_HEAVY(
+      dmplxd_wells_ch,
+      "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC", "H"
     ) | filter{ file(it[2]).size()>0 } | set { heavy_ch }
 
-    SPLIT_LIGHT( 
-      dmplxd_wells_ch, 
-      "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"  
+    SPLIT_LIGHT(
+      dmplxd_wells_ch,
+      "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"
     ) | filter{ file(it[2]).size()>0 } | set { light_ch }
 
     heavy_ch.mix(light_ch) | COLLAPSE_RANK_PRUNE \
@@ -112,7 +112,7 @@ workflow {
 
   Channel.fromPath(params.manifest)
     .splitCsv(header:true)
-    .map{ row -> 
+    .map{ row ->
       tuple(
         "$row.sample_id",
         file("${params.reads_prefix}/${row.key_file}"),
@@ -128,9 +128,3 @@ workflow {
     | collect | MERGE_RESULTS
 
 }
-
-
-
-
-
-
