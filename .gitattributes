@@ -1,0 +1,9 @@
+*.ipynb filter=strip-notebook-metadata diff=strip-notebook-metadata
+*.pdf filter=lfs diff=lfs merge=lfs -text
+*.svg filter=lfs diff=lfs merge=lfs -text
+*.p filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
+
+nextflow/data/** filter=lfs diff=lfs merge=lfs -text
+nextflow/results/** filter=lfs diff=lfs merge=lfs -text
+analysis/output/** filter=lfs diff=lfs merge=lfs -text
