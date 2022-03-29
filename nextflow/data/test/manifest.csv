@@ -1,2 +1,3 @@
-sample_id,key_file,date,read1,read2
-test1-6,data/key_files/PR1_6-key.csv,211210,data/test/test_PR1.6_r1.fastq,data/test/test_PR1.6_r2.fastq
+version https://git-lfs.github.com/spec/v1
+oid sha256:d909e51a9b72c82a99112f67b37918cb0e7ed8f9d8f16da8049fe35c793e62f3
+size 140
