@@ -12,6 +12,7 @@ dependencies:
   - phylip
   - git-lfs
   - pip
+  - msms
   - pip:
     - gctree
     - git+https://github.com/matsengrp/torchdms.git
