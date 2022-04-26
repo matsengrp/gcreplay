@@ -15,3 +15,4 @@ nextflow/results/2022-04-01/gctrees/PR1.*GC/L*.svg filter=lfs diff=lfs merge=lfs
 nextflow/results/2022-04-01/gctrees/PR1.*GC/delta*.svg filter=lfs diff=lfs merge=lfs -text
 nextflow/results/2022-04-01/gctrees/PR1.*GC/gctree.p filter=lfs diff=lfs merge=lfs -text
 nextflow/results/2022-04-01/merged-results/*.csv filter=lfs diff=lfs merge=lfs -text
+*.nk filter=lfs diff=lfs merge=lfs -text
