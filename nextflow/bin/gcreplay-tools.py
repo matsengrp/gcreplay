@@ -911,13 +911,13 @@ def node_featurize(
     required=True,
     help="Start index of light chain in concatenated sequence.",
 )
-@click.argument(
-    "variant_scores",
+@click.option(
+    "--variant_scores",
     type=click.Path(exists=False),
     default="https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
 )
-@click.argument(
-    "naive_sites",
+@click.option(
+    "--naive_sites",
     type=click.Path(exists=False),
     default="https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 )
