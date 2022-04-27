@@ -32,21 +32,12 @@ nextflow.enable.dsl = 2
 
 params.reads_prefix     = "$projectDir"
 params.hk_df =      "$projectDir/data/smartseq/smartseq_patch.csv"
-//params.key_file =   "$projectDir/data/smartseq/smartseq1-key.csv"
 params.key =        "PR-1-9"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.igk_idx          = 336
-
-/* 
- * include {
- *  SPLIT_GCS;
- *  GCTREE;
- *  MERGE_RESULTS;
- * } from './modules.nf'
- */
 
 
 log.info """\
@@ -83,7 +74,6 @@ process SS_GCTREE {
   container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
   publishDir "$params.results/gctrees/", mode: "copy"
   label "mem_large"
-  //errorStrategy 'ignore'
   input: path(single_mouse_gc_df)
   output: path("PR*")
   shell:
@@ -110,8 +100,6 @@ process SS_MERGE_RESULTS {
 workflow {
 
     hk_df_ch = Channel.fromPath(params.hk_df)
-    //key_ch = Channel.from(params.key)
-    //key_ch.merge(hk_df_ch).view()
     SS_SPLIT_GCS(params.key, hk_df_ch) \
       | flatten() | SS_GCTREE \
       | collect | SS_MERGE_RESULTS
