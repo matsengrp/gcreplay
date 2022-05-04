@@ -115,6 +115,11 @@ rm -rf outtree outfile
 dnapars < dnapars.cfg > dnapars.log
 echo \(LOG\) done: dnapars
 
+cp outfile $OUTDIR
+cp abundances.csv $OUTDIR
+cp $GC_DEF.isotypemap $OUTDIR
+cp $GC_DEF.idmap $OUTDIR
+
 # Run inference on sequences, 
 TMPDIR="/tmp"
 #mkdir -p ${GC_DEF}-gctree-infer-output/  # all trees

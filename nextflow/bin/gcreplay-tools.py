@@ -60,7 +60,7 @@ partis_airr_to_drop = [
 
 final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
-    "delta_bind", "delta_expr", "delta_psr", "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
+    "delta_bind_CGG", "delta_expr", "delta_psr", "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
     "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
     "Productive_HC", "Productive_LC",
     "V_HC", "V_LC", "D_HC", "D_LC", "J_HC", "J_LC",
@@ -784,7 +784,7 @@ def node_featurize(
     # generate LBI and LBR node features
     tree.local_branching(tau=tau, tau0=tau0)
 
-    phenotypes = ["delta_bind", "delta_expr", "delta_psr"]
+    phenotypes = ["delta_bind_CGG", "delta_expr", "delta_psr"]
 
     # generate additive phenotype node features, and rows of node dataframe
     dat = []
@@ -965,7 +965,7 @@ def featurize_seqs(
     igk_pos_map = pos_df.loc[pos_df.chain
                              == "L", "site"].reset_index(drop=True)
 
-    phenotypes = ["delta_bind", "delta_expr", "delta_psr"]
+    phenotypes = ["delta_bind_CGG", "delta_expr", "delta_psr"]
 
     # generate additive phenotype node features, and rows of node dataframe
     dat = []

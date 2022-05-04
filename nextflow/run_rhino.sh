@@ -14,5 +14,5 @@ nextflow run main.nf \
         -work-dir /fh/scratch/delete30/matsen_e/jgallowa/work/ \
         -profile fred_hutch_rhino \
         -with-dag "results/$(date -I)/dag.svg" \
-        -with-trace \
-        -resume
+        -with-trace 
+        //-resume
