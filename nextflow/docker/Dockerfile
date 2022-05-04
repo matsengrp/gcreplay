@@ -47,7 +47,7 @@ RUN conda install pip
 RUN conda install -c bioconda phylip
 
 # Other pip deps
-RUN pip install --upgrade \
+RUN pip install --upgrade --no-cache-dir \
     cutadapt \
     regex \
     click \
