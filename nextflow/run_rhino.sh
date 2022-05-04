@@ -15,4 +15,4 @@ nextflow run main.nf \
         -profile fred_hutch_rhino \
         -with-dag "results/$(date -I)/dag.svg" \
         -with-trace 
-        //-resume
+# -resume
