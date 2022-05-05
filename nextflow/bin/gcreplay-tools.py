@@ -213,13 +213,28 @@ def merge_heavy_light_chains(
         key_lc_barcodes = [int(c) for c in str(row.lc_barcode).split(".")]
 
         HC = cell_df.query(
-            f"(locus == 'IGH') & (barcode.isin({key_hc_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
+            (
+                f"(locus == 'IGH') & "
+                f"(barcode.isin({key_hc_barcodes})) & "
+                f"(column.isin({key_col})) & "
+                f"(row.isin({key_row}))"
+            ),
             engine="python"
         )
         LC = cell_df.query(
-            f"(locus == 'IGK') & (barcode.isin({key_lc_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
+            (
+                f"(locus == 'IGK') & "
+                f"(barcode.isin({key_lc_barcodes})) & "
+                f"(column.isin({key_col})) & "
+                f"(row.isin({key_row}))"
+            ),
             engine="python"
         )
+
+        # f"(locus == 'IGK') & 
+        # (barcode.isin({key_lc_barcodes})) & 
+        # (column.isin({key_col})) & 
+        # (row.isin({key_row}))",
 
         # now we need to curate the highest count
         # for well, well_df in HC.groupby("well"):
@@ -468,10 +483,14 @@ def wrangle_annotation(
 
                 key_row = row.row.split(".")
                 key_col = [int(c) for c in row.col.split(".")]
-
-                C = partis_airr.query(f"(locus == '{chain}') & (barcode.isin({key_chain_barcodes})) & (column.isin({key_col})) & (row.isin({key_row}))",
-                    engine="python"
+                q = (
+                    f"(locus == '{chain}') & "
+                    f"(barcode.isin({key_chain_barcodes})) & "
+                    f"(column.isin({key_col})) & "
+                    f"(row.isin({key_row}))"
                 )
+
+                C = partis_airr.query(q, engine="python")
 
                 to_throw = set(C.index.values)
                 for well, well_multiplate_df in C.groupby("well"):

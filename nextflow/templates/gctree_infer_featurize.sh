@@ -49,13 +49,6 @@ DMS_VSCORES=!{params.dms_vscores}
 # Gives you the DMS wild type sites
 DMS_SITES=!{params.dms_sites}
 
-# ADD DMS DATA TO OBSERVED BCR SEQS
-gcreplay-tools.py featurize-seqs \
-    $GCDF \
-    --variant_scores ${DMS_VSCORES} \
-    --naive_sites ${DMS_SITES} \
-    --igk_idx 336 \
-    --output observed_seqs.csv
 
 # ADD FEATURIZED SEQS TO
 mkdir $OUTDIR && cp observed_seqs.csv $OUTDIR
@@ -70,9 +63,17 @@ ls $MUT
 
 export MPLBACKEND=Agg
 
-
 # ========================================================
 # EDIT BELOW HERE USING PROVIDED VARIABLES ABOVE
+
+
+# ADD DMS DATA TO OBSERVED BCR SEQS
+gcreplay-tools.py featurize-seqs \
+    $GCDF \
+    --variant_scores ${DMS_VSCORES} \
+    --naive_sites ${DMS_SITES} \
+    --igk_idx ${IGK_IDX} \
+    --output observed_seqs.csv
 
 
 # check that the file has more than 10 lines (?)

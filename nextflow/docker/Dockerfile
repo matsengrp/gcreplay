@@ -7,10 +7,10 @@ LABEL maintainer "Jared Galloway <jgallowa@fredhutch.rg>" \
 # install needed tools
 RUN apt-get update --fix-missing -qq && \
     DEBIAN_FRONTEND=noninteractive \
+    locales \
     apt-get install -y -q \
     git \
     curl \
-    locales \
     libncurses5-dev  \
     libncursesw5-dev \
     build-essential \
@@ -19,6 +19,8 @@ RUN apt-get update --fix-missing -qq && \
     zlib1g-dev \
     libbz2-dev \
     pkg-config
+
+
 
 # install graphical libraries used by qt and vispy
 RUN apt-get install -y xvfb
