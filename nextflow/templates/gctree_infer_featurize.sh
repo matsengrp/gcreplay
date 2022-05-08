@@ -43,11 +43,12 @@ CELL_TYPE=${tokens[7]}
 # All key row specific results from this template should end up here
 OUTDIR="${tokens[1]}${tokens[2]}.${tokens[3]}-${MOUSE}-${NODE}-${GC_NUM}-${CELL_TYPE}"
 
-# ADD DMS DATA TO OBSERVED BCR SEQS
-gcreplay-tools.py featurize-seqs \
-    $GCDF \
-    --igk_idx 336 \
-    --output observed_seqs.csv
+# Final Kd's from individual (?) mutations
+DMS_VSCORES=!{params.dms_vscores}
+
+# Gives you the DMS wild type sites
+DMS_SITES=!{params.dms_sites}
+
 
 # ADD FEATURIZED SEQS TO
 mkdir $OUTDIR && cp observed_seqs.csv $OUTDIR
@@ -60,16 +61,19 @@ IGK_IDX=!{params.igk_idx}
 ls $SUB
 ls $MUT
 
-# Final Kd's from individual (?) mutations
-DMS_VSCORES=!{params.dms_vscores}
-
-# Gives you the DMS wild type sites
-DMS_SITES=!{params.dms_sites}
 export MPLBACKEND=Agg
-
 
 # ========================================================
 # EDIT BELOW HERE USING PROVIDED VARIABLES ABOVE
+
+
+# ADD DMS DATA TO OBSERVED BCR SEQS
+gcreplay-tools.py featurize-seqs \
+    $GCDF \
+    --variant_scores ${DMS_VSCORES} \
+    --naive_sites ${DMS_SITES} \
+    --igk_idx ${IGK_IDX} \
+    --output observed_seqs.csv
 
 
 # check that the file has more than 10 lines (?)
