@@ -50,8 +50,6 @@ DMS_VSCORES=!{params.dms_vscores}
 DMS_SITES=!{params.dms_sites}
 
 
-# ADD FEATURIZED SEQS TO
-mkdir $OUTDIR && cp observed_seqs.csv $OUTDIR
 
 # parameters for hdag mutation models (?)
 SUB=!{params.reads_prefix}/!{params.hdag_sub}
@@ -74,6 +72,9 @@ gcreplay-tools.py featurize-seqs \
     --naive_sites ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
     --output observed_seqs.csv
+
+# ADD FEATURIZED SEQS TO
+mkdir $OUTDIR && cp observed_seqs.csv $OUTDIR
 
 
 # check that the file has more than 10 lines (?)
