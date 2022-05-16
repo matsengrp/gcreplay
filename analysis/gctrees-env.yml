@@ -2,17 +2,8 @@ name: replay
 channels:
   - conda-forge
   - defaults
-  - bioconda
 dependencies:
   - python=3.9
-  - numpy
-  - pandas
-  - seaborn
-  - jupyter
-  - phylip
+  - jupyterlab
+  - gctree
   - git-lfs
-  - pip
-  - msms
-  - pip:
-    - gctree
-    - git+https://github.com/matsengrp/torchdms.git
