@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-@file: gcreplay-tools
+@file: gcreplay-tools-dev.py
 
 Right now a sandbox for throwing code into
 it'll be a simple click CLI with all the logic right here.
@@ -11,16 +11,20 @@ it'll be a simple click CLI with all the logic right here.
 import re
 import pickle
 import glob
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
+import torch
 import click
 from click import Choice, Path, command, group, option, argument
 import regex
 
 import matplotlib
+
+from utils import *
 #matplotlib.use("Qt5Agg")
 
 
@@ -60,7 +64,29 @@ partis_airr_to_drop = [
 
 final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
-    "delta_bind_CGG", "delta_expr", "delta_psr", "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
+    "aa_substitutions_IMGT",
+
+    "delta_bind_CGG_FVS_additive",
+    "delta_expr_FVS_additive",
+    "delta_psr_FVS_additive",
+
+    "delta_bind_CGG_FMVS_additive",
+    "delta_expr_FMVS_additive",
+    "delta_psr_FMVS_additive",
+
+    "delta_bind_CGG_FMVS_ground_truth",
+    "delta_expr_FMVS_ground_truth",
+    "delta_psr_FMVS_ground_truth",
+
+    "delta_bind_CGG_tdms_model_pred",
+    "delta_expr_tdms_model_pred",
+    "delta_psr_tdms_model_pred",
+
+    "delta_bind_CGG_tdms_linear_model_pred",
+    "delta_expr_tdms_linear_model_pred",
+    "delta_psr_tdms_linear_model_pred",
+
+    "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
     "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
     "Productive_HC", "Productive_LC",
     "V_HC", "V_LC", "D_HC", "D_LC", "J_HC", "J_LC",
@@ -76,197 +102,10 @@ final_HK_col_order = [
     # "date",
 ]
 
-#################################
-# HELPERS
-#################################
-
-
-def fasta_to_df(f):
-    """simply convert a fasta to dataframe"""
-
-    ids, seqs = [], []
-    with open(f) as fasta_file:
-        for seq_record in SeqIO.parse(fasta_file, 'fasta'):  # (generator)
-            ids.append(seq_record.id)
-            seqs.append(str(seq_record.seq))
-    return pd.DataFrame({"id":ids, "seq":seqs})
-
-
-def bcr_fasta_to_df(fasta_fp, id_parse_fn, **kwargs):
-    """convert a fasta file pointer to dataframe after
-    parsing the id with some function returning
-    the columns defined (less the sequence column)"""
-
-    columns = [
-        'sequence_id',
-        'ngs_date'
-        'plate',
-        'barcode',
-        'well',
-        'row',
-        'column',
-        'chain',
-        'rank',
-        'counts',
-        'fasta_seq'
-    ]
-
-    ret = pd.DataFrame({c: [] for c in columns})
-    with open(fasta_fp) as fasta_file:  # Will close handle cleanly
-        for seq_record in SeqIO.parse(fasta_file, 'fasta'):  # (generator)
-            bcr_meta = id_parse_fn(seq_record.id)
-            if bcr_meta != -1:
-                bcr_meta["fasta_seq"] = str(seq_record.seq)
-                ret = ret.append(pd.Series(bcr_meta), ignore_index=True)
-                #ret = pd.concat([ret, pd.Series(bcr_meta)], ignore_index=True)
-    return ret
-
-
-def parse_nextflow_header(header: str):
-    """parse fasta header and return rank, counts, well, plate, and chain,
-    we do not expect the `>` to be included in the header"""
-    if "unmatched" in header:
-        return -1
-
-    pr, date, plate, well, chain, _, rank_count = header.split(".")
-    bcr_ranking, bcr_count = rank_count.split("-")
-
-    return {
-        "sequence_id": header,
-        "ngs_date": date,
-        "plate": plate,
-        "barcode": int(plate[1:]),
-        "well": well,
-        "row": well[0],
-        "column": int(well[1:]),
-        "chain": chain,
-        "rank": int(bcr_ranking),
-        "counts": int(bcr_count)
-    }
-
-
-
-# TODO
-def infer_igh_isotypes(bcr_sequence, num_mm=1):
-    """Use fuzzy string matching to infer the isotype of bcr sequences
-    in the cell database - allowing for `num_mm` mismatches. This function
-    will modify the passed in dataframe and will return the first match it finds
-    """
-
-    # Motifs associated with full input BCR including constant region
-    motif_map = {
-        "IgM": ["atgtcttccccct"],
-        "IgG1": ["atggtgaccctggg"],
-        "IgG2": ["ggctcctcggtgactcta", "tcggtgactctagg", "gtgtggagatacaactgg"],
-        "IgG3": ["cccttggtccctggctgcggtgacacat", "cacatctggatcctcggtgaca"],
-        "IgA": ["tctgcgagaaatcccaccatcta"]
-    }
-
-    # match and return first valid isotype
-    for key, value in motif_map.items():
-        for motif in value:
-            m = regex.findall("({m}){{e<={nm}}}".format(
-                m=motif, nm=num_mm), bcr_sequence.lower())
-            if len(m) > 0:
-                return key
-    # TODO Log
-    print(f"WARNING: no isotype match for: {bcr_sequence}")
-
-    # if no istype motif is found
-    return np.nan
-
-
-def _test_infer_igh_isotypes() -> None:
-    assert infer_igh_isotypes("cctgaagtctgcgagaaatcccaccatctatctta") == "IgA"
-    assert infer_igh_isotypes("cctgaagtctgcgagatatcccaccatctatctta") == "IgA"
-
-
-def aa(sequence, frame):
-    """Amino acid translation of nucleotide sequence in frame 1, 2, or 3."""
-    return Seq(
-        sequence[(frame - 1): (frame - 1
-                               + (3 * ((len(sequence) - (frame - 1)) // 3)))]
-    ).translate()
-
-
-def mutations(naive_aa, aa, pos_map, chain_annotation):
-    """Amino acid substitutions between two sequences, in IMGT coordinates."""
-    return [
-        f"{aa1}{pos_map[pos]}{chain_annotation}{aa2}"
-        for pos, (aa1, aa2) in enumerate(zip(naive_aa, aa))
-        if aa1 != aa2
-    ]
-
-# move this to annotation as well
-def merge_heavy_light_chains(
-        cell_df: pd.DataFrame,
-        key_file: pd.DataFrame
-) -> pd.DataFrame:
-    """
-    """
-
-    GC_df = pd.DataFrame()
-    for idx, row in key_file.iterrows():
-        key_row = row.row.split(".")
-        key_col = [int(c) for c in row.col.split(".")]
-        key_hc_barcodes = [int(c) for c in str(row.hc_barcode).split(".")]
-        key_lc_barcodes = [int(c) for c in str(row.lc_barcode).split(".")]
-
-        HC = cell_df.query(
-            (
-                f"(locus == 'IGH') & "
-                f"(barcode.isin({key_hc_barcodes})) & "
-                f"(column.isin({key_col})) & "
-                f"(row.isin({key_row}))"
-            ),
-            engine="python"
-        )
-        LC = cell_df.query(
-            (
-                f"(locus == 'IGK') & "
-                f"(barcode.isin({key_lc_barcodes})) & "
-                f"(column.isin({key_col})) & "
-                f"(row.isin({key_row}))"
-            ),
-            engine="python"
-        )
-
-        # f"(locus == 'IGK') & 
-        # (barcode.isin({key_lc_barcodes})) & 
-        # (column.isin({key_col})) & 
-        # (row.isin({key_row}))",
-
-        # now we need to curate the highest count
-        # for well, well_df in HC.groupby("well"):
-
-        GC = HC.merge(LC, on="well", suffixes=("_HC", "_LC"))
-        GC["HK_key_mouse"] = row.mouse
-        GC["HK_key_gc"] = row.gc
-        GC["HK_key_node"] = row.node
-        GC["HK_key_cell_type"] = row.cell_type
-
-        # TODO should this be barcode index or something
-        GC["HK_key_plate"] = row.plate
-
-        GC_df = pd.concat([GC_df, GC])
-
-    GC_df.loc[:, "ID_HK"] = [f"{i}K" for i in GC_df["ID_HC"]]
-    GC_df = GC_df.query("chain_HC != chain_LC")
-
-    return GC_df
-
 
 #################################
 # CLI
 #################################
-
-"""
-# Usage example
-python gcreplay-tools.py wrangle-annotation \
-        --igh-airr 2022-02-09/partis_annotation/PR-1-6/engrd/single-chain/partition-igh.tsv \
-        --igk-airr 2022-02-09/partis_annotation/PR-1-6/engrd/single-chain/partition-igk.tsv \
-        --input-fasta 2022-02-09/ranked_bcr_sequences_per_well/PR-1-6.fasta
-"""
 
 
 # entry point
@@ -397,7 +236,8 @@ def wrangle_annotation(
     partis_igk = partis_igk.rename({"seqs_aa": "seq_aa"}, axis=1)
 
     # merge the igk and igh annotations
-    partis_airr = partis_igk.append(partis_igh)
+    # partis_airr = partis_igk.append(partis_igh)
+    partis_airr = pd.concat([partis_igk, partis_igh])
     partis_airr.loc[:, "seq_nt"] = [seq.lower()
                                     for seq in partis_airr["sequence"]]
 
@@ -455,10 +295,12 @@ def wrangle_annotation(
         len(seq) for seq in partis_airr["seq_aa"]]
 
     partis_airr.loc[:, "isotype"] = [
-        infer_igh_isotypes(row.fasta_seq)
+        infer_igh_isotypes(row.fasta_seq, 3)
         if row.locus == "IGH" else "IgK"
         for idx, row in partis_airr.iterrows()
     ]
+    no_iso = partis_airr.loc[partis_airr.isotype.isnull()].index
+    partis_airr.drop(no_iso, inplace=True)
 
     # Some cells are spread across wells.
     # This means we need to merge the counts across plates 
@@ -721,6 +563,26 @@ def query_df(dataframe, query_string, output):
 @click.argument("gctree_file", type=click.Path(exists=True))
 @click.argument("idmapfile", type=click.Path(exists=True))
 @click.argument("variant_scores", type=click.Path(exists=False))
+@click.option(
+    "--multi_variant_scores",
+    type=click.Path(exists=False),
+    default=None
+)
+@click.option(
+    "--tdms_model",
+    type=click.Path(exists=False),
+    default=None
+)
+@click.option(
+    "--tdms_model_linear",
+    type=click.Path(exists=False),
+    default=None
+)
+@click.option(
+    "--naive_sites",
+    type=click.Path(exists=False),
+    default="https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
+)
 @click.argument("naive_sites", type=click.Path(exists=False))
 @click.option(
     "--igk_idx",
@@ -754,6 +616,9 @@ def node_featurize(
     gctree_file,
     idmapfile,
     variant_scores,
+    multi_variant_scores,
+    tdms_model,
+    tdms_model_linear,
     naive_sites,
     igk_idx,
     igh_frame,
@@ -778,11 +643,33 @@ def node_featurize(
             idmap[seqid] = cell_ids.replace(":", ",")
 
     # DMS single mutant scores
-    dms_df = pd.read_csv(
+    final_variant_scores = pd.read_csv(
         variant_scores, index_col="mutation", dtype=dict(position_IMGT=pd.Int16Dtype())
     )
     # remove linker sites
-    dms_df = dms_df[dms_df.chain != "link"]
+    final_variant_scores = final_variant_scores[final_variant_scores.chain != "link"]
+
+    # Final Multi Variant Scores 
+    # TODO Pass this in pipeline
+    final_multi_variant_scores = (
+        pd.read_csv(multi_variant_scores, index_col="aa_substitutions_IMGT")
+        #.query("library == 'dms'") # TODO we are not going to add pred with octet data
+        if multi_variant_scores is not None
+        else None
+    )
+
+    # torchdms models
+    tdms_model_binary = (
+        torch.load(tdms_model, map_location="cpu")
+        if tdms_model is not None
+        else None
+    )
+
+    tdms_model_linear_binary = (
+        torch.load(tdms_model_linear, map_location="cpu")
+        if tdms_model_linear is not None
+        else None
+    )
 
     # position maps for scFv
     pos_df = pd.read_csv(
@@ -803,15 +690,20 @@ def node_featurize(
     # generate LBI and LBR node features
     tree.local_branching(tau=tau, tau0=tau0)
 
-    phenotypes = ["delta_bind_CGG", "delta_expr", "delta_psr"]
-
-    # generate additive phenotype node features, and rows of node dataframe
-    dat = []
+    node_features = defaultdict(list)
     naive_igh_aa = aa(tree.tree.sequence[:igk_idx], igh_frame)
     naive_igk_aa = aa(tree.tree.sequence[igk_idx:], igk_frame)
     for node in tree.tree.traverse():
         igh_aa = aa(node.sequence[:igk_idx], igh_frame)
         igk_aa = aa(node.sequence[igk_idx:], igk_frame)
+
+        # Make the aa seq for tdms 
+        aa_tdms = pos_df.amino_acid.copy()
+        aa_tdms.iloc[pos_df.chain == "H"] = igh_aa
+        # note: replay light chains are shorter than dms seq by one aa
+        aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
+        aa_tdms_seq = "".join(aa_tdms)
+
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
         igh_has_stop = any("*" in x for x in igh_mutations)
@@ -824,60 +716,122 @@ def node_featurize(
         else:
             isotype = ",".join(
                 f"{key}:{node.isotype[key]}" for key in node.isotype)
-        row = [
-            node.name,
-            node.up.name if node.up else None,
-            node.abundance,
-            idmap[node.name] if node.name in idmap else "",
-            len(igh_mutations),
-            len(igk_mutations),
-            ",".join(igh_mutations),
-            ",".join(igk_mutations),
-            not igh_has_stop,
-            not igk_has_stop,
-            isotype,
-            node.LBI,
-            node.LBR,
-            sum(descendant.abundance for descendant in node.traverse()),
-            node.sequence[:igk_idx],
-            str(igh_aa),
-            node.sequence[igk_idx:],
-            str(igk_aa),
-        ]
-        for phenotype in phenotypes:
-            node.add_feature(
-                phenotype,
-                np.nan if (igh_has_stop or igk_has_stop) else dms_df.loc[all_mutations, phenotype].sum(
-                ),
-            )
-            row.append(getattr(node, phenotype))
-        dat.append(row)
 
-    # write dataframe
-    columns = [
-        "name",
-        "parent_name",
-        "abundance",
-        "sampled_cell_ids",
-        "n_mutations_HC",
-        "n_mutations_LC",
-        "IgH_mutations",
-        "IgK_mutations",
-        "IgH_productive",
-        "IgK_productive",
-        "isotype",
-        "LBI",
-        "LBR",
-        "descendant_abundance",
-        "IgH_nt_sequence",
-        "IgH_aa_sequence",
-        "IgK_nt_sequence",
-        "IgK_aa_sequence",
-    ] + phenotypes
-    df = pd.DataFrame(dat, columns=columns).set_index("name")
+        node_features["name"].append(node.name)
+        node_features["parent_name"].append(node.up.name if node.up else None)
+        node_features["abundance"].append(node.abundance)
+        node_features["sampled_cell_ids"].append(idmap[node.name] if node.name in idmap else "")
+        node_features["n_mutations_HC"].append(len(igh_mutations))
+        node_features["n_mutations_LC"].append(len(igk_mutations))
+        node_features["IgH_mutations"].append(",".join(igh_mutations))
+        node_features["IgK_mutations"].append(",".join(igk_mutations))
+        node_features["IgH_productive"].append(not igh_has_stop)
+        node_features["IgK_productive"].append(not igk_has_stop)
+        node_features["isotype"].append(isotype)
+        node_features["LBI"].append(node.LBI)
+        node_features["LBR"].append(node.LBR)
+        node_features["descendant_abundance"].append(sum(descendant.abundance for descendant in node.traverse()))
+        node_features["IgH_nt_sequence"].append(node.sequence[:igk_idx])
+        node_features["IgH_aa_sequence"].append(str(igh_aa))
+        node_features["IgK_nt_sequence"].append(node.sequence[igk_idx:])
+        node_features["IgK_aa_sequence"].append(str(igk_aa))
 
+        
+        # substitutions to (hopefully) match those in FMVS
+        ami = " ".join(all_mutations)
+        node_features["aa_substitutions_IMGT"].append(ami)
+        node.add_feature("aa_substitutions", ami)
+        
+        # each of the additive phenotypes from tylers
+        #dbfvs = (
+        #    np.nan if (igh_has_stop or igk_has_stop) 
+        #    else final_variant_scores.loc[all_mutations, "delta_bind_CGG"].sum()
+        #)
+        #node_features["delta_bind_CGG_FVS_additive"].append(dbfvs)
+        #node.add_feature("delta_bind_CGG_FVS_additive", dbfvs)
+
+        #defvs = (
+        #    np.nan if (igh_has_stop or igk_has_stop) 
+        #    else final_variant_scores.loc[all_mutations, "delta_expr"].sum()
+        #)
+        #node_features["delta_expr_FVS_additive"].append(defvs)
+        #node.add_feature("delta_expr_FVS_additive", defvs)
+
+        #dpfvs = (
+        #    np.nan if (igh_has_stop or igk_has_stop) 
+        #    else final_variant_scores.loc[all_mutations, "delta_psr"].sum()
+        #)
+        #node_features["delta_psr_FVS_additive"].append(dpfvs)
+        #node.add_feature("delta_psr_FVS_additive", dpfvs)
+        
+        for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr", "delta_psr"]):
+
+            # each of the additive scores from Tylers wrangling
+            if final_variant_scores is not None:
+
+                additive_score = ( 
+                    np.nan if (igh_has_stop or igk_has_stop) 
+                    else final_variant_scores.loc[all_mutations, phenotype].sum()
+                )
+                node_features[f"{phenotype}_FVS_additive"].append(additive_score)
+                node.add_feature(f"{phenotype}_FVS_additive", additive_score)
+
+
+            # each of the 'additive' phenotypes from GE training prep
+            if final_multi_variant_scores is not None:
+                
+                additive_score = (
+                    np.nan if (igh_has_stop or igk_has_stop)
+                    else final_multi_variant_scores.loc[all_mutations, phenotype].sum()
+                )
+                ground_truth = np.nan
+
+                # if we do have ground truth for a phenotype multi mutants
+                # and the ground truth is not null, then update it's value
+                if " ".join(all_mutations) in final_multi_variant_scores.index:
+                    ground_truth = (
+                        np.nan if (igh_has_stop or igk_has_stop) 
+                        else final_multi_variant_scores.loc[" ".join(all_mutations), phenotype]
+                    )
+                    #if ground_truth == ground_truth:
+                    #    additive_score = ground_truth
+                    #    ground_truth_exists = True
+
+
+                node_features[f"{phenotype}_FMVS_additive"].append(additive_score)
+                node.add_feature(f"{phenotype}_FMVS_additive", additive_score)
+                node_features[f"{phenotype}_FMVS_ground_truth"].append(ground_truth)
+                node.add_feature(f"{phenotype}_FMVS_ground_truth", ground_truth)
+
+            # each of the phenotype predictions for a global epistasis non linear model
+            if tdms_model_binary is not None:
+                seq_binary = tdms_model_binary.seq_to_binary(aa_tdms_seq)
+                pred = tdms_model_binary(seq_binary).detach().numpy()[i]
+                node_features[f"{phenotype}_tdms_model_pred"].append(pred)
+                node.add_feature(f"{phenotype}_tdms_model_pred", pred)
+
+                # TODO call tdms_model.to_latent ... only if the model latent makes sense
+                # for each of the latent nodes attached to a prediction individually.
+                #seq_binary = tdms_model_binary.seq_to_binary(aa_tdms_seq)
+                #node_features[f"{phenotype}_tdms_model_pred_latent"] = (
+                #    tdms_model_binary.to_latent(seq_binary).detach().numpy()[i]
+                #)
+
+            # each of the predictions from a perceptron tdms model
+            if tdms_model_linear_binary is not None:
+                seq_binary = tdms_model_linear_binary.seq_to_binary(aa_tdms_seq)
+                pred = tdms_model_linear_binary(seq_binary).detach().numpy()[i]
+                node_features[f"{phenotype}_tdms_linear_model_pred"].append(pred)
+                node.add_feature(f"{phenotype}_tdms_linear_model_pred", pred)
+
+    df = pd.DataFrame(node_features).set_index("name")
     df.to_csv(f"{output_dir}/node_data.csv")
 
+    phenotypes = [
+        "delta_bind_CGG_FVS_additive", 
+        "delta_expr_FVS_additive", 
+        "delta_psr_FVS_additive"
+    ]
     # render tree with colormapped features
     for phenotype in phenotypes + ["LBI", "LBR"]:
         if phenotype.startswith("LB"):
@@ -914,10 +868,6 @@ def node_featurize(
         pickle.dump(tree, f)
 
 
-# WSD note: pending discussion, but I think we may not need this, so commenting out
-# JGG note: the dms stuff should be moved to it's own testable function for use with this 
-# and node festurize above?,
-# then the rest can be integrated into the wrangle_annotation() function above
 ##### FEATURIZE SEQS
 @cli.command("featurize-seqs")
 @click.argument("hk_df", type=click.Path(exists=True))
@@ -934,6 +884,21 @@ def node_featurize(
     "--variant_scores",
     type=click.Path(exists=False),
     default="https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
+)
+@click.option(
+    "--multi_variant_scores",
+    type=click.Path(exists=False),
+    default=None
+)
+@click.option(
+    "--tdms_model",
+    type=click.Path(exists=False),
+    default=None
+)
+@click.option(
+    "--tdms_model_linear",
+    type=click.Path(exists=False),
+    default=None
 )
 @click.option(
     "--naive_sites",
@@ -953,6 +918,9 @@ def featurize_seqs(
     igk_frame,
     igk_idx,
     variant_scores,
+    multi_variant_scores,
+    tdms_model,
+    tdms_model_linear,
     naive_sites,
     output
 ):
@@ -961,16 +929,38 @@ def featurize_seqs(
 
     HK_DF: A dataframe with paired HK seqs
     VARIANT_SCORES: Path to variant scores csv in DMS repository
+    MULTI_VARIANT_SCORES: Path to final multi variant scores used for GE training
     NAIVE_SITES: Path to sites csv in DMS repository
     """
     hk_df = pd.read_csv(hk_df)
 
-    # DMS single mutant scores
-    dms_df = pd.read_csv(
+    # DMS single mutant scores, final from tyle
+    final_variant_scores = pd.read_csv(
         variant_scores, index_col="mutation", dtype=dict(position_IMGT=pd.Int16Dtype())
     )
     # remove linker sites
-    dms_df = dms_df[dms_df.chain != "link"]
+    final_variant_scores = final_variant_scores[final_variant_scores.chain != "link"]
+
+    # Final Multi Variant Scores 
+    final_multi_variant_scores = (
+        pd.read_csv(multi_variant_scores, index_col="aa_substitutions_IMGT")
+        # .query("library == 'dms'") # TODO we are not going to add pred with octet data
+        if multi_variant_scores is not None
+        else None
+    )
+
+    # torchdms models
+    tdms_model_binary = (
+        torch.load(tdms_model, map_location="cpu")
+        if tdms_model is not None
+        else None
+    )
+
+    tdms_model_linear_binary = (
+        torch.load(tdms_model_linear, map_location="cpu")
+        if tdms_model_linear is not None
+        else None
+    )
 
     # position maps for scFv
     pos_df = pd.read_csv(
@@ -984,34 +974,110 @@ def featurize_seqs(
     igk_pos_map = pos_df.loc[pos_df.chain
                              == "L", "site"].reset_index(drop=True)
 
-    phenotypes = ["delta_bind_CGG", "delta_expr", "delta_psr"]
 
-    # generate additive phenotype node features, and rows of node dataframe
-    dat = []
+    # construct new dataframe with all sequence phenotype predictions
+    seq_pheno_preds = defaultdict(list)
     naive_igh_aa = aa(naive_hk_bcr_nt[:igk_idx], igh_frame)
     naive_igk_aa = aa(naive_hk_bcr_nt[igk_idx:], igk_frame)
+
+    # Well make a prediction for each of the observed sequences
     for idx, row in hk_df.iterrows():
+
+        # Infer mutations from nt seq available
         igh_aa = aa(row.seq_nt_HC, igh_frame)
         igk_aa = aa(row.seq_nt_LC, igk_frame)
+
+        # Make the aa seq for tdms 
+        aa_tdms = pos_df.amino_acid.copy()
+        aa_tdms.iloc[pos_df.chain == "H"] = igh_aa
+        # note: replay light chains are shorter than dms seq by one aa
+        aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
+        aa_tdms_seq = "".join(aa_tdms)
+
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
-
         igh_has_stop = any("*" in x for x in igh_mutations)
         igk_has_stop = any("*" in x for x in igk_mutations)
-
         all_mutations = igh_mutations + igk_mutations
 
-        row = [",".join(igh_mutations),",".join(igk_mutations)]
-        row.extend([
-            np.nan if (igh_has_stop or igk_has_stop) else dms_df.loc[all_mutations, phenotype].sum()
-            for phenotype in phenotypes
-        ]),
-        dat.append(row)
 
-    # write dataframe
-    col_names = ["IgH_mutations", "IgK_mutations"] + phenotypes
-    df = pd.DataFrame(dat, columns=col_names)
+        # Now, we'll add all the phenotype predictions        
+        # Individual chain mutations
+        seq_pheno_preds["IgH_mutations"].append(igh_mutations)
+        seq_pheno_preds["IgK_mutations"].append(igk_mutations)
+        
+        # substitutions to (hopefully) match those in FMVS
+        seq_pheno_preds["aa_substitutions_IMGT"].append(" ".join(all_mutations))
+        
+        # each of the additive phenotypes from tylers
+        #seq_pheno_preds["delta_bind_CGG_FVS_additive"].append(
+        #    np.nan if (igh_has_stop or igk_has_stop) 
+        #    else final_variant_scores.loc[all_mutations, "delta_bind_CGG"].sum()
+        #)
+        #seq_pheno_preds["delta_expr_FVS_additive"].append(
+        #    np.nan if (igh_has_stop or igk_has_stop) 
+        #    else final_variant_scores.loc[all_mutations, "delta_expr"].sum()
+        #)
+        #seq_pheno_preds["delta_psr_FVS_additive"].append(
+        #    np.nan if (igh_has_stop or igk_has_stop) 
+        #    else final_variant_scores.loc[all_mutations, "delta_psr"].sum()
+        #)
+        
+        for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr", "delta_psr"]):
+
+            if final_variant_scores is not None:
+
+                seq_pheno_preds[f"{phenotype}_FVS_additive"].append(
+                    np.nan if (igh_has_stop or igk_has_stop) 
+                    else final_variant_scores.loc[all_mutations, phenotype].sum()
+                )
+
+            # each of the 'additive' phenotypes from GE training prep
+            if final_multi_variant_scores is not None:
+
+                # compute additive score from final multi variant scores
+                additive_score = (
+                    np.nan if (igh_has_stop or igk_has_stop) 
+                    else final_multi_variant_scores.loc[all_mutations, phenotype].sum()
+                )
+
+                # if the ground truth exists, compute that
+                ground_truth = np.nan
+                if " ".join(all_mutations) in final_multi_variant_scores.index:
+                    ground_truth = (
+                        np.nan if (igh_has_stop or igk_has_stop) 
+                        else final_multi_variant_scores.loc[" ".join(all_mutations), phenotype]
+                    )
+
+
+                seq_pheno_preds[f"{phenotype}_FMVS_additive"].append(additive_score)
+                seq_pheno_preds[f"{phenotype}_FMVS_ground_truth"].append(ground_truth)
+
+            # each of the phenotype predictions for a global epistasis non linear model
+            if tdms_model_binary is not None:
+                seq_binary = tdms_model_binary.seq_to_binary(aa_tdms_seq)
+                seq_pheno_preds[f"{phenotype}_tdms_model_pred"].append(
+                    tdms_model_binary(seq_binary).detach().numpy()[i]
+                )
+
+                # TODO call tdms_model.to_latent ... only if the model latent makes sense
+                # for each of the latent nodes attached to a prediction individually.
+                #seq_binary = tdms_model_binary.seq_to_binary(aa_tdms_seq)
+                #seq_pheno_preds[f"{phenotype}_tdms_model_pred_latent"] = (
+                #    tdms_model_binary.to_latent(seq_binary).detach().numpy()[i]
+                #)
+
+            # each of the predictions from a perceptron tdms model
+            if tdms_model_linear_binary is not None:
+                seq_binary = tdms_model_linear_binary.seq_to_binary(aa_tdms_seq)
+                seq_pheno_preds[f"{phenotype}_tdms_linear_model_pred"].append(
+                    tdms_model_linear_binary(seq_binary).detach().numpy()[i]
+                )
+        
+    df = pd.DataFrame(seq_pheno_preds)
     ret = pd.concat([df, hk_df], axis=1)
+
+    # TODO ADD NEW PHENOTYPES
     ret = ret.loc[:, [c for c in final_HK_col_order if c in ret.columns]]
     ret.to_csv(f"{output}", index=False)
 

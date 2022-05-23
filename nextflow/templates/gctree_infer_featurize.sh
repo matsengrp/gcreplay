@@ -50,6 +50,9 @@ DMS_VSCORES=!{params.dms_vscores}
 DMS_SITES=!{params.dms_sites}
 
 
+DMS_MULTI_SCORES=!{params.reads_prefix}/!{params.dms_mvscores}
+TDMS_MODEL=!{params.reads_prefix}/!{params.tdms_model}
+TDMS_MODEL_LINEAR=!{params.reads_prefix}/!{params.tdms_model_lin}
 
 # parameters for hdag mutation models (?)
 SUB=!{params.reads_prefix}/!{params.hdag_sub}
@@ -69,12 +72,17 @@ export MPLBACKEND=Agg
 gcreplay-tools.py featurize-seqs \
     $GCDF \
     --variant_scores ${DMS_VSCORES} \
+    --multi_variant_scores ${DMS_MULTI_SCORES} \
+    --tdms_model ${TDMS_MODEL} \
+    --tdms_model_linear ${TDMS_MODEL_LINEAR} \
     --naive_sites ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
     --output observed_seqs.csv
 
+
 # ADD FEATURIZED SEQS TO
 mkdir $OUTDIR && cp observed_seqs.csv $OUTDIR
+cp $GCDF $OUTDIR
 
 
 # check that the file has more than 10 lines (?)
@@ -149,6 +157,9 @@ xvfb-run -a gcreplay-tools.py featurize-nodes \
     ${OUTDIR}/gctree.inference.1.p \
     ${GC_DEF}.idmap \
     ${DMS_VSCORES} \
+    --multi_variant_scores ${DMS_MULTI_SCORES} \
+    --tdms_model ${TDMS_MODEL} \
+    --tdms_model_linear ${TDMS_MODEL_LINEAR} \
     ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
     --output_dir ${OUTDIR}
