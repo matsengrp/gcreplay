@@ -736,33 +736,9 @@ def node_featurize(
         node_features["IgK_nt_sequence"].append(node.sequence[igk_idx:])
         node_features["IgK_aa_sequence"].append(str(igk_aa))
 
-        
-        # substitutions to (hopefully) match those in FMVS
         ami = " ".join(all_mutations)
         node_features["aa_substitutions_IMGT"].append(ami)
         node.add_feature("aa_substitutions", ami)
-        
-        # each of the additive phenotypes from tylers
-        #dbfvs = (
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_bind_CGG"].sum()
-        #)
-        #node_features["delta_bind_CGG_FVS_additive"].append(dbfvs)
-        #node.add_feature("delta_bind_CGG_FVS_additive", dbfvs)
-
-        #defvs = (
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_expr"].sum()
-        #)
-        #node_features["delta_expr_FVS_additive"].append(defvs)
-        #node.add_feature("delta_expr_FVS_additive", defvs)
-
-        #dpfvs = (
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_psr"].sum()
-        #)
-        #node_features["delta_psr_FVS_additive"].append(dpfvs)
-        #node.add_feature("delta_psr_FVS_additive", dpfvs)
         
         for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr", "delta_psr"]):
 
@@ -793,10 +769,6 @@ def node_featurize(
                         np.nan if (igh_has_stop or igk_has_stop) 
                         else final_multi_variant_scores.loc[" ".join(all_mutations), phenotype]
                     )
-                    #if ground_truth == ground_truth:
-                    #    additive_score = ground_truth
-                    #    ground_truth_exists = True
-
 
                 node_features[f"{phenotype}_FMVS_additive"].append(additive_score)
                 node.add_feature(f"{phenotype}_FMVS_additive", additive_score)
@@ -1008,20 +980,6 @@ def featurize_seqs(
         
         # substitutions to (hopefully) match those in FMVS
         seq_pheno_preds["aa_substitutions_IMGT"].append(" ".join(all_mutations))
-        
-        # each of the additive phenotypes from tylers
-        #seq_pheno_preds["delta_bind_CGG_FVS_additive"].append(
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_bind_CGG"].sum()
-        #)
-        #seq_pheno_preds["delta_expr_FVS_additive"].append(
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_expr"].sum()
-        #)
-        #seq_pheno_preds["delta_psr_FVS_additive"].append(
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_psr"].sum()
-        #)
         
         for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr", "delta_psr"]):
 
