@@ -21,7 +21,6 @@ RUN apt-get update --fix-missing -qq && \
     pkg-config
 
 
-
 # install graphical libraries used by qt and vispy
 RUN apt-get install -y xvfb
 RUN apt-get install -qqy mesa-utils libgl1-mesa-glx  libglib2.0-0
@@ -54,7 +53,7 @@ RUN pip install --upgrade --no-cache-dir \
     regex \
     click \
     biopython \
-    gctree==4.0.1
+    gctree==4.0.3
 
 # install libgtextutils
 RUN curl -L 'https://github.com/agordon/libgtextutils/releases/download/0.7/libgtextutils-0.7.tar.gz' \
