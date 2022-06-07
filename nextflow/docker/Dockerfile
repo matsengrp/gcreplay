@@ -53,7 +53,7 @@ RUN pip install --upgrade --no-cache-dir \
     regex \
     click \
     biopython \
-    gctree==4.0.3
+    gctree==4.0.4
 
 # install libgtextutils
 RUN curl -L 'https://github.com/agordon/libgtextutils/releases/download/0.7/libgtextutils-0.7.tar.gz' \
