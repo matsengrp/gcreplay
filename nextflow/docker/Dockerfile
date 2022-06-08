@@ -7,8 +7,8 @@ LABEL maintainer "Jared Galloway <jgallowa@fredhutch.rg>" \
 # install needed tools
 RUN apt-get update --fix-missing -qq && \
     DEBIAN_FRONTEND=noninteractive \
-    locales \
     apt-get install -y -q \
+    locales \
     git \
     curl \
     libncurses5-dev  \
@@ -19,7 +19,6 @@ RUN apt-get update --fix-missing -qq && \
     zlib1g-dev \
     libbz2-dev \
     pkg-config
-
 
 
 # install graphical libraries used by qt and vispy
@@ -54,7 +53,7 @@ RUN pip install --upgrade --no-cache-dir \
     regex \
     click \
     biopython \
-    gctree==4.0.1
+    gctree==4.0.4
 
 # install libgtextutils
 RUN curl -L 'https://github.com/agordon/libgtextutils/releases/download/0.7/libgtextutils-0.7.tar.gz' \
@@ -74,3 +73,8 @@ RUN curl -L 'https://github.com/agordon/fastx_toolkit/releases/download/0.0.14/f
 # install pandaseq
 RUN git clone https://github.com/neufeld/pandaseq.git \
   && (cd pandaseq && ./autogen.sh && ./configure && make && make install && ldconfig)
+
+# install torchdms
+RUN git clone https://github.com/matsengrp/torchdms.git \
+  && (cd torchdms && make install)
+
