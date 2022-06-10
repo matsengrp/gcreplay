@@ -702,6 +702,7 @@ def node_featurize(
         # note: replay light chains are shorter than dms seq by one aa
         aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
         aa_tdms_seq = "".join(aa_tdms)
+        node.add_feature("aa_sequence", aa_tdms_seq)
 
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
@@ -734,6 +735,7 @@ def node_featurize(
         node_features["IgH_aa_sequence"].append(str(igh_aa))
         node_features["IgK_nt_sequence"].append(node.sequence[igk_idx:])
         node_features["IgK_aa_sequence"].append(str(igk_aa))
+        node_features["aa_sequence"].append(aa_tdms_seq)
 
         
         # substitutions to (hopefully) match those in FMVS
