@@ -25,7 +25,6 @@ import regex
 import matplotlib
 
 from utils import *
-#matplotlib.use("Qt5Agg")
 
 
 #################################
@@ -742,28 +741,6 @@ def node_featurize(
         node_features["aa_substitutions_IMGT"].append(ami)
         node.add_feature("aa_substitutions", ami)
         
-        # each of the additive phenotypes from tylers
-        #dbfvs = (
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_bind_CGG"].sum()
-        #)
-        #node_features["delta_bind_CGG_FVS_additive"].append(dbfvs)
-        #node.add_feature("delta_bind_CGG_FVS_additive", dbfvs)
-
-        #defvs = (
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_expr"].sum()
-        #)
-        #node_features["delta_expr_FVS_additive"].append(defvs)
-        #node.add_feature("delta_expr_FVS_additive", defvs)
-
-        #dpfvs = (
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_psr"].sum()
-        #)
-        #node_features["delta_psr_FVS_additive"].append(dpfvs)
-        #node.add_feature("delta_psr_FVS_additive", dpfvs)
-        
         for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr", "delta_psr"]):
 
             # each of the additive scores from Tylers wrangling
@@ -784,24 +761,9 @@ def node_featurize(
                     np.nan if (igh_has_stop or igk_has_stop)
                     else final_multi_variant_scores.loc[all_mutations, phenotype].sum()
                 )
-                ground_truth = np.nan
-
-                # if we do have ground truth for a phenotype multi mutants
-                # and the ground truth is not null, then update it's value
-                if " ".join(all_mutations) in final_multi_variant_scores.index:
-                    ground_truth = (
-                        np.nan if (igh_has_stop or igk_has_stop) 
-                        else final_multi_variant_scores.loc[" ".join(all_mutations), phenotype]
-                    )
-                    #if ground_truth == ground_truth:
-                    #    additive_score = ground_truth
-                    #    ground_truth_exists = True
-
 
                 node_features[f"{phenotype}_FMVS_additive"].append(additive_score)
                 node.add_feature(f"{phenotype}_FMVS_additive", additive_score)
-                node_features[f"{phenotype}_FMVS_ground_truth"].append(ground_truth)
-                node.add_feature(f"{phenotype}_FMVS_ground_truth", ground_truth)
 
             # each of the phenotype predictions for a global epistasis non linear model
             if tdms_model_binary is not None:
@@ -993,6 +955,7 @@ def featurize_seqs(
         # note: replay light chains are shorter than dms seq by one aa
         aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
         aa_tdms_seq = "".join(aa_tdms)
+        seq_pheno_preds["aa_sequence"] = aa_tdms_seq
 
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
@@ -1008,20 +971,6 @@ def featurize_seqs(
         
         # substitutions to (hopefully) match those in FMVS
         seq_pheno_preds["aa_substitutions_IMGT"].append(" ".join(all_mutations))
-        
-        # each of the additive phenotypes from tylers
-        #seq_pheno_preds["delta_bind_CGG_FVS_additive"].append(
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_bind_CGG"].sum()
-        #)
-        #seq_pheno_preds["delta_expr_FVS_additive"].append(
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_expr"].sum()
-        #)
-        #seq_pheno_preds["delta_psr_FVS_additive"].append(
-        #    np.nan if (igh_has_stop or igk_has_stop) 
-        #    else final_variant_scores.loc[all_mutations, "delta_psr"].sum()
-        #)
         
         for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr", "delta_psr"]):
 
@@ -1041,17 +990,7 @@ def featurize_seqs(
                     else final_multi_variant_scores.loc[all_mutations, phenotype].sum()
                 )
 
-                # if the ground truth exists, compute that
-                ground_truth = np.nan
-                if " ".join(all_mutations) in final_multi_variant_scores.index:
-                    ground_truth = (
-                        np.nan if (igh_has_stop or igk_has_stop) 
-                        else final_multi_variant_scores.loc[" ".join(all_mutations), phenotype]
-                    )
-
-
                 seq_pheno_preds[f"{phenotype}_FMVS_additive"].append(additive_score)
-                seq_pheno_preds[f"{phenotype}_FMVS_ground_truth"].append(ground_truth)
 
             # each of the phenotype predictions for a global epistasis non linear model
             if tdms_model_binary is not None:
