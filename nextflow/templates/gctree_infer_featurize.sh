@@ -69,7 +69,7 @@ export MPLBACKEND=Agg
 
 
 # ADD DMS DATA TO OBSERVED BCR SEQS
-gcreplay-tools.py featurize-seqs \
+gcreplay-tools-dev.py featurize-seqs \
     $GCDF \
     --variant_scores ${DMS_VSCORES} \
     --multi_variant_scores ${DMS_MULTI_SCORES} \
@@ -97,14 +97,14 @@ then
 # will not need to do this in the pipeline 
 
 # convert some columns into headers and sequences for a basic fasta format conversion
-gcreplay-tools.py gc-df-to-fasta \
+gcreplay-tools-dev.py gc-df-to-fasta \
     --gc-df $GCDF \
     -o $GC_DEF.fasta
 echo \(LOG\) done: created fasta
 
 
 # make isotype map for the specific gc
-gcreplay-tools.py get-columns \
+gcreplay-tools-dev.py get-columns \
     -df $GCDF \
     -c ID_HK -c isotype_HC \
     -o $GC_DEF.isotypemap
@@ -153,13 +153,15 @@ echo \(LOG\) done: gctree
 
 # Run will's featurize code
 #mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
-xvfb-run -a gcreplay-tools.py featurize-nodes \
+xvfb-run -a gcreplay-tools-dev.py featurize-nodes \
     ${OUTDIR}/gctree.inference.1.p \
     ${GC_DEF}.idmap \
     ${DMS_VSCORES} \
     --multi_variant_scores ${DMS_MULTI_SCORES} \
     --tdms_model ${TDMS_MODEL} \
     --tdms_model_linear ${TDMS_MODEL_LINEAR} \
+    --tau 1.0 \
+    --tau0 1.0 \
     ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
     --output_dir ${OUTDIR}
