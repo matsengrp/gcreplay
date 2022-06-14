@@ -160,6 +160,8 @@ xvfb-run -a gcreplay-tools.py featurize-nodes \
     --multi_variant_scores ${DMS_MULTI_SCORES} \
     --tdms_model ${TDMS_MODEL} \
     --tdms_model_linear ${TDMS_MODEL_LINEAR} \
+    --tau 1.0 \
+    --tau0 1.0 \
     ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
     --output_dir ${OUTDIR}

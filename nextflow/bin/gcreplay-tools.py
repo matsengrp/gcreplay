@@ -25,7 +25,6 @@ import regex
 import matplotlib
 
 from utils import *
-#matplotlib.use("Qt5Agg")
 
 
 #################################
@@ -64,7 +63,7 @@ partis_airr_to_drop = [
 
 final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
-    "aa_substitutions_IMGT",
+    "aa_substitutions_IMGT", "aa_sequence",
 
     "delta_bind_CGG_FVS_additive",
     "delta_expr_FVS_additive",
@@ -703,6 +702,7 @@ def node_featurize(
         # note: replay light chains are shorter than dms seq by one aa
         aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
         aa_tdms_seq = "".join(aa_tdms)
+        node.add_feature("aa_sequence", aa_tdms_seq)
 
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
@@ -735,7 +735,10 @@ def node_featurize(
         node_features["IgH_aa_sequence"].append(str(igh_aa))
         node_features["IgK_nt_sequence"].append(node.sequence[igk_idx:])
         node_features["IgK_aa_sequence"].append(str(igk_aa))
+        node_features["aa_sequence"].append(aa_tdms_seq)
 
+        
+        # substitutions to (hopefully) match those in FMVS
         ami = " ".join(all_mutations)
         node_features["aa_substitutions_IMGT"].append(ami)
         node.add_feature("aa_substitutions", ami)
@@ -760,20 +763,9 @@ def node_featurize(
                     np.nan if (igh_has_stop or igk_has_stop)
                     else final_multi_variant_scores.loc[all_mutations, phenotype].sum()
                 )
-                ground_truth = np.nan
-
-                # if we do have ground truth for a phenotype multi mutants
-                # and the ground truth is not null, then update it's value
-                if " ".join(all_mutations) in final_multi_variant_scores.index:
-                    ground_truth = (
-                        np.nan if (igh_has_stop or igk_has_stop) 
-                        else final_multi_variant_scores.loc[" ".join(all_mutations), phenotype]
-                    )
 
                 node_features[f"{phenotype}_FMVS_additive"].append(additive_score)
                 node.add_feature(f"{phenotype}_FMVS_additive", additive_score)
-                node_features[f"{phenotype}_FMVS_ground_truth"].append(ground_truth)
-                node.add_feature(f"{phenotype}_FMVS_ground_truth", ground_truth)
 
             # each of the phenotype predictions for a global epistasis non linear model
             if tdms_model_binary is not None:
@@ -965,6 +957,7 @@ def featurize_seqs(
         # note: replay light chains are shorter than dms seq by one aa
         aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
         aa_tdms_seq = "".join(aa_tdms)
+        seq_pheno_preds["aa_sequence"] = aa_tdms_seq
 
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
@@ -999,17 +992,7 @@ def featurize_seqs(
                     else final_multi_variant_scores.loc[all_mutations, phenotype].sum()
                 )
 
-                # if the ground truth exists, compute that
-                ground_truth = np.nan
-                if " ".join(all_mutations) in final_multi_variant_scores.index:
-                    ground_truth = (
-                        np.nan if (igh_has_stop or igk_has_stop) 
-                        else final_multi_variant_scores.loc[" ".join(all_mutations), phenotype]
-                    )
-
-
                 seq_pheno_preds[f"{phenotype}_FMVS_additive"].append(additive_score)
-                seq_pheno_preds[f"{phenotype}_FMVS_ground_truth"].append(ground_truth)
 
             # each of the phenotype predictions for a global epistasis non linear model
             if tdms_model_binary is not None:
