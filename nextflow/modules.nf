@@ -4,7 +4,7 @@ nextflow.enable.dsl =2
  * Process 1A: trim the first three bases of the paired end reads.
  */
 process TRIM_COMBINE_MATES { 
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/trimmed_combined_fasta/" 
   label 'multithread'
   input: tuple val(key), val(key_file), val(date), path(read1), path(read2)
@@ -26,7 +26,7 @@ process TRIM_COMBINE_MATES {
  */
 //path plate_barcodes
 process DEMULTIPLEX_PLATES {
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/demultiplexed_plates_fasta/" 
   input: tuple val(key), val(key_file), val(date), path(key_fasta)
   output: tuple val(key), val(key_file), path("${key}.${date}.*")
@@ -42,7 +42,7 @@ process DEMULTIPLEX_PLATES {
  * Process 1C: Demultiplex each plate into the 96 wells per plate
  */
 process DEMULTIPLEX_WELLS {
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/demultiplexed_wells_fasta/"
   input: tuple val(key), val(key_file), path(plate)
   output: tuple val(key), val(key_file), path("${plate}.*")
@@ -60,7 +60,7 @@ process DEMULTIPLEX_WELLS {
  * for common motifs
  */
 process SPLIT_HK {
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/split_HK/"
   label 'multithread'
   input: 
@@ -80,7 +80,7 @@ process SPLIT_HK {
  * demultiplexed files into  
  */
 process COLLAPSE_RANK_PRUNE {
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/rank_collapsed/"
   input: tuple val(key), val(key_file), path(well_chain)
   output: tuple val(key), val(key_file), path("${well_chain}.R")
@@ -98,7 +98,7 @@ process COLLAPSE_RANK_PRUNE {
  * Process 1F: Merge the top ranked BCR's
  */
 process MERGE_BCRS {
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/ranked_bcr_sequences_per_well/"
   input: tuple val(key), val(key_file), path(all_coll_rank)
   output: tuple val(key), val(key_file), path("${key}.fasta")
@@ -131,7 +131,7 @@ process PARTIS_ANNOTATION {
  * Process 2B: Wrangle and parse the annotations
  */
 process PARTIS_WRANGLE {
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   //container '093db2c8b33a'
   publishDir "$params.results/single_gc_wrangle/"
   input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
@@ -163,7 +163,7 @@ process PARTIS_WRANGLE {
  */
 process GCTREE {
   //container '093db2c8b33a'
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/gctrees/", mode: "copy"
   label "mem_large"
   //errorStrategy 'ignore'
@@ -178,7 +178,7 @@ process GCTREE {
  * Process 3B: Merge all results
  */
 process MERGE_RESULTS {
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/merged-results/", mode: "copy"
   label "mem_large"
   input: path(all_results)

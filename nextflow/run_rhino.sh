@@ -19,8 +19,7 @@ nextflow run main.nf \
         -with-trace \
         -resume
 
-rm results/latest
-ln -s results/$(date -I) results/latest
+(cd results && ln -sf $(date -I) latest && git add latest)
 
 git add results/$(date -I)/merged-results/*.csv
 git add results/$(date -I)/gctrees/PR1.*GC/gctree.p
