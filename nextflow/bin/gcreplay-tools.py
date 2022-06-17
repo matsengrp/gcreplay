@@ -492,7 +492,7 @@ def df_groupby(dataframe, columns, sample, output_prefix):
         if sample != None:
             groupdf.sort_values(by="ID_HK").sample(min(10,len(groupdf)), random_state=1).to_csv(f"{output_prefix}-{group_string}.csv", index=False)
         else:
-            groupdf.to_csv(f"{output_prefix}-{group_string}.csv", index=False)
+            groupdf.sort_values(by="ID_HK").to_csv(f"{output_prefix}-{group_string}.csv", index=False)
 
 
 ##### QUERY DATAFRAME
@@ -957,7 +957,7 @@ def featurize_seqs(
         # note: replay light chains are shorter than dms seq by one aa
         aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
         aa_tdms_seq = "".join(aa_tdms)
-        seq_pheno_preds["aa_sequence"] = aa_tdms_seq
+        seq_pheno_preds["aa_sequence"].append(aa_tdms_seq)
 
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")

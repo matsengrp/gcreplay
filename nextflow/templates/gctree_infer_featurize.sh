@@ -63,6 +63,7 @@ ls $SUB
 ls $MUT
 
 export MPLBACKEND=Agg
+export PYTHONHASHSEED=0
 
 # ========================================================
 # EDIT BELOW HERE USING PROVIDED VARIABLES ABOVE
@@ -132,6 +133,7 @@ cp outfile $OUTDIR
 cp abundances.csv $OUTDIR
 cp $GC_DEF.isotypemap $OUTDIR
 cp $GC_DEF.idmap $OUTDIR
+cp $GC_DEF.fasta $OUTDIR
 
 # Run inference on sequences, 
 TMPDIR="/tmp"
@@ -150,6 +152,7 @@ xvfb-run -a gctree infer outfile abundances.csv \
     | tee gctree.inference.log
 echo \(LOG\) done: gctree
 
+cp gctree.inference.log ${OUTDIR}
 
 # Run will's featurize code
 #mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
