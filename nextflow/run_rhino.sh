@@ -19,12 +19,10 @@ nextflow run main.nf \
         -with-report $results/report.html \
         -resume
 
-(cd results && ln -sf $(date -I) latest && git add latest)
+(cd results && rm latest && ln -s $(date -I) latest && git add latest)
 
 git add results/$(date -I)/merged-results/*.csv
 git add results/$(date -I)/gctrees/PR1.*GC/gctree.p
 git add results/$(date -I)/gctrees/PR1.*GC/L*.svg
 git add results/$(date -I)/gctrees/PR1.*GC/delta*.svg
 git add results/$(date -I)/gctrees/PR1.*GC/*.nk
-
-
