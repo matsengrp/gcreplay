@@ -36,6 +36,9 @@ params.key =        "PR-1-9"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
+params.dms_mvscores     = "data/torchdms/prepped-dms/final-multi-variant-scores.csv"
+params.tdms_model       = "data/torchdms/prepped-dms/tdms-fully-connected.model"
+params.tdms_model_lin   = "data/torchdms/prepped-dms/tdms-linear.model"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.igk_idx          = 336
 
@@ -52,7 +55,7 @@ Rockefeller University, New York NY.
  * Process 2B: Wrangle and parse the annotations
  */
 process SS_SPLIT_GCS {
-  container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/single_gc_wrangle/"
   input: 
     val key
@@ -71,7 +74,7 @@ process SS_SPLIT_GCS {
  * Process 3A: Wrangle and featurize nodes
  */
 process SS_GCTREE {
-  container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/gctrees/", mode: "copy"
   label "mem_large"
   input: path(single_mouse_gc_df)
@@ -85,7 +88,7 @@ process SS_GCTREE {
  * Process 3B: Merge all results
  */
 process SS_MERGE_RESULTS {
-  container 'quay.io/matsengrp/gcreplay-pipeline:2022-03-03'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/merged-results/", mode: "copy"
   label "mem_large"
   input: path(all_results)
