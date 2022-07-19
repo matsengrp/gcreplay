@@ -22,7 +22,7 @@ def replay_tree_summary_stats(tree):
     LBIs = []
     affinities = []
     if args.obs:
-        nodes = tree.get_leaves()
+        nodes = list(node for node in tree.traverse() if node.abundance > 0)
     else:
         nodes = list(tree.traverse())
     for node in nodes:
