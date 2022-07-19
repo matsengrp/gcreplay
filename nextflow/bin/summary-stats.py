@@ -2,8 +2,15 @@ import pickle, argparse, os
 import numpy as np
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--treedir", type=str)
-parser.add_argument("--out", type=str)
+parser.add_argument(
+    "--treedir", type=str, help="directory with pickled gctrees to read"
+)
+parser.add_argument("--out", type=str, help="csv outfile")
+parser.add_argument(
+    "--obs",
+    action="store_true",
+    help="display statistics only for observed (leaf) nodes",
+)
 args = parser.parse_args()
 
 
@@ -14,8 +21,11 @@ def replay_tree_summary_stats(tree):
     isotypes = []
     LBIs = []
     affinities = []
-
-    for node in tree.traverse():
+    if args.obs:
+        nodes = tree.get_leaves()
+    else:
+        nodes = list(tree.traverse())
+    for node in nodes:
         sequences.append(node.sequence)
         distances.append(node.get_distance(tree))
         abundances.append(node.abundance)
@@ -41,13 +51,13 @@ def replay_tree_summary_stats(tree):
         np.min(affinities),
         np.max(affinities),
         np.std(affinities),
-        100* isotypes.count("IgG1")/isotypes.length,
-        100*isotypes.count("IgG2")/isotypes.length,
-        100*isotypes.count("IgG3")/isotypes.length,
-        100* isotypes.count("IgM")/isotypes.length,
-        100* isotypes.count("IgD")/isotypes.length,
-        100* isotypes.count("IgA")/isotypes.length,
-        100* isotypes.count("IgE")/isotypes.length,
+        100 * isotypes.count("IgG1") / len(isotypes),
+        100 * isotypes.count("IgG2") / len(isotypes),
+        100 * isotypes.count("IgG3") / len(isotypes),
+        100 * isotypes.count("IgM") / len(isotypes),
+        100 * isotypes.count("IgD") / len(isotypes),
+        100 * isotypes.count("IgA") / len(isotypes),
+        100 * isotypes.count("IgE") / len(isotypes),
     )
 
 
