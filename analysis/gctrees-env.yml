@@ -11,3 +11,5 @@ dependencies:
   - statsmodels
   - gctree
   - git-lfs
+  - pip
+   - jaxopt
