@@ -64,8 +64,6 @@ process GCTREE_SIM {
 }
 
 
-
-
 workflow {
 
     simu = Channel.fromPath("$params.simulations/*.fasta")
