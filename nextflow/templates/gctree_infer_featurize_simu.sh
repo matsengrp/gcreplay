@@ -21,11 +21,11 @@ CPUS=!{task.cpus}
 SGC_FASTA=!{simulated_gc}
 echo $SGC_FASTA
 
-if [[ !{params.test} ]];
-then
-head $SGC_FASTA > grep -v "mrca" > "test-!{simulated_gc}"
-SGC_FASTA="test-!{simulated_gc}"
-fi
+#if [[ !{params.test} ]];
+#then
+#head $SGC_FASTA > grep -v "mrca" > "test-!{simulated_gc}"
+#SGC_FASTA="test-!{simulated_gc}"
+#fi
 
 
 OUTDIR=gct-$(basename $SGC_FASTA)
@@ -93,23 +93,27 @@ xvfb-run -a gctree infer outfile abundances.csv \
     --outbase ${OUTDIR}/gctree \
     | tee gctree.inference.log
 echo \(LOG\) done: gctree
-#
-#
-## Run will's featurize code
-##mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
-#xvfb-run -a gcreplay-tools.py featurize-nodes \
-#    ${OUTDIR}/gctree.inference.1.p \
-#    ${GC_DEF}.idmap \
-#    ${DMS_VSCORES} \
-#    --multi_variant_scores ${DMS_MULTI_SCORES} \
-#    --tdms_model ${TDMS_MODEL} \
-#    --tdms_model_linear ${TDMS_MODEL_LINEAR} \
-#    ${DMS_SITES} \
-#    --igk_idx ${IGK_IDX} \
-#    --output_dir ${OUTDIR}
-#
-#mv $GC_DEF.idmap ${OUTDIR}/
-#echo \(LOG\) done: Viz
+
+cp gctree.inference.log ${OUTDIR}
+
+
+# Run will's featurize code
+#mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
+xvfb-run -a gcreplay-tools.py featurize-nodes \
+    ${OUTDIR}/gctree.inference.1.p \
+    ${GC_DEF}.idmap \
+    ${DMS_VSCORES} \
+    --multi_variant_scores ${DMS_MULTI_SCORES} \
+    --tdms_model ${TDMS_MODEL} \
+    --tdms_model_linear ${TDMS_MODEL_LINEAR} \
+    --tau 1.0 \
+    --tau0 1.0 \
+    ${DMS_SITES} \
+    --igk_idx ${IGK_IDX} \
+    --output_dir ${OUTDIR}
+
+mv $GC_DEF.idmap ${OUTDIR}/
+echo \(LOG\) done: Viz
 #
 #
 ## PB/MB Cells
