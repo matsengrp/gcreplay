@@ -30,7 +30,6 @@ nextflow.enable.dsl = 2
  * Define the default parameters - example data get's run by default
  */
 
-// params.reads_prefix     = "$projectDir"
 params.simulations      = "$projectDir/data/simulations"
 params.results          = "$projectDir/results"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"

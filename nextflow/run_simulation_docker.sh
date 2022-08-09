@@ -9,8 +9,3 @@ nextflow run simulations.nf \
         -profile docker \
         -with-dag "results/$(date -I)/sim-dag.svg" \
         -resume
-
-        #--test true \
-#--dms_vscores "${PWD}/data/_ignore/dms/DMS_final_variant_scores.csv" \
-#--dms_sites "${PWD}/data/_ignore/dms/DMS_sites.csv" \
-
