@@ -21,13 +21,6 @@ CPUS=!{task.cpus}
 SGC_FASTA=!{simulated_gc}
 echo $SGC_FASTA
 
-#if [[ !{params.test} ]];
-#then
-#head $SGC_FASTA > grep -v "mrca" > "test-!{simulated_gc}"
-#SGC_FASTA="test-!{simulated_gc}"
-#fi
-
-
 OUTDIR=gct-$(basename $SGC_FASTA)
 mkdir $OUTDIR
 cp $SGC_FASTA $OUTDIR/simu.fasta

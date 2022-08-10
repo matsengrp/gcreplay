@@ -52,8 +52,7 @@ Rockefeller University, New York NY.
 
 
 process GCTREE_SIM {
-  //container '093db2c8b33a'
-  container 'quay.io/matsengrp/gcreplay-pipeline:24_torchdms_integration'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/simulation-gctrees/", mode: "copy"
   label "mem_large"
   input: path(simulated_gc)
@@ -65,7 +64,7 @@ process GCTREE_SIM {
 
 workflow {
 
-    simu = Channel.fromPath("$params.simulations/*.fasta")
+    simu = Channel.fromPath("$params.simulations")
     simu | GCTREE_SIM
 
 }
