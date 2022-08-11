@@ -5,7 +5,7 @@ source /app/lmod/lmod/init/profile
 
 module load nextflow
 module load Singularity
-module load git-lfs/2.11.0
+# module load git-lfs/2.11.0
 
 export PATH=$SINGULARITYROOT/bin/:$PATH
 results="results/$(date -I)"
