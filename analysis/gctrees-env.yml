@@ -4,6 +4,12 @@ channels:
   - defaults
 dependencies:
   - python=3.9
-  - jupyterlab
+  - seaborn
+  - biopython
+  - pandas
+  - jupyter
+  - statsmodels
   - gctree
   - git-lfs
+  - pip
+   - jaxopt
