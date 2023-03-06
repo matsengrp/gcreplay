@@ -3,9 +3,9 @@
 vsn=test-v0
 ddir=/fh/fast/matsen_e/dralph/gcdyn/gcreplay-observed
 odir=/fh/fast/matsen_e/dralph/gcdyn/$vsn
+gcrdir=projects/gcreplay/analysis
+gcddir=projects/gcdyn
 
-echo ./scripts/plot-abdn.py --data-dir $ddir --simu-dir $odir/simu --outdir $odir/plots
-# echo python scripts/multi-simulation.py --outdir $odir/simu --n-seqs 70 --n-trials 1
-
-# echo ./bin/compare-plotdirs.py --file-glob-str='abdn.csv' --outdir $odir/comparisons --plotdirs $odir/data-plots:$odir/simu-plots --names data:simu --log y
-
+echo ./$gcrdir/gcdyn-plot.py --data-dir $ddir --simu-dir $odir/simu --outdir $odir/plots
+# echo conda activate gcdyn
+# echo python $gcddir/scripts/multi-simulation.py --outdir $odir/simu --n-seqs 70 --n-trials 1

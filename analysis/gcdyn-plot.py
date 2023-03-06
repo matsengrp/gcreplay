@@ -56,7 +56,9 @@ def calc_abdn(indir, label, is_simu):
     fn_fns = glob.glob('%s/*.fasta'%indir)
     if not is_simu:
         fn_fns = filter_mice(fn_fns)
-    cmd = 'python scripts/abundance.py %s --min-seqs 70 --max-seqs 70 --outdir %s/%s' % (' '.join(fn_fns), args.outdir, label)
+    if len(fn_fns) == 0:
+        raise Exception('no fasta files in dir %s' % indir)
+    cmd = 'python %s/scripts/abundance.py %s --min-seqs 70 --max-seqs 70 --outdir %s/%s' % (args.gcdyn_dir, ' '.join(fn_fns), args.outdir, label)
     utils.simplerun(cmd)
 
 # ----------------------------------------------------------------------------------------
@@ -112,6 +114,7 @@ parser.add_argument('--simu-dir')
 parser.add_argument('--outdir')
 parser.add_argument('--mice', default=[1, 2, 3, 4, 5, 6], help='restrict to these mouse numbers')
 parser.add_argument('--is-simu', action='store_true')
+parser.add_argument('--gcdyn-dir', default='%s/work/partis/projects/gcdyn'%os.getenv('HOME'))
 args = parser.parse_args()
 
 dlabels = []
