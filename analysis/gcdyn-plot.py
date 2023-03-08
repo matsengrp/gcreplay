@@ -18,8 +18,9 @@ import lbplotting
 import hutils
 
 # ----------------------------------------------------------------------------------------
-colors = {'data' : plotting.default_colors[0],
-          'simu' : plotting.default_colors[1]}
+colors = {'data' : plotting.default_colors[1],
+          'simu' : plotting.default_colors[0]}
+pltlabels = {'hdists' : 'root-tip dist'}
 
 # ----------------------------------------------------------------------------------------
 def parse_name(fn):  # convert .fa name to mouse #, etc
@@ -56,11 +57,11 @@ def filter_mice(in_fns):
     return fn_fns
 
 # ----------------------------------------------------------------------------------------
-def abfn(tlab):
-    return '%s/%s/abundances.csv' % (args.outdir, tlab)
+def abfn(tlab, abtype='abundances'):
+    return '%s/%s/%s.csv' % (args.outdir, tlab, abtype)
 
 # ----------------------------------------------------------------------------------------
-def calc_abdn(indir, label, is_simu):
+def parse_fastas(indir, label, is_simu):
     fn_fns = glob.glob('%s/*.fasta'%indir)
     if not is_simu:
         fn_fns = filter_mice(fn_fns)
@@ -79,54 +80,61 @@ def hargs(htmp):
     return xbounds, ybounds, xticks, yticks, yticklabels
 
 # ----------------------------------------------------------------------------------------
-def plot(plotdir, label):
-    with open(abfn(label)) as afile:
+def plot(plotdir, label, abtype):
+    # read values from csv file
+    with open(abfn(label, abtype=abtype)) as afile:
         reader = csv.DictReader(afile)
-        plotvals = {k : {} for k in reader.fieldnames if k!=''}
-        for line in reader:
-            abn = int(line[''])  # i can't figure out how to set this column label in the other script
-            for bn in plotvals:  # <bn> is GC name
-                plotvals[bn][abn] = int(line[bn])
+        if abtype == 'abundances':
+            plotvals = {k : {} for k in reader.fieldnames if k!=''}
+            for line in reader:
+                abn = int(line[''])  # i can't figure out how to set this column label in the other script
+                for bn in plotvals:  # <bn> is GC name
+                    plotvals[bn][abn] = int(line[bn])
+        else:
+            plotvals = {}
+            for line in reader:
+                plotvals[line['fbase']] = [int(s) for s in line['vlist'].split(':')]
 
-    utils.prep_dir(plotdir, wildlings=['*.csv', '*.svg'])
-
+    # collect values from each GC
     max_vals = []
     distr_hists = []
     for bn in plotvals:
-        max_vals.append(max([a for a, n in plotvals[bn].items() if n>0]))
-        htmp = hutils.make_hist_from_dict_of_counts(plotvals[bn], 'int', bn)
-        if args.max_gc_plots is not None and len(max_vals) <= args.max_gc_plots:
-            fn = htmp.fullplot(plotdir, 'abdn-distr-gc-%s'%bn, pargs={'square_bins' : True, 'errors' : False, 'color' : colors[label]}, fargs={'title' : bn, 'xlabel' : 'abundance', 'ylabel' : 'counts'})
-            lbplotting.add_fn(fnames, fn)
+        if abtype == 'abundances':
+            max_vals.append(max([a for a, n in plotvals[bn].items() if n>0]))
+            htmp = hutils.make_hist_from_dict_of_counts(plotvals[bn], 'int', bn)
+        else:
+            htmp = hutils.make_hist_from_list_of_values(plotvals[bn], 'int', bn)
+        if len(distr_hists) < args.max_gc_plots:
+            nstxt = '%d seqs'%htmp.integral(True, multiply_by_bin_center=abtype=='abundances')
+            mvtxt = 'mean %.1f' % htmp.get_mean()
+            fn = htmp.fullplot(plotdir, '%s-distr-gc-%s'%(abtype, bn), pargs={'square_bins' : True, 'errors' : False, 'color' : colors[label]},
+                               fargs={'title' : bn, 'xlabel' : pltlabels.get(abtype, abtype), 'ylabel' : 'counts', 'title' : '%s: %s'%(label, bn)}, texts=[[0.6, 0.8, nstxt], [0.6, 0.75, mvtxt]])
+            lbplotting.add_fn(fnames, fn, new_row=len(distr_hists)==0)
         distr_hists.append(htmp)
 
-    hmax = hutils.make_hist_from_list_of_values(max_vals, 'int', 'max-abdn')
-    xbounds, ybounds, xticks, yticks, yticklabels = hargs(hmax)
-    hmax.title = label
-    hmax.xtitle = 'max abundance in GC'
-    fn = hmax.fullplot(plotdir, 'max-abdn', pargs={'square_bins' : True, 'remove_empty_bins' : True, 'errors' : False, 'color' : colors[label]},
-                       fargs={'xbounds' : xbounds, 'ybounds' : ybounds, 'yticks' : yticks, 'yticklabels' : yticklabels,
-                              'xlabel' : hmax.xtitle, 'ylabel' : 'counts', 'log' : 'y', 'xticks' : xticks})
-    # fnames[0].append(fn)
+    hmax = None
+    if abtype == 'abundances':
+        hmax = hutils.make_hist_from_list_of_values(max_vals, 'int', 'max-abdn')
+        xbounds, ybounds, xticks, yticks, yticklabels = hargs(hmax)
+        hmax.title = '%s (%d GCs)' % (label, len(max_vals))
+        hmax.xtitle = 'max abundance in GC'
 
+    # plot mean distribution over GCs
     mean_hdistr = plotting.make_mean_hist(distr_hists)
     mean_hdistr.title = '%s (%d GCs)' % (label, len(distr_hists))
-    mean_hdistr.xtitle = 'abundance'
+    mean_hdistr.xtitle = pltlabels.get(abtype, abtype)
     mean_hdistr.ytitle = 'N seqs\nmean+/-std, %d GCs' % len(distr_hists)
     xbounds, ybounds, xticks, yticks, yticklabels = hargs(mean_hdistr)
-    fn = mean_hdistr.fullplot(plotdir, 'abdn', pargs={'remove_empty_bins' : True, 'color' : colors[label]},
-                              fargs={'xbounds' : xbounds, 'ybounds' : ybounds, 'yticks' : yticks, 'yticklabels' : yticklabels,
-                                     'xlabel' : mean_hdistr.xtitle, 'ylabel' : mean_hdistr.ytitle, 'log' : 'y', 'xticks' : xticks})
-    # fnames[0].append(fn)
+
     return {'distr' : mean_hdistr, 'max' : hmax}
 
 # ----------------------------------------------------------------------------------------
-def compare_plots(hname, plotdir, hists, labels):
-    xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists[0])
+def compare_plots(hname, plotdir, hists, labels, abtype):
+    xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists[0]) if abtype=='abundances' else (None, None, None, None, None)
     ytitle = hists[0].ytitle
     if hname == 'distr':
         ytitle = '%s\nmean +/- std' % hists[0].ytitle.split('\n')[0]
-    fn = plotting.draw_no_root(None, plotdir=plotdir, plotname='%s-abdn'%hname, more_hists=hists, log='y', xtitle=hists[0].xtitle, ytitle=ytitle,
+    fn = plotting.draw_no_root(None, plotdir=plotdir, plotname='%s-%s'%(hname, abtype), more_hists=hists, log='y' if abtype=='abundances' else '', xtitle=hists[0].xtitle, ytitle=ytitle,
                                bounds=xbounds, ybounds=ybounds, xticks=xticks, yticks=yticks, yticklabels=yticklabels, errors=hname!='max', square_bins=hname=='max', linewidths=[4, 3], plottitle='',
                                alphas=[0.6, 0.6], colors=[colors[l] for l in labels])
     fnames[0].append(fn)
@@ -142,7 +150,7 @@ parser.add_argument('--outdir')
 parser.add_argument('--mice', default=[1, 2, 3, 4, 5, 6], help='restrict to these mouse numbers')
 parser.add_argument('--is-simu', action='store_true')
 parser.add_argument('--gcdyn-dir', default='%s/work/partis/projects/gcdyn'%os.getenv('HOME'))
-parser.add_argument('--max-gc-plots', type=int, default=2, help='only plot individual (per-GC) plots for this  many GCs')
+parser.add_argument('--max-gc-plots', type=int, default=1, help='only plot individual (per-GC) plots for this  many GCs')
 args = parser.parse_args()
 
 dlabels = []
@@ -151,15 +159,22 @@ if args.data_dir is not None:
 if args.simu_dir is not None:
     dlabels.append([args.simu_dir, 'simu'])
 
-hclists, fnames = {'distr' : [], 'max' : []}, [[], [], []]
+abtypes = ['abundances', 'hdists']
+hclists = {t : {'distr' : [], 'max' : []} for t in abtypes}
+fnames = [[], [], []]
 for idir, tlab in dlabels:
-    calc_abdn(idir, tlab, is_simu=tlab=='simu')
-    lhists = plot('%s/plots/%s'%(args.outdir, tlab), tlab)
-    for hn in lhists:
-        hclists[hn].append(lhists[hn])
+    parse_fastas(idir, tlab, is_simu=tlab=='simu')
+    utils.prep_dir('%s/plots/%s'%(args.outdir, tlab), wildlings=['*.csv', '*.svg'])
+    for abtype in abtypes:
+        lhists = plot('%s/plots/%s'%(args.outdir, tlab), tlab, abtype)
+        for hn in lhists:
+            hclists[abtype][hn].append(lhists[hn])
 
 cfpdir = '%s/plots/comparisons' % args.outdir
 utils.prep_dir(cfpdir, wildlings=['*.csv', '*.svg'])
-for hname, hlist in hclists.items():
-    compare_plots(hname, cfpdir, hlist, [l for _, l in dlabels])
+for abtype in abtypes:
+    for hname, hlist in hclists[abtype].items():
+        if hlist.count(None) == len(hlist):
+            continue
+        compare_plots(hname, cfpdir, hlist, [l for _, l in dlabels], abtype)
 plotting.make_html(args.outdir+'/plots', fnames=fnames)
