@@ -137,7 +137,6 @@ cp $GC_DEF.fasta $OUTDIR
 
 # Run inference on sequences, 
 TMPDIR="/tmp"
-#mkdir -p ${GC_DEF}-gctree-infer-output/  # all trees
 xvfb-run -a gctree infer outfile abundances.csv \
     --idmapfile $GC_DEF.idmap \
     --isotype_mapfile $GC_DEF.isotypemap \
@@ -155,7 +154,6 @@ echo \(LOG\) done: gctree
 cp gctree.inference.log ${OUTDIR}
 
 # Run will's featurize code
-#mkdir -p ${GC_DEF}-featurize-output/     # featurized rank 1 trees? could cobine with below 
 xvfb-run -a gcreplay-tools.py featurize-nodes \
     ${OUTDIR}/gctree.inference.1.p \
     ${GC_DEF}.idmap \
@@ -169,16 +167,5 @@ xvfb-run -a gcreplay-tools.py featurize-nodes \
     --igk_idx ${IGK_IDX} \
     --output_dir ${OUTDIR}
 
-mv $GC_DEF.idmap ${OUTDIR}/
 echo \(LOG\) done: Viz
-
-
-# PB/MB Cells
-# Just nead to add DMS info to the df.
-# else
-
-
-
-
 fi
-
