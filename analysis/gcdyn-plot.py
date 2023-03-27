@@ -62,7 +62,7 @@ def abfn(tlab, abtype='abundances'):
 
 # ----------------------------------------------------------------------------------------
 def parse_fastas(indir, label, is_simu):
-    fn_fns = glob.glob('%s/*.fasta'%indir)
+    fn_fns = glob.glob('%s/%s*.fasta' % (indir, 'seqs_' if is_simu else 'annotated-'))
     if not is_simu:
         fn_fns = filter_mice(fn_fns)
     if len(fn_fns) == 0:
@@ -71,10 +71,13 @@ def parse_fastas(indir, label, is_simu):
     utils.simplerun(cmd)
 
 # ----------------------------------------------------------------------------------------
-def hargs(htmp):
-    xbounds = [0.5, htmp.xmax+0.5]
-    xticks = list(range(1, int(htmp.xmax)+1, 2))
-    ybounds = [0.9 * htmp.get_minimum(exclude_empty=True), 1.1 * htmp.get_maximum()]
+def hargs(hlist):
+    xmax = max(h.xmax for h in hlist)
+    xbounds = [0.5, xmax+0.5]
+    xticks = list(range(1, int(xmax)+1, 2 if xmax<10 else 5))
+    ymin = min(h.get_minimum(exclude_empty=True) for h in hlist)
+    ymax = max(h.get_maximum() for h in hlist)
+    ybounds = [0.9 * ymin, 1.1 * ymax]
     yticks, yticklabels = plotting.get_auto_y_ticks(ybounds[0], ybounds[1])
     ybounds = [yticks[0], yticks[-1]]
     return xbounds, ybounds, xticks, yticks, yticklabels
@@ -108,35 +111,35 @@ def plot(plotdir, label, abtype):
             nstxt = '%d seqs'%htmp.integral(True, multiply_by_bin_center=abtype=='abundances')
             mvtxt = 'mean %.1f' % htmp.get_mean()
             fn = htmp.fullplot(plotdir, '%s-distr-gc-%s'%(abtype, bn), pargs={'square_bins' : True, 'errors' : False, 'color' : colors[label]},
-                               fargs={'title' : bn, 'xlabel' : pltlabels.get(abtype, abtype), 'ylabel' : 'counts', 'title' : '%s: %s'%(label, bn)}, texts=[[0.6, 0.8, nstxt], [0.6, 0.75, mvtxt]])
+                               fargs={'title' : bn, 'xlabel' : pltlabels.get(abtype, abtype), 'ylabel' : 'counts', 'log' : 'y', 'title' : '%s: %s'%(label, bn)}, texts=[[0.6, 0.8, nstxt], [0.6, 0.75, mvtxt]])
             lbplotting.add_fn(fnames, fn, new_row=len(distr_hists)==0)
         distr_hists.append(htmp)
 
     hmax = None
     if abtype == 'abundances':
         hmax = hutils.make_hist_from_list_of_values(max_vals, 'int', 'max-abdn')
-        xbounds, ybounds, xticks, yticks, yticklabels = hargs(hmax)
-        hmax.title = '%s (%d GCs)' % (label, len(max_vals))
+        xbounds, ybounds, xticks, yticks, yticklabels = hargs([hmax])
+        hmax.title = '%s (mean %.1f)' % (label, hmax.get_mean())
         hmax.xtitle = 'max abundance in GC'
 
     # plot mean distribution over GCs
     mean_hdistr = plotting.make_mean_hist(distr_hists)
-    mean_hdistr.title = '%s (%d GCs)' % (label, len(distr_hists))
+    mean_hdistr.title = '%s (mean %.1f)' % (label, mean_hdistr.get_mean())
     mean_hdistr.xtitle = pltlabels.get(abtype, abtype)
     mean_hdistr.ytitle = 'N seqs\nmean+/-std, %d GCs' % len(distr_hists)
-    xbounds, ybounds, xticks, yticks, yticklabels = hargs(mean_hdistr)
+    xbounds, ybounds, xticks, yticks, yticklabels = hargs([mean_hdistr])
 
     return {'distr' : mean_hdistr, 'max' : hmax}
 
 # ----------------------------------------------------------------------------------------
 def compare_plots(hname, plotdir, hists, labels, abtype):
-    xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists[0]) if abtype=='abundances' else (None, None, None, None, None)
+    xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists) if abtype=='abundances' else (None, None, None, None, None)
     ytitle = hists[0].ytitle
     if hname == 'distr':
         ytitle = '%s\nmean +/- std' % hists[0].ytitle.split('\n')[0]
     fn = plotting.draw_no_root(None, plotdir=plotdir, plotname='%s-%s'%(hname, abtype), more_hists=hists, log='y' if abtype=='abundances' else '', xtitle=hists[0].xtitle, ytitle=ytitle,
                                bounds=xbounds, ybounds=ybounds, xticks=xticks, yticks=yticks, yticklabels=yticklabels, errors=hname!='max', square_bins=hname=='max', linewidths=[4, 3], plottitle='',
-                               alphas=[0.6, 0.6], colors=[colors[l] for l in labels])
+                               alphas=[0.6, 0.6], colors=[colors[l] for l in labels], translegend=[-0.2, 0], write_csv=True, hfile_labels=labels)
     fnames[0].append(fn)
 
 # ----------------------------------------------------------------------------------------
@@ -150,7 +153,7 @@ parser.add_argument('--outdir')
 parser.add_argument('--mice', default=[1, 2, 3, 4, 5, 6], help='restrict to these mouse numbers')
 parser.add_argument('--is-simu', action='store_true')
 parser.add_argument('--gcdyn-dir', default='%s/work/partis/projects/gcdyn'%os.getenv('HOME'))
-parser.add_argument('--max-gc-plots', type=int, default=1, help='only plot individual (per-GC) plots for this  many GCs')
+parser.add_argument('--max-gc-plots', type=int, default=3, help='only plot individual (per-GC) plots for this  many GCs')
 args = parser.parse_args()
 
 dlabels = []
