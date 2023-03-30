@@ -6,6 +6,7 @@ import os
 import glob
 import argparse
 import colored_traceback.always
+import json
 
 # if you move this script, you'll need to change this method of getting the imports
 partis_dir = '%s/work/partis' % os.getenv('HOME') #os.path.dirname(os.path.realpath(__file__)).replace('/bin', '')
@@ -16,6 +17,7 @@ import glutils
 import plotting
 import lbplotting
 import hutils
+from hist import Hist
 
 # ----------------------------------------------------------------------------------------
 colors = {'data' : plotting.default_colors[1],
@@ -132,7 +134,27 @@ def plot(plotdir, label, abtype):
     return {'distr' : mean_hdistr, 'max' : hmax}
 
 # ----------------------------------------------------------------------------------------
-def compare_plots(hname, plotdir, hists, labels, abtype):
+def hist_distance(h1, h2, dbgstr='hist', weighted=False, debug=True):
+    if debug:
+        print weighted
+        print '    %s distance:' % dbgstr
+        print '      xval     v1      v2    diff'
+    xvals = sorted(set(x for h in [h1, h2] for x in h.get_bin_centers()))
+    dvals = []
+    for xval in xvals:
+        ib1, ib2 = [h.find_bin(xval) for h in [h1, h2]]
+        if not h1.is_overflow(ib1) and not h2.is_overflow(ib2):
+            if h1.low_edges[ib1] != h2.low_edges[ib2]:
+                raise Exception('h1 low edge %.3f (ibin %d) doesn\'t equal h2 low edge %.3f (ibin %d)' % (h1.low_edges[ib1], ib1, h2.low_edges[ib2], ib2))
+        v1, v2 = [0. if h.is_overflow(i) else h.bin_contents[i] for h, i in zip([h1, h2], [ib1, ib2])]  # NOTE ignores contents of over and underflow bins, which isn't great, but there shouldn't be any?
+        dvals.append((xval if weighted else 1) * abs(v1 - v2))
+        if debug:
+            def fstr(v): return utils.color('blue', '-', width=6) if v==0 else '%6.2f'%v
+            print '      %3.0f  %s  %s  %s' % (xval, fstr(v1), fstr(v2), fstr(dvals[-1]))
+    return sum(dvals)
+
+# ----------------------------------------------------------------------------------------
+def compare_plots(hname, plotdir, hists, labels, abtype, diff_vals):
     xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists) if abtype=='abundances' else (None, None, None, None, None)
     ytitle = hists[0].ytitle
     if hname == 'distr':
@@ -141,6 +163,10 @@ def compare_plots(hname, plotdir, hists, labels, abtype):
                                bounds=xbounds, ybounds=ybounds, xticks=xticks, yticks=yticks, yticklabels=yticklabels, errors=hname!='max', square_bins=hname=='max', linewidths=[4, 3], plottitle='',
                                alphas=[0.6, 0.6], colors=[colors[l] for l in labels], translegend=[-0.2, 0], write_csv=True, hfile_labels=labels)
     fnames[0].append(fn)
+
+    hdict = {l : h for l, h in zip(labels, hists)}
+    dname = '%s-%s'%(hname, abtype)
+    diff_vals[dname] = hist_distance(hdict['simu'], hdict['data'], weighted='abundances' in abtype, dbgstr=dname)
 
 # ----------------------------------------------------------------------------------------
 ustr = """
@@ -175,9 +201,14 @@ for idir, tlab in dlabels:
 
 cfpdir = '%s/plots/comparisons' % args.outdir
 utils.prep_dir(cfpdir, wildlings=['*.csv', '*.svg'])
+diff_vals = {}
 for abtype in abtypes:
     for hname, hlist in hclists[abtype].items():
         if hlist.count(None) == len(hlist):
             continue
-        compare_plots(hname, cfpdir, hlist, [l for _, l in dlabels], abtype)
+        compare_plots(hname, cfpdir, hlist, [l for _, l in dlabels], abtype, diff_vals)
+
 plotting.make_html(args.outdir+'/plots', fnames=fnames)
+dfn = '%s/diff-vals.yaml' % args.outdir
+with open(dfn, 'w') as dfile:
+    json.dump(diff_vals, dfile)
