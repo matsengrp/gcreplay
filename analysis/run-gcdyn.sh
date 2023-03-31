@@ -1,9 +1,11 @@
 #!/bin/bash
 
-common="--final-plot-xvar xshift"
-echo ./projects/cf-gcdyn.py --actions simu --version v1 --birth-response-list constant:soft-relu:soft-relu:soft-relu --xscale-list 1:1:2:3 --zip-vars birth-response:xscale --n-replicates 2
-echo ./projects/cf-gcdyn.py --actions simu:process --version v2 --birth-response-list soft-relu --xscale-list 0.1:1:10 --xshift-list=-5:-1:0:1:5 --n-replicates 2 --dry
-echo ./projects/cf-gcdyn.py --actions simu:process --version v3 --birth-response-list sigmoid --xscale-list 0.1:1:10 --xshift-list=-5:-1:0:1:5 --n-replicates 2 --dry
+common="--final-plot-xvar xshift --dry --n-replicates 2"
+echo ./projects/cf-gcdyn.py --actions simu --version v1 --birth-response-list constant:soft-relu:soft-relu:soft-relu --xscale-list 1:1:2:3 --zip-vars birth-response:xscale $commone
+xscales=0.1:1:5:10
+xshifts=-5:-2:-1:0:1:2:5
+echo ./projects/cf-gcdyn.py --actions simu:process --version v2 --birth-response-list soft-relu --xscale-list $xscales --xshift-list=$xshifts $common
+echo ./projects/cf-gcdyn.py --actions simu:process --version v3 --birth-response-list sigmoid --xscale-list $xscales --xshift-list=$xshifts $common
 exit 0
 
 vsn=test-v2

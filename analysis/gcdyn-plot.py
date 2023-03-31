@@ -134,11 +134,12 @@ def plot(plotdir, label, abtype):
     return {'distr' : mean_hdistr, 'max' : hmax}
 
 # ----------------------------------------------------------------------------------------
+# NOTE may be better to eventually switch to optimal transport rather than this weighted average/center of mass approach
+# NOTE may also/instead want to use log of y difference (The max abundance seems ok, but the high tail of the abundance distr is getting totally washed out/overwhelmed by the low end)
 def hist_distance(h1, h2, dbgstr='hist', weighted=False, debug=True):
     if debug:
-        print weighted
-        print '    %s distance:' % dbgstr
-        print '      xval     v1      v2    diff'
+        print '    %s distance%s:' % (dbgstr, ' (weighted)' if weighted else '')
+        print '      xval     v1      v2    abs diff'
     xvals = sorted(set(x for h in [h1, h2] for x in h.get_bin_centers()))
     dvals = []
     for xval in xvals:
@@ -151,6 +152,8 @@ def hist_distance(h1, h2, dbgstr='hist', weighted=False, debug=True):
         if debug:
             def fstr(v): return utils.color('blue', '-', width=6) if v==0 else '%6.2f'%v
             print '      %3.0f  %s  %s  %s' % (xval, fstr(v1), fstr(v2), fstr(dvals[-1]))
+    if debug:
+        print '    %.1f' % sum(dvals)
     return sum(dvals)
 
 # ----------------------------------------------------------------------------------------
