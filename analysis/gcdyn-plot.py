@@ -22,7 +22,7 @@ from hist import Hist
 # ----------------------------------------------------------------------------------------
 colors = {'data' : plotting.default_colors[1],
           'simu' : plotting.default_colors[0]}
-pltlabels = {'hdists' : 'root-tip dist'}
+pltlabels = {'hdists' : 'root-tip dist', 'max-abdn-shm' : 'median SHM of seqs\nw/max abundance'}
 
 # ----------------------------------------------------------------------------------------
 def parse_name(fn):  # convert .fa name to mouse #, etc
@@ -191,7 +191,7 @@ if args.data_dir is not None:
 if args.simu_dir is not None:
     dlabels.append([args.simu_dir, 'simu'])
 
-abtypes = ['abundances', 'hdists']
+abtypes = ['abundances', 'hdists', 'max-abdn-shm']
 hclists = {t : {'distr' : [], 'max' : []} for t in abtypes}
 fnames = [[], [], []]
 for idir, tlab in dlabels:
