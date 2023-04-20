@@ -20,7 +20,6 @@ RUN apt-get update --fix-missing -qq && \
     libbz2-dev \
     pkg-config
 
-
 # install graphical libraries used by qt and vispy
 RUN apt-get install -y xvfb
 RUN apt-get install -qqy mesa-utils libgl1-mesa-glx  libglib2.0-0
