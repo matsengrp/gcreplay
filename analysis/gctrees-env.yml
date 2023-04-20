@@ -12,4 +12,6 @@ dependencies:
   - gctree
   - git-lfs
   - pip
-   - jaxopt
+  - pip:
+    - jaxopt
+    - openpyxl  # for reading excel files
