@@ -21,12 +21,30 @@ RUN apt-get update --fix-missing -qq && \
     openjdk-8-jre \
     openjdk-8-jdk
 
+# For this to work with a singularity wrapper
+# we have top move it somewhere other than root
+ENV PATH="/opt/miniconda3/bin:${PATH}"
+ARG PATH="/opt/miniconda3/bin:${PATH}"
+
+# install python deps
+RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+RUN wget \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && mkdir /opt/.conda \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
+    # ./Miniconda3-py38_4.8.3-Linux-x86_64.sh -b\
+
+# install phylip
+RUN conda install pip
+RUN pip install biopython==1.81
+
 RUN git clone --depth=1 https://github.com/beagle-dev/beagle-lib.git \
     && mkdir beagle-lib/build \
-    && (cd beagle-lib/build && cmake -DBUILD_OPENCL=OFF -DCMAKE_INSTALL_PREFIX:PATH=$HOME .. && make install)
+    && (cd beagle-lib/build && cmake -DBUILD_OPENCL=OFF -DCMAKE_INSTALL_PREFIX:PATH=/ .. && make install)
 
-ENV LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
-ENV PKG_CONFIG_PATH=$HOME/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV LD_LIBRARY_PATH=/lib
+ENV PKG_CONFIG_PATH=/lib/pkgconfig
 
 # install BEAST
 RUN curl -fsSL --proto '=https' \
@@ -46,4 +64,5 @@ RUN curl -fsSL --proto '=https' \
 
 COPY ./BEASTGen_v1.0.2.tgz .
 RUN tar -zxvf BEASTGen_v1.0.2.tgz \
+    && chmod +x /BEASTGen_v1.0.2/bin/beastgen \
     && (cd /bin && ln -s /BEASTGen_v1.0.2/bin/beastgen ./beastgen)
