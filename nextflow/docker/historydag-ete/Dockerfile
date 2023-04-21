@@ -9,7 +9,6 @@ LABEL maintainer "Jared Galloway <jgallowa@fredhutch.rg>" \
 RUN apt-get update --fix-missing -qq && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y -q \
-    cmake \
     build-essential \
     autoconf \
     automake \
@@ -26,34 +25,20 @@ RUN apt-get update --fix-missing -qq && \
 ENV PATH="/opt/miniconda3/bin:${PATH}"
 ARG PATH="/opt/miniconda3/bin:${PATH}"
 
-# install python deps
+# wget for anaconda
 RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+
+# install to the directory set above
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /opt/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
     && rm -f Miniconda3-latest-Linux-x86_64.sh
 
-# install phylip
+# TODO if you want viz, we need to get python3.9 (<3.10)?
 RUN conda install pip
-RUN pip install biopython==1.81
+RUN pip install pandas numpy biopython seaborn matplotlib ete3 dendropy regex
 
-RUN git clone --depth=1 https://github.com/beagle-dev/beagle-lib.git \
-    && mkdir beagle-lib/build \
-    && (cd beagle-lib/build && cmake -DBUILD_OPENCL=OFF -DCMAKE_INSTALL_PREFIX:PATH=/ .. && make install)
-
-ENV LD_LIBRARY_PATH=/lib
-ENV PKG_CONFIG_PATH=/lib/pkgconfig
-
-# install BEAST
-RUN curl -fsSL --proto '=https' \
-    https://github.com/beast-dev/beast-mcmc/releases/download/v1.10.4/BEASTv1.10.4.tgz \
-    --output BEASTv1.10.4.tgz \
-    && tar -zxvf BEASTv1.10.4.tgz \
-    && (cd /bin && ln -s /BEASTv1.10.4/bin/beast ./beast)
-
-# install BEASTGen    
-COPY ./BEASTGen_v1.0.2.tgz .
-RUN tar -zxvf BEASTGen_v1.0.2.tgz \
-    && chmod +x /BEASTGen_v1.0.2/bin/beastgen \
-    && (cd /bin && ln -s /BEASTGen_v1.0.2/bin/beastgen ./beastgen)
+# currently the ete code lives only in a branch
+RUN git clone https://github.com/matsengrp/historydag.git \
+    && (cd historydag && git checkout wd-load-beast-trees && pip install -e .)
