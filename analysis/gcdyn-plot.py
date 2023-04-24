@@ -108,7 +108,7 @@ def plot(plotdir, label, abtype):
             max_vals.append(max([a for a, n in plotvals[bn].items() if n>0]))
             htmp = hutils.make_hist_from_dict_of_counts(plotvals[bn], 'int', bn)
         else:
-            htmp = hutils.make_hist_from_list_of_values(plotvals[bn], 'int', bn)
+            htmp = hutils.make_hist_from_list_of_values(plotvals[bn], 'int', bn) #, xmin_force=-0.5 if abtype=='max-abdn-shm' else None)
         if len(distr_hists) < args.max_gc_plots:
             nstxt = '%d seqs'%htmp.integral(True, multiply_by_bin_center=abtype=='abundances')
             mvtxt = 'mean %.1f' % htmp.get_mean()
@@ -136,7 +136,7 @@ def plot(plotdir, label, abtype):
 # ----------------------------------------------------------------------------------------
 # NOTE may be better to eventually switch to optimal transport rather than this weighted average/center of mass approach
 # NOTE may also/instead want to use log of y difference (The max abundance seems ok, but the high tail of the abundance distr is getting totally washed out/overwhelmed by the low end)
-def hist_distance(h1, h2, dbgstr='hist', weighted=False, debug=True):
+def hist_distance(h1, h2, dbgstr='hist', weighted=False, debug=False):
     if debug:
         print '    %s distance%s:' % (dbgstr, ' (weighted)' if weighted else '')
         print '      xval     v1      v2    abs diff'
@@ -168,8 +168,9 @@ def compare_plots(hname, plotdir, hists, labels, abtype, diff_vals):
     fnames[0].append(fn)
 
     hdict = {l : h for l, h in zip(labels, hists)}
-    dname = '%s-%s'%(hname, abtype)
-    diff_vals[dname] = hist_distance(hdict['simu'], hdict['data'], weighted='abundances' in abtype, dbgstr=dname)
+    if abtype != 'max-abdn-shm':  # min/max aren't the same for all hists, so doesn't work yet
+        dname = '%s-%s'%(hname, abtype)
+        diff_vals[dname] = hist_distance(hdict['simu'], hdict['data'], weighted='abundances' in abtype, dbgstr=dname)
 
 # ----------------------------------------------------------------------------------------
 ustr = """
