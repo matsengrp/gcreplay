@@ -47,7 +47,7 @@ Rockefeller University, New York NY.
 
 
 process ADD_TIME_TO_FASTA {
-  container 'e3286480f1a3'
+  container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast-timetrees/", mode: "copy"
   input: path(observed_seqs)
   output: path("*_with_time.fasta")
@@ -60,8 +60,10 @@ process ADD_TIME_TO_FASTA {
 //  --fasta $observed_seqs
 
 process BEAST_TIMETREE {
+  label 'large'
   stageInMode 'copy' // I guess beast doesn't like symlinks
-  container 'e3286480f1a3'
+  // container 'e3286480f1a3'
+  container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast" //, mode: "copy" # no need to 
   input: tuple path(observed_seqs_with_time), path(beast_template)
   output: path("btt-*")
@@ -70,7 +72,9 @@ process BEAST_TIMETREE {
 }
 
 process ETE_CONVERSION {
-  container '1cffc7cc2f04'
+  // container '1cffc7cc2f04'
+  label 'large'
+  container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
   publishDir "$params.results/ete" //, mode: "copy" # no need to 
   input: path(beast_output)
   output: path("ete-*")
