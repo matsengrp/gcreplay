@@ -1,13 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-# CHAIN_LENGTH=50000000
-# LOG_EVERY=10000
-CHAIN_LENGTH=5000
-LOG_EVERY=100
+CHAIN_LENGTH=!{params.chain_length}
+LOG_EVERY=!{params.log_every}
 
 CPUS=!{task.cpus}
-FILENAME=!{observed_seqs_with_time}
+FILENAME=!{seqs_with_time}
 BEAST_TEMPLATE=!{beast_template}
 
 # _with_time is added before, strip that
