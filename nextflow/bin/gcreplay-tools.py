@@ -1069,6 +1069,5 @@ def merge_results(
 
 
 # TODO We need this until we get setup.py
-# for a real mf python package.
 if __name__ == '__main__':
     cli()
