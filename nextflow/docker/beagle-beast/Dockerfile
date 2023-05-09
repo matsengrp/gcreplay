@@ -33,7 +33,6 @@ RUN wget \
     && mkdir /opt/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
     && rm -f Miniconda3-latest-Linux-x86_64.sh
-    # ./Miniconda3-py38_4.8.3-Linux-x86_64.sh -b\
 
 # install phylip
 RUN conda install pip
@@ -52,16 +51,8 @@ RUN curl -fsSL --proto '=https' \
     --output BEASTv1.10.4.tgz \
     && tar -zxvf BEASTv1.10.4.tgz \
     && (cd /bin && ln -s /BEASTv1.10.4/bin/beast ./beast)
-    
-# install BEASTGEN
-# Note: this was downloaded from google drive which doesn't easily allow 
-# for curling a specific file. The command below returns a 400 error
-#RUN curl -fsSL --proto '=https' 
-#    https://drive.google.com/file/d/0B37cqWL7UhTAVFVhQ2o1Y093b1k \
-#    --output BEASTGen_v1.0.2.tgz \ 
-#    && tar -xvf BEASTGen_v1.0.2.tgz \
-#    && (cd /bin && ln -s /BEASTGen_v1.0.2/bin/beastgen ./beastgen)
 
+# install BEASTGen    
 COPY ./BEASTGen_v1.0.2.tgz .
 RUN tar -zxvf BEASTGen_v1.0.2.tgz \
     && chmod +x /BEASTGen_v1.0.2/bin/beastgen \
