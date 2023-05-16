@@ -5,8 +5,8 @@
 
 
 /*
- * 'gcre-flow' - A Nextflow pipeline for running gc analysis workflow
- * smart-seq analysis
+ * 'beast-flow' Run beast on gcreplay data
+ * 
  *
  * Fred Hutchinson Cancer Research Center, Seattle WA.
  * Rockefeller University, New York NY.
@@ -31,7 +31,7 @@ nextflow.enable.dsl = 2
  */
 
 params.seqs    = "$projectDir/data/beast/test-observed-seqs.fasta"
-params.beast_template   = "$projectDir/data/beast/beast_templates/skyline_histlog.template"
+params.beast_template   = "$projectDir/data/beast/beast_templates/skyline_histlog.template.patch"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.results          = "$projectDir/results"
@@ -59,20 +59,46 @@ process ADD_TIME_TO_FASTA {
   """
 }
 
+process BEASTGEN {
+  label 'large'
+  stageInMode 'copy' // I guess beast doesn't like symlinks
+  container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
+  input: tuple path(seqs_with_time), path(beast_template)
+  output: path("btt-*")
+  shell:
+  template "beastgen.sh"
+}
+
+process NAIVE_ROOT_PATCH {
+  container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
+  publishDir "$params.results/beastgen"
+  input: path(beastgen_output)
+  output: path(beastgen_output)
+  shell:
+  """
+  beast_template_root_fix.py \
+    --templated_beast_xml_path $beastgen_output/beastgen.xml \
+    --out_path $beastgen_output/beastgen.naiveroot.xml
+  """  
+}
+
 process BEAST_TIMETREE {
   label 'large'
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast"
-  input: tuple path(seqs_with_time), path(beast_template)
-  output: path("btt-*")
+  input: path(beastgen_output)
+  output: path(beastgen_output)
   shell:
-  template "beast_time_tree.sh"
+  """
+  beast -threads $task.cpus -prefix beast -working $beastgen_output/beastgen.naiveroot.xml
+  """
+
 }
 
 process ETE_CONVERSION {
   errorStrategy 'retry'
-  maxRetries 3
+  maxRetries 1
   label 'mem_large'
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
   publishDir "$params.results/ete", mode: "copy" 
@@ -83,7 +109,7 @@ process ETE_CONVERSION {
   BEAST_OUTDIR=$beast_output
   OUTDIR=ete-\${BEAST_OUTDIR#"btt-"}
   beast2ete.py \
-    --xml_file $beast_output/beastgen.xml \
+    --xml_file $beast_output/beastgen.naiveroot.xml \
     --nexus_file $beast_output/*.history.trees \
     --dms_df $params.dms_vscores \
     --pos_df $params.dms_sites \
@@ -92,14 +118,39 @@ process ETE_CONVERSION {
   """
 }
 
+process MERGE_SLICE_DFS {
+  label 'mem_large'
+  container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
+  input: path(all_ete_outputs)
+  publishDir "$params.results/phenotype_trajectory", mode: "copy" 
+  output: path("slice_df.csv")
+  script:
+  """
+  #!/usr/bin/env python  
+  import glob
+  import pandas as pd
+
+  pd.concat(
+    [
+      pd.read_csv(f"{ete_dir}/slice_df.csv")
+      for ete_dir in glob.glob('ete-*')
+    ]
+  ).to_csv("slice_df.csv", index=False)
+  """
+}
 
 workflow {
 
-    obs = Channel.fromPath("$params.seqs")
-    obs | ADD_TIME_TO_FASTA | set {obs_w_time}
+    seqs = Channel.fromPath("$params.seqs")
     beast_template = Channel.fromPath("$params.beast_template")
-    obs_w_time.combine(beast_template) | BEAST_TIMETREE 
-    BEAST_TIMETREE.out | ETE_CONVERSION
+
+    seqs | ADD_TIME_TO_FASTA | combine(beast_template) \
+        | BEASTGEN 
+        | NAIVE_ROOT_PATCH \
+        | BEAST_TIMETREE \
+        | ETE_CONVERSION \
+        | collect | set {all_slice_dfs}
+    MERGE_SLICE_DFS(all_slice_dfs) | view()
 
 }
 

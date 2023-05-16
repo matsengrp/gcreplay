@@ -3,7 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+analysis/beast/output/
+nextflow/data/beast/annotated-PR-1-6-1-LB-19-GC.fasta
+**/building-xvfb/
+**/work
+
 containers/
+
+**/Attic
+**/daemon.json
 
 # C extensions
 *.so

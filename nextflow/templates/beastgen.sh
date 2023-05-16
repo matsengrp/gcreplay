@@ -4,7 +4,7 @@ set -euo pipefail
 CHAIN_LENGTH=!{params.chain_length}
 LOG_EVERY=!{params.log_every}
 
-CPUS=!{task.cpus}
+# CPUS=!{task.cpus}
 FILENAME=!{seqs_with_time}
 BEAST_TEMPLATE=!{beast_template}
 
@@ -25,4 +25,4 @@ beastgen \
     $FILENAME \
     $OUTDIR/beastgen.xml
 
-beast -threads ${CPUS} -prefix beast -working $OUTDIR/beastgen.xml
+# beast -threads ${CPUS} -prefix beast -working $OUTDIR/beastgen.xml
