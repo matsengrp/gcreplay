@@ -91,9 +91,9 @@ if __name__ == '__main__':
                 current_phenotypes = node.up.phenotypes
                 for mut_event in node.mutations:
 
-                    if mut_event.age < age:
+                    if mut_event['age'] < age:
                         break
-                    current_phenotypes = mut_event.phenotypes
+                    current_phenotypes = mut_event['phenotypes']
 
                 slice_population.append(current_phenotypes)
 
@@ -129,9 +129,9 @@ if __name__ == '__main__':
                     nodes.append(
                         [
                             tree_idx, 
-                            mut_event.age, 
-                            mut_event.phenotypes.delta_bind_CGG, 
-                            mut_event.phenotypes.delta_expr
+                            mut_event["age"], 
+                            mut_event["phenotypes"].delta_bind_CGG, 
+                            mut_event["phenotypes"].delta_expr
                         ]
                     )
 

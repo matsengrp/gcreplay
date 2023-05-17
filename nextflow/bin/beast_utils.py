@@ -1,12 +1,9 @@
 import ete3
 from historydag import beast_loader
-from collections import namedtuple
 from functools import partial
+import numpy as np
 
 
-mutation_event = namedtuple(
-    "mutation_event", ["site", "ancestral", "derived", "age", "time_to_event", "phenotypes"]
-)
 
 
 def beast_trees_as_ete(
@@ -74,7 +71,11 @@ def set_dendropy_tree_node_ages(tree):
     leaf nodes may not be exactly 0.0 due to floating point arithmetic.
     """
     last_time = max(tree.calc_node_root_distances())
-    age_function = lambda node: last_time - node.root_distance
+    def age_function(node): 
+        age = last_time - node.root_distance
+        if np.isclose(age, 0): return 0.0
+        return age
+
     tree.calc_node_ages(set_node_age_fn=age_function)
     return None
 
@@ -107,6 +108,7 @@ def beast_dendropy_to_ete(tree, phenotype_fn):
         ete_node.age = dendropy_node.age
         ete_node.mutations = []
         ete_node.phenotypes = phenotype_fn(ete_node.sequence)
+
         for child in dendropy_node.child_nodes():
             node_label = child.taxon.label if child.taxon else None
             ete_child = ete3.Tree(name=node_label, dist=child.edge_length)
@@ -121,13 +123,14 @@ def beast_dendropy_to_ete(tree, phenotype_fn):
                 site -= 1
                 time_to_event = previous_event_age - age
                 parent_sequence[site] = derived
-                event = mutation_event(
-                        site, 
-                        ancestral, 
-                        derived, 
-                        age, 
-                        time_to_event, 
-                        phenotype_fn("".join(parent_sequence))
+
+                event = dict(
+                        site=site,
+                        ancestral=ancestral,
+                        derived=derived,
+                        age=age,
+                        time_to_event=time_to_event,
+                        phenotypes=phenotype_fn("".join(parent_sequence))
                 )
 
                 ete_node.mutations.append(event)
