@@ -46,8 +46,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not os.path.exists(args.outdir): os.mkdir(args.outdir)
-    print(args.save_pkl_trees)
-    # assert False
     if args.save_pkl_trees:
         if not os.path.exists(f"{args.outdir}/pkl_ete_trees"): os.mkdir(f"{args.outdir}/pkl_ete_trees")
     naive_sequence=naive_hk_bcr_nt 
