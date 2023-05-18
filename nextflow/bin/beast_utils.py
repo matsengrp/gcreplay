@@ -63,6 +63,24 @@ def dendropy_trees_from_beast(
     return tree_start_idx, beast_trees[tree_start_idx:]
 
 
+#def set_dendropy_tree_node_ages(tree):
+#    """
+#    Set the age and root_distance attributes (in place) of nodes in tree. The
+#    age of a node is taken to be longest path from the root to any leaf minus
+#    the length of the path from the root to the given node. The age of non-naive
+#    leaf nodes may not be exactly 0.0 due to floating point arithmetic.
+#    """
+#    last_time = max(tree.calc_node_root_distances())
+#    def age_function(node): 
+#        age = last_time - node.root_distance
+#        if node.is_leaf():
+#            age = round(age, 6)
+#            assert age < node.up.age
+#        return age
+#    tree.calc_node_ages(set_node_age_fn=age_function)
+#    return None
+
+
 def set_dendropy_tree_node_ages(tree):
     """
     Set the age and root_distance attributes (in place) of nodes in tree. The
@@ -71,13 +89,14 @@ def set_dendropy_tree_node_ages(tree):
     leaf nodes may not be exactly 0.0 due to floating point arithmetic.
     """
     last_time = max(tree.calc_node_root_distances())
-    def age_function(node): 
-        age = last_time - node.root_distance
-        if np.isclose(age, 0): return 0.0
-        return age
-
+    age_function = lambda node: last_time - node.root_distance
     tree.calc_node_ages(set_node_age_fn=age_function)
+
+    for node in tree.leaf_node_iter():
+        node.age = round(node.age)
+
     return None
+
 
 
 def format_history_all(history_all_string):

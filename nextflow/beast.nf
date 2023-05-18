@@ -38,6 +38,7 @@ params.results          = "$projectDir/results"
 params.chain_length     = 50000000
 params.log_every        = 10000
 params.burn_frac        = 0.9
+params.save_pkl_trees    = false
 
 log.info """\
 G C Re - F L O W (beast)!
@@ -49,6 +50,7 @@ Rockefeller University, New York NY.
 
 
 process ADD_TIME_TO_FASTA {
+  label 'small'
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast-input/", mode: "copy"
   input: path(seqs)
@@ -60,7 +62,7 @@ process ADD_TIME_TO_FASTA {
 }
 
 process BEASTGEN {
-  label 'large'
+  label 'small'
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   input: tuple path(seqs_with_time), path(beast_template)
@@ -70,6 +72,7 @@ process BEASTGEN {
 }
 
 process NAIVE_ROOT_PATCH {
+  label 'small'
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
   publishDir "$params.results/beastgen"
   input: path(beastgen_output)
@@ -83,7 +86,7 @@ process NAIVE_ROOT_PATCH {
 }
 
 process BEAST_TIMETREE {
-  label 'large'
+  label 'longtime'
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast"
@@ -101,7 +104,7 @@ process ETE_CONVERSION {
   maxRetries 1
   label 'mem_large'
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
-  publishDir "$params.results/ete", mode: "copy" 
+  publishDir "$params.results/ete"
   input: path(beast_output)
   output: path("ete-*")
   shell:
@@ -114,12 +117,12 @@ process ETE_CONVERSION {
     --dms_df $params.dms_vscores \
     --pos_df $params.dms_sites \
     --burn_frac $params.burn_frac \
-    --outdir \$OUTDIR
+    --outdir \$OUTDIR \
+    --save_pkl_trees $params.save_pkl_trees
   """
 }
 
 process MERGE_SLICE_DFS {
-  label 'mem_large'
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
   input: path(all_ete_outputs)
   publishDir "$params.results/phenotype_trajectory", mode: "copy" 

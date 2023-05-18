@@ -15,12 +15,26 @@ from functools import partial
 
 parser = argparse.ArgumentParser(description='A script that takes in string and file arguments')
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 # Adding string arguments
 parser.add_argument('--xml_file', type=str, help='')
 parser.add_argument('--nexus_file', type=str, help='')
 parser.add_argument('--dms_df', type=str, help='')
 parser.add_argument('--pos_df', type=str, help='')
 parser.add_argument('--outdir', type=str, help='')
+# parser.add_argument('--pkldir', type=str, required=False, default=None)
+parser.add_argument("--save_pkl_trees", type=str2bool, nargs='?',
+                        const=True, default=False,
+                        help="Activate nice mode.")
 parser.add_argument('--burn_frac', type=float, required=False, default=0.9, help='')
 parser.add_argument('--igk_idx', type=int, required=False, default=336, help='')
 parser.add_argument('--igh_frame', type=int, required=False, default=1, help='')
@@ -32,7 +46,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not os.path.exists(args.outdir): os.mkdir(args.outdir)
-    if not os.path.exists(f"{args.outdir}/trees"): os.mkdir(f"{args.outdir}/trees")
+    print(args.save_pkl_trees)
+    # assert False
+    if args.save_pkl_trees:
+        if not os.path.exists(f"{args.outdir}/pkl_ete_trees"): os.mkdir(f"{args.outdir}/pkl_ete_trees")
     naive_sequence=naive_hk_bcr_nt 
 
 
@@ -111,7 +128,8 @@ if __name__ == '__main__':
     slices = []
     nodes = []
     for tree_idx, ete_tree in enumerate(ete_trees, tree_start_idx):
-        pickle.dump(ete_tree, open(f"{args.outdir}/trees/{tree_idx}.pkl", "wb"))
+        if args.save_pkl_trees:
+            pickle.dump(ete_tree, open(f"{args.outdir}/pkl_ete_trees/{tree_idx}.pkl", "wb"))
 
         # phenotype slices through tree time
         for age in np.linspace(0, 20, 20):
