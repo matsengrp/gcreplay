@@ -69,7 +69,8 @@ def parse_fastas(indir, label, is_simu):
         fn_fns = filter_mice(fn_fns)
     if len(fn_fns) == 0:
         raise Exception('no fasta files in dir %s' % indir)
-    cmd = 'python %s/scripts/abundance.py %s --min-seqs 70 --max-seqs 70 --outdir %s' % (args.gcdyn_dir, ' '.join(fn_fns), os.path.dirname(abfn(label)))
+    raise Exception('needs updating for new gcdyn file structure (no longer writing individual fasta for each tree, and individual tree files will also be in subdirs if using --n-sub-procs)')
+    cmd = 'python %s/scripts/abundance.py %s%s --max-seqs 70 --outdir %s' % (args.gcdyn_dir, ' '.join(fn_fns), '' if is_simu else ' --min-seqs 70', os.path.dirname(abfn(label)))
     utils.simplerun(cmd)
 
 # ----------------------------------------------------------------------------------------

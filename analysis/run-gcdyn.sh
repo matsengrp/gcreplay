@@ -1,12 +1,22 @@
 #!/bin/bash
 
 bin=./projects/cf-gcdyn.py
-common="--actions simu:process --final-plot-xvar xshift --dry --n-replicates 2"
+common="--actions simu --dry"
 # echo ./projects/cf-gcdyn.py --actions simu --version v1 --birth-response-list constant:soft-relu:soft-relu:soft-relu --xscale-list 1:1:2:3 --zip-vars birth-response:xscale $commone
 xscales=0.1:1:5:10; xshifts=-5:-2:-1:0:1:2:5
+# common="--actions simu --final-plot-xvar xshift --dry --n-replicates 2"
 # echo $bin $common --version v2 --birth-response-list soft-relu --xscale-list $xscales --xshift-list=$xshifts
-echo $bin $common --version v3 --birth-response-list sigmoid --xscale-list $xscales --xshift-list=$xshifts
-echo $bin $common --version v4 --birth-response-list sigmoid --xscale-list 0.5:0.75:1:1.25:1.5 --xshift-list=0:1:2:5:8:15
+# echo $bin $common --version v3-carry-cap --birth-response-list sigmoid --xscale-list $xscales --xshift-list=$xshifts
+# echo $bin $common --version v4-carry-cap --birth-response-list sigmoid --xscale-list 0.5:0.75:1:1.25:1.5 --xshift-list=0:1:2:5:8:15
+# common="--actions simu:merge-simu:process --final-plot-xvar xshift --dry"
+# echo $bin $common --version v6 --birth-response-list sigmoid --xscale-list 0.75:1:1.25 --xshift-list=2:5 --n-replicates 20
+# echo $bin $common --label vs-n-trees --version v0 --birth-response-list sigmoid --carry-cap-list 150 --xscale-list 0.5,1.5 --xshift-list 2 --n-replicates 2 --n-trials-list 100:1000 --simu-extra-args=\"--n-sub-procs 10\" --perf-metrics xscale --plot-metrics dl-infer
+# echo $bin $common --label vs-n-trees --version v1 --birth-response-list sigmoid --carry-cap-list 150 --xscale-list 1 --xshift-list 2 --n-replicates 2 --n-trials-list 100:500 --simu-extra-args=\"--n-sub-procs 10\" --perf-metrics xscale --plot-metrics dl-infer
+echo $bin $common --label vs-n-trees --version v2 --birth-response-list sigmoid --carry-cap-list 150 --xscale-list 0.5,0.75,1,1.25,1.5 --xshift-list 2 --n-replicates 3 --n-trials-list 100:1000:10000 --simu-extra-args=\"--n-sub-procs 30\" --perf-metrics xscale --plot-metrics dl-infer --final-plot-xvar n-trials
+# NOTE carry cap was 150 for n-seqs 50 and 100 but increased it to 500 for n-seqs 300, so should delete/replace this
+# ick, time required scales with square of carry cap
+echo $bin $common --label vs-n-leaves --version v2 --birth-response-list sigmoid --carry-cap-list 150 --xscale-list 0.5,0.75,1,1.25,1.5 --xshift-list 2 --n-replicates 2 --n-seqs-list 50:75:100:125 --n-trials-list 100:1000 --simu-extra-args=\"--n-sub-procs 30\" --perf-metrics xscale-perf-width:xscale-train-vs-test --model-size-list small:tiny --plot-metrics dl-infer --final-plot-xvar n-seqs --pvks-to-plot 1000
+
 exit 0
 
 vsn=test-v2
