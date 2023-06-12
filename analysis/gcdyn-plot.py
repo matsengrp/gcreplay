@@ -64,14 +64,35 @@ def abfn(tlab, abtype='abundances'):
 
 # ----------------------------------------------------------------------------------------
 def parse_fastas(indir, label, is_simu):
-    fn_fns = glob.glob('%s/%s*.fasta' % (indir, 'seqs_' if is_simu else 'annotated-'))
+    if is_simu:
+        workdir = '%s/work' % args.outdir
+        seqfos = utils.read_fastx('%s/seqs.fasta'%indir)
+        naive_seq = None  # collect families from single fasta output file (this is annoying but i think still better than going back to writing all individual fastas for each family)
+        family_fos = {}
+        for sfo in seqfos:
+            if sfo['name'] == 'naive':
+                if naive_seq is None:
+                    naive_seq = sfo['seq']
+                assert sfo['seq'] == naive_seq
+                continue
+            fid, sid = sfo['name'].split('-')
+            if fid not in family_fos:
+                family_fos[fid] = []
+            family_fos[fid].append(sfo)
+        for fid in sorted(family_fos, key=int):
+            utils.write_fasta('%s/seqs_%d.fasta'%(workdir, int(fid)), [{'name' : 'naive', 'seq' : naive_seq}] + family_fos[fid])
+        fn_fns = glob.glob('%s/seqs_*.fasta' % workdir)
+    else:
+        fn_fns = glob.glob('%s/annotated-*.fasta' % indir)
     if not is_simu:
         fn_fns = filter_mice(fn_fns)
     if len(fn_fns) == 0:
         raise Exception('no fasta files in dir %s' % indir)
-    raise Exception('needs updating for new gcdyn file structure (no longer writing individual fasta for each tree, and individual tree files will also be in subdirs if using --n-sub-procs)')
     cmd = 'python %s/scripts/abundance.py %s%s --max-seqs 70 --outdir %s' % (args.gcdyn_dir, ' '.join(fn_fns), '' if is_simu else ' --min-seqs 70', os.path.dirname(abfn(label)))
     utils.simplerun(cmd)
+    if is_simu:
+        utils.clean_files(fn_fns)
+        os.rmdir(workdir)
 
 # ----------------------------------------------------------------------------------------
 def hargs(hlist):
