@@ -64,6 +64,9 @@ def abfn(tlab, abtype='abundances'):
 
 # ----------------------------------------------------------------------------------------
 def parse_fastas(indir, label, is_simu):
+    if os.path.exists(abfn(label)):
+        print'    %s abundance exists, skipping: %s' % (label, abfn(label))
+        return
     if is_simu:
         workdir = '%s/work' % args.outdir
         seqfos = utils.read_fastx('%s/seqs.fasta'%indir)
