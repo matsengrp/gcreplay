@@ -110,7 +110,7 @@ def hargs(hlist):
     return xbounds, ybounds, xticks, yticks, yticklabels
 
 # ----------------------------------------------------------------------------------------
-def plot(plotdir, label, abtype):
+def plot_abdn_stuff(plotdir, label, abtype):
     # read values from csv file
     with open(abfn(label, abtype=abtype)) as afile:
         reader = csv.DictReader(afile)
@@ -128,7 +128,7 @@ def plot(plotdir, label, abtype):
     # collect values from each GC
     max_vals = []
     distr_hists = []
-    for bn in plotvals:
+    for bn in plotvals:  # bn is the base name of the fasta file (i.e. gc name)
         if abtype == 'abundances':
             max_vals.append(max([a for a, n in plotvals[bn].items() if n>0]))
             htmp = hutils.make_hist_from_dict_of_counts(plotvals[bn], 'int', bn)
@@ -157,6 +157,45 @@ def plot(plotdir, label, abtype):
     xbounds, ybounds, xticks, yticks, yticklabels = hargs([mean_hdistr])
 
     return {'distr' : mean_hdistr, 'max' : hmax}
+
+# ----------------------------------------------------------------------------------------
+def get_affinity_plots(label):
+    # ----------------------------------------------------------------------------------------
+    def get_plotvals(label, dendro_trees, affy_vals):
+        plotvals = {k : [] for k in ['leaf', 'internal']}
+        for dtree in dendro_trees:
+            for node in dtree.preorder_node_iter():
+                if affy_vals.get(node.taxon.label) is None:
+                    continue
+                plotvals['leaf' if node.is_leaf() else 'internal'].append(affy_vals[node.taxon.label])
+        return plotvals
+    # ----------------------------------------------------------------------------------------
+    import paircluster
+    import treeutils
+    if label == 'data':
+        lp_infos = paircluster.read_paired_dir(args.gcreplay_dir)
+        with open('%s/selection-metrics.yaml'%args.gcreplay_dir) as sfile:
+            smfos = json.load(sfile)
+        antn_pairs = paircluster.get_all_antn_pairs(lp_infos)
+        assert len(smfos) == len(antn_pairs)
+        dendro_trees, affy_vals = [], {}
+        for sfo, (h_atn, l_atn) in zip(smfos, antn_pairs):
+            dtree = treeutils.get_dendro_tree(treestr=sfo['lb']['tree'])
+            dendro_trees.append(dtree)
+            for node in dtree.preorder_node_iter():
+                affy_vals[node.taxon.label] = utils.per_seq_val(h_atn, 'affinities', node.taxon.label+'-igh')
+        plotvals = get_plotvals(label, dendro_trees, affy_vals)
+    elif label == 'simu':
+        with open('%s/meta.json'%args.simu_dir) as mfile:
+            mfos = json.load(mfile)
+        dendro_trees = [treeutils.get_dendro_tree(treestr=s) for s in treeutils.get_treestrs_from_file('%s/trees.nwk'%args.simu_dir)]
+        plotvals = get_plotvals(label, dendro_trees, {u : mfos[u]['affinity'] for u in mfos})
+    else:
+        assert False
+    hists = {}
+    for pkey, pvals in plotvals.items():
+        hists['distr-%s-affinity'%pkey] = Hist(xmin=-10, xmax=5, n_bins=30, value_list=pvals, title=label, xtitle='%s affinity'%pkey)
+    return hists
 
 # ----------------------------------------------------------------------------------------
 # NOTE may be better to eventually switch to optimal transport rather than this weighted average/center of mass approach
@@ -203,6 +242,7 @@ ustr = """
 """
 parser = argparse.ArgumentParser(usage=ustr)
 parser.add_argument('--data-dir')
+parser.add_argument('--gcreplay-dir', default='/fh/fast/matsen_e/processed-data/partis/taraki-gctree-2021-10/v13/delta_bind_CGG_FVS_additive/gc1')  # default='%s/projects/gcreplay'%partis_dir)
 parser.add_argument('--simu-dir')
 parser.add_argument('--outdir')
 parser.add_argument('--mice', default=[1, 2, 3, 4, 5, 6], help='restrict to these mouse numbers')
@@ -217,14 +257,18 @@ if args.data_dir is not None:
 if args.simu_dir is not None:
     dlabels.append([args.simu_dir, 'simu'])
 
-abtypes = ['abundances', 'hdists', 'max-abdn-shm']
+abtypes = ['leaf-affinity', 'internal-affinity', 'abundances', 'hdists', 'max-abdn-shm']
 hclists = {t : {'distr' : [], 'max' : []} for t in abtypes}
 fnames = [[], [], []]
 for idir, tlab in dlabels:
-    parse_fastas(idir, tlab, is_simu=tlab=='simu')
+    parse_fastas(idir, tlab, is_simu=tlab=='simu')  # runs abundance.py to parse input fastas into a summary csv format
     utils.prep_dir('%s/plots/%s'%(args.outdir, tlab), wildlings=['*.csv', '*.svg'])
-    for abtype in abtypes:
-        lhists = plot('%s/plots/%s'%(args.outdir, tlab), tlab, abtype)
+    lhists = get_affinity_plots(tlab)
+    for tk in lhists:
+        hn, ntype, astr = tk.split('-')
+        hclists[ntype+'-'+astr][hn].append(lhists[tk])
+    for abtype in [t for t in abtypes if 'affinity' not in t]:
+        lhists = plot_abdn_stuff('%s/plots/%s'%(args.outdir, tlab), tlab, abtype)
         for hn in lhists:
             hclists[abtype][hn].append(lhists[hn])
 
