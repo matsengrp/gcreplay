@@ -3,7 +3,7 @@
 # TEST ./projects/cf-gcdyn.py --actions simu:dl-infer --n-replicates 1 --label test --version v0 --dry --test --n-trials 6 --n-sub-procs 3
 
 bin=./projects/cf-gcdyn.py
-common="--actions simu --dry --n-max-procs 5 --base-outdir /fh/local/dralph/partis/gcdyn"
+common="--actions simu --dry --n-max-procs 5 --base-outdir  /fh/fast/matsen_e/dralph/partis/gcdyn" #/fh/local/dralph/partis/gcdyn"
 # echo ./projects/cf-gcdyn.py --actions simu --version v1 --birth-response-list constant:soft-relu:soft-relu:soft-relu --xscale-list 1:1:2:3 --zip-vars birth-response:xscale $commone
 xscales=0.1:1:5:10; xshifts=-5:-2:-1:0:1:2:5
 # common="--actions simu --final-plot-xvar xshift --dry --n-replicates 2"

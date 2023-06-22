@@ -22,7 +22,7 @@ from hist import Hist
 # ----------------------------------------------------------------------------------------
 colors = {'data' : plotting.default_colors[1],
           'simu' : plotting.default_colors[0]}
-pltlabels = {'hdists' : 'root-tip dist', 'max-abdn-shm' : 'median SHM of seqs\nw/max abundance'}
+pltlabels = {'hdists' : 'root-tip dist', 'max-abdn-shm' : 'SHM in most\nabundant seq'}  # 'median SHM of seqs\nw/max abundance'}
 
 # ----------------------------------------------------------------------------------------
 def parse_name(fn):  # convert .fa name to mouse #, etc
@@ -91,7 +91,7 @@ def parse_fastas(indir, label, is_simu):
         fn_fns = filter_mice(fn_fns)
     if len(fn_fns) == 0:
         raise Exception('no fasta files in dir %s' % indir)
-    cmd = 'python %s/scripts/abundance.py %s%s --max-seqs 70 --outdir %s' % (args.gcdyn_dir, ' '.join(fn_fns), '' if is_simu else ' --min-seqs 70', os.path.dirname(abfn(label)))
+    cmd = 'python %s/scripts/abundance.py %s%s --max-seqs 70 --outdir %s' % (args.gcdyn_dir, ' '.join(fn_fns), '' if is_simu else ' --min-seqs %d'%args.min_seqs_per_gc, os.path.dirname(abfn(label)))
     utils.simplerun(cmd)
     if is_simu:
         utils.clean_files(fn_fns)
@@ -146,14 +146,14 @@ def plot_abdn_stuff(plotdir, label, abtype):
     if abtype == 'abundances':
         hmax = hutils.make_hist_from_list_of_values(max_vals, 'int', 'max-abdn')
         xbounds, ybounds, xticks, yticks, yticklabels = hargs([hmax])
-        hmax.title = '%s (mean %.1f)' % (label, hmax.get_mean())
+        hmax.title = '%s (%d trees)' % (label, len(distr_hists))
         hmax.xtitle = 'max abundance in GC'
 
     # plot mean distribution over GCs
     mean_hdistr = plotting.make_mean_hist(distr_hists)
-    mean_hdistr.title = '%s (mean %.1f)' % (label, mean_hdistr.get_mean())
+    mean_hdistr.title = '%s (%d trees)' % (label, len(distr_hists))
     mean_hdistr.xtitle = pltlabels.get(abtype, abtype)
-    mean_hdistr.ytitle = 'N seqs\nmean+/-std, %d GCs' % len(distr_hists)
+    mean_hdistr.ytitle = 'N seqs in bin\nmean+/-std (over GCs)'
     xbounds, ybounds, xticks, yticks, yticklabels = hargs([mean_hdistr])
 
     return {'distr' : mean_hdistr, 'max' : hmax}
@@ -162,12 +162,20 @@ def plot_abdn_stuff(plotdir, label, abtype):
 def get_affinity_plots(label):
     # ----------------------------------------------------------------------------------------
     def get_plotvals(label, dendro_trees, affy_vals):
+        def nstr(node):
+            return 'leaf' if node.is_leaf() else 'internal'
         plotvals = {k : [] for k in ['leaf', 'internal']}
+        n_missing, n_tot = {'internal' : [], 'leaf' : []}, {'internal' : [], 'leaf' : []}
         for dtree in dendro_trees:
             for node in dtree.preorder_node_iter():
-                if affy_vals.get(node.taxon.label) is None:
+                name = node.taxon.label
+                n_tot[nstr(node)].append(name)
+                if affy_vals.get(name) is None:
+                    n_missing[nstr(node)].append(name)
                     continue
-                plotvals['leaf' if node.is_leaf() else 'internal'].append(affy_vals[node.taxon.label])
+                plotvals[nstr(node)].append(affy_vals[name])
+        if sum(len(l) for l in n_missing.values()) > 0:
+            print '      %s missing/none affinity values for: %d / %d leaves, %d / %d internal' % (utils.wrnstr(), len(n_missing['leaf']), len(n_tot['leaf']), len(n_missing['internal']), len(n_tot['internal']))
         return plotvals
     # ----------------------------------------------------------------------------------------
     import paircluster
@@ -176,10 +184,18 @@ def get_affinity_plots(label):
         lp_infos = paircluster.read_paired_dir(args.gcreplay_dir)
         with open('%s/selection-metrics.yaml'%args.gcreplay_dir) as sfile:
             smfos = json.load(sfile)
+        smdict = {':'.join(u+'-igh' for u in s['unique_ids']) : s for s in smfos}
         antn_pairs = paircluster.get_all_antn_pairs(lp_infos)
-        assert len(smfos) == len(antn_pairs)
         dendro_trees, affy_vals = [], {}
-        for sfo, (h_atn, l_atn) in zip(smfos, antn_pairs):
+        for h_atn, l_atn in antn_pairs:
+            if len(h_atn['unique_ids']) < args.min_seqs_per_gc:
+                continue
+            gcstr = h_atn['unique_ids'][0].split('-')[0]
+            assert gcstr[:2] == 'gc'
+            gcn = int(gcstr[2:])
+            if gcn not in args.GCs:
+                continue
+            sfo = smdict.get(':'.join(h_atn['unique_ids']))
             dtree = treeutils.get_dendro_tree(treestr=sfo['lb']['tree'])
             dendro_trees.append(dtree)
             for node in dtree.preorder_node_iter():
@@ -194,7 +210,9 @@ def get_affinity_plots(label):
         assert False
     hists = {}
     for pkey, pvals in plotvals.items():
-        hists['distr-%s-affinity'%pkey] = Hist(xmin=-10, xmax=5, n_bins=30, value_list=pvals, title=label, xtitle='%s affinity'%pkey)
+        htmp = Hist(xmin=-10, xmax=5, n_bins=30, value_list=pvals, title=label, xtitle='%s affinity'%pkey)
+        htmp.title += ' (%d nodes in %d trees)' % (len(pvals), len(dendro_trees))
+        hists['distr-%s-affinity'%pkey] = htmp
     return hists
 
 # ----------------------------------------------------------------------------------------
@@ -224,11 +242,10 @@ def hist_distance(h1, h2, dbgstr='hist', weighted=False, debug=False):
 def compare_plots(hname, plotdir, hists, labels, abtype, diff_vals):
     xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists) if abtype=='abundances' else (None, None, None, None, None)
     ytitle = hists[0].ytitle
-    if hname == 'distr':
-        ytitle = '%s\nmean +/- std' % hists[0].ytitle.split('\n')[0]
     fn = plotting.draw_no_root(None, plotdir=plotdir, plotname='%s-%s'%(hname, abtype), more_hists=hists, log='y' if abtype=='abundances' else '', xtitle=hists[0].xtitle, ytitle=ytitle,
-                               bounds=xbounds, ybounds=ybounds, xticks=xticks, yticks=yticks, yticklabels=yticklabels, errors=hname!='max', square_bins=hname=='max', linewidths=[4, 3], plottitle='',
-                               alphas=[0.6, 0.6], colors=[colors[l] for l in labels], translegend=[-0.2, 0], write_csv=True, hfile_labels=labels)
+                               bounds=xbounds, ybounds=ybounds, xticks=xticks, yticks=yticks, yticklabels=yticklabels, errors=hname!='max', square_bins=hname=='max', linewidths=[4, 3],
+                               plottitle='mean distr. over GCs' if 'N seqs in bin' in ytitle else '',  # this is a shitty way to identify the mean_hdistr hists, but best i can come up with atm
+                               alphas=[0.6, 0.6], colors=[colors[l] for l in labels], translegend=[-0.65, 0] if 'affinity' in abtype else [-0.2, 0], write_csv=True, hfile_labels=labels)
     fnames[0].append(fn)
 
     hdict = {l : h for l, h in zip(labels, hists)}
@@ -242,13 +259,15 @@ ustr = """
 """
 parser = argparse.ArgumentParser(usage=ustr)
 parser.add_argument('--data-dir')
-parser.add_argument('--gcreplay-dir', default='/fh/fast/matsen_e/processed-data/partis/taraki-gctree-2021-10/v13/delta_bind_CGG_FVS_additive/gc1')  # default='%s/projects/gcreplay'%partis_dir)
+parser.add_argument('--gcreplay-dir', default='/fh/fast/matsen_e/processed-data/partis/taraki-gctree-2021-10/v13/delta_bind_CGG_FVS_additive/all')  # default='%s/projects/gcreplay'%partis_dir)
 parser.add_argument('--simu-dir')
 parser.add_argument('--outdir')
+parser.add_argument('--min-seqs-per-gc', type=int, default=70)
 parser.add_argument('--mice', default=[1, 2, 3, 4, 5, 6], help='restrict to these mouse numbers')
+parser.add_argument('--GCs', default=[0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 34, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 50, 55, 56, 57, 58, 59, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83], help='restrict to these GC numbers (these correspond to --mice, used command in comment: ') # csv -cHK_key_gc:HK_key_mouse /fh/fast/matsen_e/data/taraki-gctree-2021-10/gcreplay/nextflow/results/latest/merged-results/observed-seqs.csv |sort|uniq|grep ' [123456]$'|ap 1|sort|uniq >/tmp/out')
 parser.add_argument('--is-simu', action='store_true')
 parser.add_argument('--gcdyn-dir', default='%s/work/partis/projects/gcdyn'%os.getenv('HOME'))
-parser.add_argument('--max-gc-plots', type=int, default=3, help='only plot individual (per-GC) plots for this  many GCs')
+parser.add_argument('--max-gc-plots', type=int, default=0, help='only plot individual (per-GC) plots for this  many GCs')
 args = parser.parse_args()
 
 dlabels = []
@@ -263,10 +282,11 @@ fnames = [[], [], []]
 for idir, tlab in dlabels:
     parse_fastas(idir, tlab, is_simu=tlab=='simu')  # runs abundance.py to parse input fastas into a summary csv format
     utils.prep_dir('%s/plots/%s'%(args.outdir, tlab), wildlings=['*.csv', '*.svg'])
-    lhists = get_affinity_plots(tlab)
-    for tk in lhists:
-        hn, ntype, astr = tk.split('-')
-        hclists[ntype+'-'+astr][hn].append(lhists[tk])
+    if any('affinity' in t for t in abtypes):
+        lhists = get_affinity_plots(tlab)
+        for tk in lhists:
+            hn, ntype, astr = tk.split('-')
+            hclists[ntype+'-'+astr][hn].append(lhists[tk])
     for abtype in [t for t in abtypes if 'affinity' not in t]:
         lhists = plot_abdn_stuff('%s/plots/%s'%(args.outdir, tlab), tlab, abtype)
         for hn in lhists:
@@ -281,6 +301,8 @@ for abtype in abtypes:
             continue
         compare_plots(hname, cfpdir, hlist, [l for _, l in dlabels], abtype, diff_vals)
 
+if len(fnames[0]) > 4:
+    fnames = [fnames[0][:4], fnames[0][4:]] + fnames[1:]
 plotting.make_html(args.outdir+'/plots', fnames=fnames)
 dfn = '%s/diff-vals.yaml' % args.outdir
 with open(dfn, 'w') as dfile:
