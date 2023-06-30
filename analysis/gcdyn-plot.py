@@ -98,7 +98,7 @@ def parse_fastas(indir, label, is_simu):
         os.rmdir(workdir)
 
 # ----------------------------------------------------------------------------------------
-def hargs(hlist):
+def abdn_hargs(hlist):
     xmax = max(h.xmax for h in hlist)
     xbounds = [0.5, xmax+0.5]
     xticks = list(range(1, int(xmax)+1, 2 if xmax<10 else 5))
@@ -208,7 +208,7 @@ def get_affinity_plots(label):
         assert False
     hists = {}
     for pkey, pvals in plotvals.items():
-        htmp = Hist(xmin=-10, xmax=5, n_bins=30, value_list=pvals, title=label, xtitle='%s affinity'%pkey)
+        htmp = Hist(xmin=-15, xmax=7, n_bins=30, value_list=pvals, title=label, xtitle='%s affinity'%pkey)
         htmp.title += ' (%d nodes in %d trees)' % (len(pvals), len(dendro_trees))
         hists['distr-%s-affinity'%pkey] = htmp
     return hists
@@ -244,7 +244,7 @@ def compare_plots(hname, plotdir, hists, labels, abtype, diff_vals):
             htmp.normalize()
         if 'fraction of' in hists[0].ytitle:
             ytitle = 'fraction of total'
-    xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists) if abtype=='abundances' else (None, None, None, None, None)
+    xbounds, ybounds, xticks, yticks, yticklabels = abdn_hargs(hists) if abtype=='abundances' else (None, None, None, None, None)  # seems not to need this? hutils.multi_hist_filled_bin_xbounds(hists)
     fn = plotting.draw_no_root(None, plotdir=plotdir, plotname='%s-%s'%(hname, abtype), more_hists=hists, log='y' if abtype=='abundances' else '', xtitle=hists[0].xtitle, ytitle=ytitle,
                                bounds=xbounds, ybounds=ybounds, xticks=xticks, yticks=yticks, yticklabels=yticklabels, errors=hname!='max', square_bins=hname=='max', linewidths=[4, 3],
                                plottitle='mean distr. over GCs' if 'N seqs in bin' in ytitle else '',  # this is a shitty way to identify the mean_hdistr hists, but best i can come up with atm
