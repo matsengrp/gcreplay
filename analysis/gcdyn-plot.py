@@ -145,7 +145,6 @@ def plot_abdn_stuff(plotdir, label, abtype):
     hmax = None
     if abtype == 'abundances':
         hmax = hutils.make_hist_from_list_of_values(max_vals, 'int', 'max-abdn')
-        xbounds, ybounds, xticks, yticks, yticklabels = hargs([hmax])
         hmax.title = '%s (%d trees)' % (label, len(distr_hists))
         hmax.xtitle = 'max abundance in GC'
 
@@ -154,7 +153,6 @@ def plot_abdn_stuff(plotdir, label, abtype):
     mean_hdistr.title = '%s (%d trees)' % (label, len(distr_hists))
     mean_hdistr.xtitle = pltlabels.get(abtype, abtype)
     mean_hdistr.ytitle = 'N seqs in bin\nmean+/-std (over GCs)'
-    xbounds, ybounds, xticks, yticks, yticklabels = hargs([mean_hdistr])
 
     return {'distr' : mean_hdistr, 'max' : hmax}
 
@@ -240,8 +238,13 @@ def hist_distance(h1, h2, dbgstr='hist', weighted=False, debug=False):
 
 # ----------------------------------------------------------------------------------------
 def compare_plots(hname, plotdir, hists, labels, abtype, diff_vals):
-    xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists) if abtype=='abundances' else (None, None, None, None, None)
     ytitle = hists[0].ytitle
+    if args.normalize:
+        for htmp in hists:
+            htmp.normalize()
+        if 'fraction of' in hists[0].ytitle:
+            ytitle = 'fraction of total'
+    xbounds, ybounds, xticks, yticks, yticklabels = hargs(hists) if abtype=='abundances' else (None, None, None, None, None)
     fn = plotting.draw_no_root(None, plotdir=plotdir, plotname='%s-%s'%(hname, abtype), more_hists=hists, log='y' if abtype=='abundances' else '', xtitle=hists[0].xtitle, ytitle=ytitle,
                                bounds=xbounds, ybounds=ybounds, xticks=xticks, yticks=yticks, yticklabels=yticklabels, errors=hname!='max', square_bins=hname=='max', linewidths=[4, 3],
                                plottitle='mean distr. over GCs' if 'N seqs in bin' in ytitle else '',  # this is a shitty way to identify the mean_hdistr hists, but best i can come up with atm
@@ -268,6 +271,7 @@ parser.add_argument('--GCs', default=[0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15
 parser.add_argument('--is-simu', action='store_true')
 parser.add_argument('--gcdyn-dir', default='%s/work/partis/projects/gcdyn'%os.getenv('HOME'))
 parser.add_argument('--max-gc-plots', type=int, default=0, help='only plot individual (per-GC) plots for this  many GCs')
+parser.add_argument('--normalize', action='store_true')
 args = parser.parse_args()
 
 dlabels = []
