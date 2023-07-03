@@ -7,6 +7,12 @@ import glob
 import argparse
 import colored_traceback.always
 import json
+from Bio.SeqUtils.CheckSum import seguid
+import itertools
+import pandas as pd
+import numpy
+import collections
+import ast
 
 # if you move this script, you'll need to change this method of getting the imports
 partis_dir = '%s/work/partis' % os.getenv('HOME') #os.path.dirname(os.path.realpath(__file__)).replace('/bin', '')
@@ -18,6 +24,8 @@ import plotting
 import lbplotting
 import hutils
 from hist import Hist
+import treeutils
+import paircluster
 
 # ----------------------------------------------------------------------------------------
 colors = {'data' : plotting.default_colors[1],
@@ -63,39 +71,82 @@ def abfn(tlab, abtype='abundances'):
     return '%s/%s/%s.csv' % (args.outdir, tlab, abtype)
 
 # ----------------------------------------------------------------------------------------
-def parse_fastas(indir, label, is_simu):
-    if os.path.exists(abfn(label)):
-        print'    %s abundance exists, skipping: %s' % (label, abfn(label))
-        return
-    if is_simu:
-        workdir = '%s/work' % args.outdir
-        seqfos = utils.read_fastx('%s/seqs.fasta'%indir)
-        naive_seq = None  # collect families from single fasta output file (this is annoying but i think still better than going back to writing all individual fastas for each family)
-        family_fos = {}
-        for sfo in seqfos:
-            if sfo['name'] == 'naive':
-                if naive_seq is None:
-                    naive_seq = sfo['seq']
-                assert sfo['seq'] == naive_seq
-                continue
-            fid, sid = sfo['name'].split('-')
-            if fid not in family_fos:
-                family_fos[fid] = []
-            family_fos[fid].append(sfo)
-        for fid in sorted(family_fos, key=int):
-            utils.write_fasta('%s/seqs_%d.fasta'%(workdir, int(fid)), [{'name' : 'naive', 'seq' : naive_seq}] + family_fos[fid])
-        fn_fns = glob.glob('%s/seqs_*.fasta' % workdir)
-    else:
-        fn_fns = glob.glob('%s/annotated-*.fasta' % indir)
-    if not is_simu:
-        fn_fns = filter_mice(fn_fns)
-    if len(fn_fns) == 0:
-        raise Exception('no fasta files in dir %s' % indir)
-    cmd = 'python %s/scripts/abundance.py %s%s --max-seqs 70 --outdir %s' % (args.gcdyn_dir, ' '.join(fn_fns), '' if is_simu else ' --min-seqs %d'%args.min_seqs_per_gc, os.path.dirname(abfn(label)))
-    utils.simplerun(cmd)
-    if is_simu:
-        utils.clean_files(fn_fns)
-        os.rmdir(workdir)
+def write_abdn_csv(label, all_seqfos):
+    # ----------------------------------------------------------------------------------------
+    def process_family(fam_fos):
+        n_seqs = len(fam_fos)
+        if args.min_seqs_per_gc is not None and n_seqs < args.min_seqs_per_gc:
+            counters['too-small'] += 1
+            return
+        if args.max_seqs_per_gc is not None and n_seqs > args.max_seqs_per_gc:
+            init_sizes.append(n_seqs)
+            i_to_keep = numpy.random.choice(list(range(n_seqs)), size=args.max_seqs_per_gc)
+            fam_fos = [fam_fos[i] for i in i_to_keep]
+
+        # This dictionary will map sequence checksum to the list of squence ids that have that
+        # sequence checksum.
+        ids_by_checksum = collections.defaultdict(list)
+        hdvals, hd_dict = (
+            [],
+            {},
+        )  # list of hamming distance to naive for each sequence (hd_dict is just for max_abdn below)
+        sequence_count = 0
+        for sfo in fam_fos:
+            sequence_count = sequence_count + 1
+            ids_by_checksum[seguid(sfo['seq'])].append(sfo['name'])
+            hdvals.append(sfo['n_muts'])
+            hd_dict[sfo['name']] = hdvals[-1]
+
+        abundance_distribution = collections.defaultdict(int)
+        for id_list in ids_by_checksum.values():
+            id_count = len(id_list)
+            abundance_distribution[id_count] = abundance_distribution[id_count] + 1
+        assert sequence_count == sum(k * v for k, v in abundance_distribution.items())
+        for amax, max_abdn_idlists in itertools.groupby(
+            sorted(ids_by_checksum.values(), key=len, reverse=True), key=len
+        ):
+            # print(amax, [len(l) for l in max_abdn_idlists])
+            break  # just want the first one (max abundance)
+
+        base = hash(''.join(s['seq'] for s in fam_fos))
+        abundances[base] = pd.Series(
+            abundance_distribution.values(), index=abundance_distribution.keys()
+        )
+
+        fdicts["hdists"][base] = hdvals
+        fdicts["max-abdn-shm"][base] = [
+            int(numpy.median([hd_dict[u] for x in max_abdn_idlists for u in x]))
+        ]
+
+    # ----------------------------------------------------------------------------------------
+    counters = {'too-small' : 0, 'removed' : 0}
+    init_sizes = []
+    abundances = {}
+    fdicts = {"hdists": {}, "max-abdn-shm": {}}
+    for gcn, fam_fos in all_seqfos.items():
+        process_family(fam_fos)
+
+    if counters['too-small'] > 0:
+        print("    skipped %d files with fewer than %d seqs" % (counters['too-small'], args.min_seqs_per_gc))
+    if len(init_sizes) > 0:
+        print(
+            "    downsampled %d samples to %d from initial sizes: %s"
+            % (len(init_sizes), args.max_seqs_per_gc, " ".join(str(s) for s in sorted(init_sizes)))
+        )
+
+    print "  writing to %s" % os.path.dirname(abfn(label))
+    if not os.path.exists(os.path.dirname(abfn(label))):
+        os.makedirs(os.path.dirname(abfn(label)))
+
+    to_write = pd.DataFrame(abundances).fillna(0).astype(int)
+    to_write.to_csv(abfn(label, 'abundances'))
+
+    for fstr, fdct in fdicts.items():
+        with open(abfn(label, abtype=fstr), 'w') as cfile:
+            writer = csv.DictWriter(cfile, ["fbase", "vlist"])
+            writer.writeheader()
+            for fbase, vlist in fdicts[fstr].items():
+                writer.writerow({"fbase": fbase, "vlist": ":".join(str(v) for v in vlist)})
 
 # ----------------------------------------------------------------------------------------
 def abdn_hargs(hlist):
@@ -154,14 +205,15 @@ def plot_abdn_stuff(plotdir, label, abtype):
     mean_hdistr.xtitle = pltlabels.get(abtype, abtype)
     mean_hdistr.ytitle = 'N seqs in bin\nmean+/-std (over GCs)'
 
-    return {'distr' : mean_hdistr, 'max' : hmax}
+    return {abtype : {'distr' : mean_hdistr, 'max' : hmax}}
 
 # ----------------------------------------------------------------------------------------
-def get_affinity_plots(label):
+def read_input_files(label):
+    # ----------------------------------------------------------------------------------------
+    def nstr(node):
+        return 'leaf' if node.is_leaf() else 'internal'
     # ----------------------------------------------------------------------------------------
     def get_plotvals(label, dendro_trees, affy_vals):
-        def nstr(node):
-            return 'leaf' if node.is_leaf() else 'internal'
         plotvals = {k : [] for k in ['leaf', 'internal']}
         n_missing, n_tot = {'internal' : [], 'leaf' : []}, {'internal' : [], 'leaf' : []}
         for dtree in dendro_trees:
@@ -176,41 +228,79 @@ def get_affinity_plots(label):
             print '      %s missing/none affinity values for: %d / %d leaves, %d / %d internal' % (utils.wrnstr(), len(n_missing['leaf']), len(n_tot['leaf']), len(n_missing['internal']), len(n_tot['internal']))
         return plotvals
     # ----------------------------------------------------------------------------------------
-    import paircluster
-    import treeutils
     if label == 'data':
-        lp_infos = paircluster.read_paired_dir(args.gcreplay_dir)
-        with open('%s/selection-metrics.yaml'%args.gcreplay_dir) as sfile:
-            smfos = json.load(sfile)
-        smdict = {':'.join(u+'-igh' for u in s['unique_ids']) : s for s in smfos}
-        antn_pairs = paircluster.get_all_antn_pairs(lp_infos)
-        dendro_trees, affy_vals = [], {}
-        for h_atn, l_atn in antn_pairs:
-            if len(h_atn['unique_ids']) < args.min_seqs_per_gc:
-                continue
-            gcstr = h_atn['unique_ids'][0].split('-')[0]
-            assert gcstr[:2] == 'gc'
-            gcn = int(gcstr[2:])
-            if gcn not in args.GCs:
-                continue
-            sfo = smdict.get(':'.join(h_atn['unique_ids']))
-            dtree = treeutils.get_dendro_tree(treestr=sfo['lb']['tree'])
-            dendro_trees.append(dtree)
-            for node in dtree.preorder_node_iter():
-                affy_vals[node.taxon.label] = utils.per_seq_val(h_atn, 'affinities', node.taxon.label+'-igh')
-        plotvals = get_plotvals(label, dendro_trees, affy_vals)
+        all_seqfos = collections.OrderedDict()
+        skipped_mice, kept_mice = set(), set()
+        print '    reading replay data from %s' % args.gcreplay_dir
+        with open('%s/gcreplay/nextflow/results/latest/merged-results/gctree-node-data.csv'%args.gcreplay_dir) as cfile:
+            reader = csv.DictReader(cfile)
+            for line in reader:
+                if int(line['HK_key_mouse']) not in args.mice:
+                    skipped_mice.add(int(line['HK_key_mouse']))
+                    continue
+                kept_mice.add(int(line['HK_key_mouse']))
+                gcn = int(line['HK_key_gc'])
+                if gcn not in all_seqfos:
+                    all_seqfos[gcn] = []
+                affinity = line['delta_bind_CGG_FVS_additive']
+                affinity = None if affinity == '' else float(affinity)
+                hdist = utils.hamming_distance(args.naive_seq, line['IgH_nt_sequence']+line['IgK_nt_sequence'])
+                # nmuts = int(line['n_mutations_HC']) + int(line['n_mutations_LC'])
+                # print '  %2d  %2d  %s' % (hdist, nmuts, utils.color('red', '<--') if hdist!=nmuts else '')
+                # print '      %s' % utils.color_mutants(NAIVE_SEQUENCE, line['IgH_nt_sequence']+line['IgK_nt_sequence'])
+                for iseq in range(int(line['abundance'])):
+                    all_seqfos[gcn].append({'name' : 'gc%d-%s-%d' % (int(line['HK_key_gc']), line['name'], iseq),
+                                            'seq' : line['IgH_nt_sequence']+line['IgK_nt_sequence'],
+                                            # 'n_muts' : nmuts,
+                                            'n_muts' : hdist,
+                                            'affinity' : affinity,
+                                            })
+        print '    kept %d / %d mice: %s' % (len(kept_mice), len(kept_mice) + len(skipped_mice), ' '.join(str(m) for m in kept_mice))
+        plotvals = {k : [] for k in ['leaf', 'internal']}
+        n_missing, n_tot = {'internal' : [], 'leaf' : []}, {'internal' : [], 'leaf' : []}
+        for gcn in all_seqfos:
+# TODO apply min/max n seqs stuff here?
+# TODO combine with get_plotvals()?
+            gctree_dir = utils.get_single_entry(glob.glob('%s/gcreplay/nextflow/results/latest/gctrees/PR*-%d-GC'%(args.gcreplay_dir, gcn)))
+            dtree = treeutils.get_dendro_tree(treefname='%s/gctree.inference.1.nk'%gctree_dir)
+            nodefo = {n.taxon.label : n for n in dtree.preorder_node_iter()}
+            for sfo in all_seqfos[gcn]:
+                gcstr, nname, iseq = sfo['name'].split('-')
+                n_tot[nstr(nodefo[nname])].append(nname)
+                if sfo['affinity'] is None:
+                    n_missing[nstr(nodefo[nname])].append(nname)
+                    continue
+                plotvals[nstr(nodefo[nname])].append(sfo['affinity'])
+        if sum(len(l) for l in n_missing.values()) > 0:
+            print '      %s missing/none affinity values for: %d / %d leaves, %d / %d internal' % (utils.wrnstr(), len(n_missing['leaf']), len(n_tot['leaf']), len(n_missing['internal']), len(n_tot['internal']))
+        write_abdn_csv(label, all_seqfos)
+# TODO apply min/max to n_trees as well (?)
+        n_trees = len(all_seqfos)
     elif label == 'simu':
         with open('%s/meta.json'%args.simu_dir) as mfile:
             mfos = json.load(mfile)
+        tmp_seqfos = utils.read_fastx('%s/seqs.fasta'%args.simu_dir)
+        all_seqfos = collections.OrderedDict()
+        for sfo in tmp_seqfos:
+            if 'naive' in sfo['name']:
+                continue
+            sfo['n_muts'] = mfos[sfo['name']]['n_muts']
+            gcn, nname = sfo['name'].split('-')
+            if gcn not in all_seqfos:
+                all_seqfos[gcn] = []
+            all_seqfos[gcn].append(sfo)
+        write_abdn_csv(label, all_seqfos)
         dendro_trees = [treeutils.get_dendro_tree(treestr=s) for s in treeutils.get_treestrs_from_file('%s/trees.nwk'%args.simu_dir)]
         plotvals = get_plotvals(label, dendro_trees, {u : mfos[u]['affinity'] for u in mfos})
+        n_trees = len(dendro_trees)
     else:
         assert False
+
     hists = {}
     for pkey, pvals in plotvals.items():
         htmp = Hist(xmin=-15, xmax=7, n_bins=30, value_list=pvals, title=label, xtitle='%s affinity'%pkey)
-        htmp.title += ' (%d nodes in %d trees)' % (len(pvals), len(dendro_trees))
-        hists['distr-%s-affinity'%pkey] = htmp
+        htmp.title += ' (%d nodes in %d trees)' % (len(pvals), n_trees)
+        hists['%s-affinity'%pkey] = {'distr' : htmp}
     return hists
 
 # ----------------------------------------------------------------------------------------
@@ -262,17 +352,24 @@ ustr = """
 """
 parser = argparse.ArgumentParser(usage=ustr)
 parser.add_argument('--data-dir')
-parser.add_argument('--gcreplay-dir', default='/fh/fast/matsen_e/processed-data/partis/taraki-gctree-2021-10/v13/delta_bind_CGG_FVS_additive/all')  # default='%s/projects/gcreplay'%partis_dir)
+parser.add_argument('--gcreplay-dir', default='/fh/fast/matsen_e/data/taraki-gctree-2021-10')
 parser.add_argument('--simu-dir')
 parser.add_argument('--outdir')
 parser.add_argument('--min-seqs-per-gc', type=int, default=70)
+parser.add_argument('--max-seqs-per-gc', type=int, default=70)
 parser.add_argument('--mice', default=[1, 2, 3, 4, 5, 6], help='restrict to these mouse numbers')
 parser.add_argument('--GCs', default=[0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 34, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 50, 55, 56, 57, 58, 59, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83], help='restrict to these GC numbers (these correspond to --mice, used command in comment: ') # csv -cHK_key_gc:HK_key_mouse /fh/fast/matsen_e/data/taraki-gctree-2021-10/gcreplay/nextflow/results/latest/merged-results/observed-seqs.csv |sort|uniq|grep ' [123456]$'|ap 1|sort|uniq >/tmp/out')
 parser.add_argument('--is-simu', action='store_true')
 parser.add_argument('--gcdyn-dir', default='%s/work/partis/projects/gcdyn'%os.getenv('HOME'))
 parser.add_argument('--max-gc-plots', type=int, default=0, help='only plot individual (per-GC) plots for this  many GCs')
 parser.add_argument('--normalize', action='store_true')
+parser.add_argument('--naive-seq', default="GAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCTCAGACTCTGTCCCTCACCTGTTCTGTCACTGGCGACTCCATCACCAGTGGTTACTGGAACTGGATCCGGAAATTCCCAGGGAATAAACTTGAGTACATGGGGTACATAAGCTACAGTGGTAGCACTTACTACAATCCATCTCTCAAAAGTCGAATCTCCATCACTCGAGACACATCCAAGAACCAGTACTACCTGCAGTTGAATTCTGTGACTACTGAGGACACAGCCACATATTACTGTGCAAGGGACTTCGATGTCTGGGGCGCAGGGACCACGGTCACCGTCTCCTCAGACATTGTGATGACTCAGTCTCAAAAATTCATGTCCACATCAGTAGGAGACAGGGTCAGCGTCACCTGCAAGGCCAGTCAGAATGTGGGTACTAATGTAGCCTGGTATCAACAGAAACCAGGGCAATCTCCTAAAGCACTGATTTACTCGGCATCCTACAGGTACAGTGGAGTCCCTGATCGCTTCACAGGCAGTGGATCTGGGACAGATTTCACTCTCACCATCAGCAATGTGCAGTCTGAAGACTTGGCAGAGTATTTCTGTCAGCAATATAACAGCTATCCTCTCACGTTCGGCTCGGGGACTAAGCTAGAAATAAAA")
+parser.add_argument(
+    "--random-seed", type=int, default=1, help="random seed for subsampling"
+)
 args = parser.parse_args()
+
+numpy.random.seed(args.random_seed)
 
 dlabels = []
 if args.data_dir is not None:
@@ -284,17 +381,17 @@ abtypes = ['leaf-affinity', 'internal-affinity', 'abundances', 'hdists', 'max-ab
 hclists = {t : {'distr' : [], 'max' : []} for t in abtypes}
 fnames = [[], [], []]
 for idir, tlab in dlabels:
-    parse_fastas(idir, tlab, is_simu=tlab=='simu')  # runs abundance.py to parse input fastas into a summary csv format
     utils.prep_dir('%s/plots/%s'%(args.outdir, tlab), wildlings=['*.csv', '*.svg'])
-    if any('affinity' in t for t in abtypes):
-        lhists = get_affinity_plots(tlab)
-        for tk in lhists:
-            hn, ntype, astr = tk.split('-')
-            hclists[ntype+'-'+astr][hn].append(lhists[tk])
-    for abtype in [t for t in abtypes if 'affinity' not in t]:
-        lhists = plot_abdn_stuff('%s/plots/%s'%(args.outdir, tlab), tlab, abtype)
-        for hn in lhists:
-            hclists[abtype][hn].append(lhists[hn])
+# reads input files and TODO writes abundance csv summary files (probably stop doing the latter?)
+    affy_hists = read_input_files(tlab)
+    for abtype in abtypes:
+        if 'affinity' in abtype:
+            lhists = affy_hists
+        else:
+# TODO merge with read_input_files() (?)
+            lhists = plot_abdn_stuff('%s/plots/%s'%(args.outdir, tlab), tlab, abtype)
+        for hn in lhists[abtype]:
+            hclists[abtype][hn].append(lhists[abtype][hn])
 
 cfpdir = '%s/plots/comparisons' % args.outdir
 utils.prep_dir(cfpdir, wildlings=['*.csv', '*.svg'])
