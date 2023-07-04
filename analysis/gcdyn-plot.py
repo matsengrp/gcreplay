@@ -33,45 +33,11 @@ colors = {'data' : plotting.default_colors[1],
 pltlabels = {'hdists' : 'root-tip dist', 'max-abdn-shm' : 'SHM in most\nabundant seq'}  # 'median SHM of seqs\nw/max abundance'}
 
 # ----------------------------------------------------------------------------------------
-def parse_name(fn):  # convert .fa name to mouse #, etc
-    fn = os.path.basename(fn)
-    # fn = 'annotated-PR-1-10-11-LA-122-GC.fasta'
-    nlist = fn.split('-')
-    if len(nlist) != 8:
-        raise Exception('fn should have 7 - chars, but got %d: %s' % (fn.count('-'), fn))
-    assert nlist[:2] == ['annotated', 'PR']
-    flowcell = '-'.join(nlist[2:4])
-    mouse = int(nlist[4])
-    ln_loc = nlist[5]
-    ln_id = nlist[6]
-    assert nlist[7] == 'GC.fasta'
-    return mouse, flowcell, ln_loc, ln_id
-
-# ----------------------------------------------------------------------------------------
-def bstr(mouse, flowcell, ln_loc, ln_id):
-    return '-'.join([str(mouse), flowcell, ln_loc, ln_id])
-# ----------------------------------------------------------------------------------------
-def filter_mice(in_fns):
-    skipped_mice, kept_mice = set(), set()
-    fn_fns = []
-    for fasta_path in in_fns:
-        mouse, flowcell, ln_loc, ln_id = parse_name(fasta_path)
-        if args.mice is not None and mouse not in args.mice:
-            skipped_mice.add(mouse)
-            continue
-        kept_mice.add(mouse)
-        fn_fns.append(fasta_path)
-    if len(skipped_mice) > 0:
-        print '    skipped %d mice: %s' % (len(skipped_mice), ' '.join(str(s) for s in sorted(skipped_mice)))
-    print '    kept %d samples from %d mice: %s' % (len(fn_fns), len(kept_mice), ' '.join(str(s) for s in sorted(kept_mice)))
-    return fn_fns
-
-# ----------------------------------------------------------------------------------------
 def abfn(tlab, abtype='abundances'):
     return '%s/%s/%s.csv' % (args.outdir, tlab, abtype)
 
 # ----------------------------------------------------------------------------------------
-def write_abdn_csv(label, all_seqfos):
+def write_abdn_csv(label, all_seqfos):  # summarize abundance (and other) info into csv files, for later reading (kind of weird to separate it like this, it's because this used to be in another script)
     # ----------------------------------------------------------------------------------------
     def process_family(fam_fos):
         n_seqs = len(fam_fos)
@@ -161,7 +127,7 @@ def abdn_hargs(hlist):
     return xbounds, ybounds, xticks, yticks, yticklabels
 
 # ----------------------------------------------------------------------------------------
-def plot_abdn_stuff(plotdir, label, abtype):
+def plot_abdn_stuff(lhists, plotdir, label, abtype):
     # read values from csv file
     with open(abfn(label, abtype=abtype)) as afile:
         reader = csv.DictReader(afile)
@@ -205,7 +171,7 @@ def plot_abdn_stuff(plotdir, label, abtype):
     mean_hdistr.xtitle = pltlabels.get(abtype, abtype)
     mean_hdistr.ytitle = 'N seqs in bin\nmean+/-std (over GCs)'
 
-    return {abtype : {'distr' : mean_hdistr, 'max' : hmax}}
+    lhists[abtype] = {'distr' : mean_hdistr, 'max' : hmax}
 
 # ----------------------------------------------------------------------------------------
 def read_input_files(label):
@@ -213,9 +179,7 @@ def read_input_files(label):
     def nstr(node):
         return 'leaf' if node.is_leaf() else 'internal'
     # ----------------------------------------------------------------------------------------
-    def get_plotvals(label, dendro_trees, affy_vals):
-        plotvals = {k : [] for k in ['leaf', 'internal']}
-        n_missing, n_tot = {'internal' : [], 'leaf' : []}, {'internal' : [], 'leaf' : []}
+    def get_simu_affy(label, dendro_trees, affy_vals):
         for dtree in dendro_trees:
             for node in dtree.preorder_node_iter():
                 name = node.taxon.label
@@ -228,23 +192,22 @@ def read_input_files(label):
             print '      %s missing/none affinity values for: %d / %d leaves, %d / %d internal' % (utils.wrnstr(), len(n_missing['leaf']), len(n_tot['leaf']), len(n_missing['internal']), len(n_tot['internal']))
         return plotvals
     # ----------------------------------------------------------------------------------------
-    if label == 'data':
-        all_seqfos = collections.OrderedDict()
-        skipped_mice, kept_mice = set(), set()
+    def read_data_file():
+        skipped_mice, kept_mice, all_gcs = set(), set(), set()
         print '    reading replay data from %s' % args.gcreplay_dir
         with open('%s/gcreplay/nextflow/results/latest/merged-results/gctree-node-data.csv'%args.gcreplay_dir) as cfile:
             reader = csv.DictReader(cfile)
             for line in reader:
+                gcn = int(line['HK_key_gc'])
+                all_gcs.add(gcn)
                 if int(line['HK_key_mouse']) not in args.mice:
                     skipped_mice.add(int(line['HK_key_mouse']))
                     continue
                 kept_mice.add(int(line['HK_key_mouse']))
-                gcn = int(line['HK_key_gc'])
                 if gcn not in all_seqfos:
                     all_seqfos[gcn] = []
                 affinity = line['delta_bind_CGG_FVS_additive']
-                affinity = None if affinity == '' else float(affinity)
-                hdist = utils.hamming_distance(args.naive_seq, line['IgH_nt_sequence']+line['IgK_nt_sequence'])
+                hdist = utils.hamming_distance(args.naive_seq, line['IgH_nt_sequence']+line['IgK_nt_sequence'])  # this is different to nmuts in the next line, not yet sure why
                 # nmuts = int(line['n_mutations_HC']) + int(line['n_mutations_LC'])
                 # print '  %2d  %2d  %s' % (hdist, nmuts, utils.color('red', '<--') if hdist!=nmuts else '')
                 # print '      %s' % utils.color_mutants(NAIVE_SEQUENCE, line['IgH_nt_sequence']+line['IgK_nt_sequence'])
@@ -253,14 +216,20 @@ def read_input_files(label):
                                             'seq' : line['IgH_nt_sequence']+line['IgK_nt_sequence'],
                                             # 'n_muts' : nmuts,
                                             'n_muts' : hdist,
-                                            'affinity' : affinity,
+                                            'affinity' : None if affinity == '' else float(affinity),
                                             })
-        print '    kept %d / %d mice: %s' % (len(kept_mice), len(kept_mice) + len(skipped_mice), ' '.join(str(m) for m in kept_mice))
-        plotvals = {k : [] for k in ['leaf', 'internal']}
-        n_missing, n_tot = {'internal' : [], 'leaf' : []}, {'internal' : [], 'leaf' : []}
+        print '    kept %d / %d GCs from  %d / %d mice: %s' % (len(all_seqfos), len(all_gcs), len(kept_mice), len(kept_mice) + len(skipped_mice), ' '.join(str(m) for m in kept_mice))
+    # ----------------------------------------------------------------------------------------
+    all_seqfos = collections.OrderedDict()
+    plotvals = {k : [] for k in ['leaf', 'internal']}
+    n_missing, n_tot = {'internal' : [], 'leaf' : []}, {'internal' : [], 'leaf' : []}  # per-seq (not per-gc) counts
+    if label == 'data':
+        read_data_file()  # read seqs plus affinity and mutation info from csv file (still have to read trees below to get leaf/internal info)
+        n_too_small = 0
         for gcn in all_seqfos:
-# TODO apply min/max n seqs stuff here?
-# TODO combine with get_plotvals()?
+            if len(all_seqfos[gcn]) < args.min_seqs_per_gc:  # NOTE not subsampling with args.max_seqs_per_gc as in write_abdn_csv() (can't be bothered, it seems more important for abundance stuff anyway)
+                n_too_small += 1
+                continue
             gctree_dir = utils.get_single_entry(glob.glob('%s/gcreplay/nextflow/results/latest/gctrees/PR*-%d-GC'%(args.gcreplay_dir, gcn)))
             dtree = treeutils.get_dendro_tree(treefname='%s/gctree.inference.1.nk'%gctree_dir)
             nodefo = {n.taxon.label : n for n in dtree.preorder_node_iter()}
@@ -273,14 +242,13 @@ def read_input_files(label):
                 plotvals[nstr(nodefo[nname])].append(sfo['affinity'])
         if sum(len(l) for l in n_missing.values()) > 0:
             print '      %s missing/none affinity values for: %d / %d leaves, %d / %d internal' % (utils.wrnstr(), len(n_missing['leaf']), len(n_tot['leaf']), len(n_missing['internal']), len(n_tot['internal']))
-        write_abdn_csv(label, all_seqfos)
-# TODO apply min/max to n_trees as well (?)
-        n_trees = len(all_seqfos)
+        if n_too_small > 0:
+            print '    skipped %d / %d gcs with fewer than %d seqs' % (n_too_small, len(all_seqfos), args.min_seqs_per_gc)
+        n_trees = len(all_seqfos) - n_too_small
     elif label == 'simu':
         with open('%s/meta.json'%args.simu_dir) as mfile:
             mfos = json.load(mfile)
         tmp_seqfos = utils.read_fastx('%s/seqs.fasta'%args.simu_dir)
-        all_seqfos = collections.OrderedDict()
         for sfo in tmp_seqfos:
             if 'naive' in sfo['name']:
                 continue
@@ -289,12 +257,13 @@ def read_input_files(label):
             if gcn not in all_seqfos:
                 all_seqfos[gcn] = []
             all_seqfos[gcn].append(sfo)
-        write_abdn_csv(label, all_seqfos)
         dendro_trees = [treeutils.get_dendro_tree(treestr=s) for s in treeutils.get_treestrs_from_file('%s/trees.nwk'%args.simu_dir)]
-        plotvals = get_plotvals(label, dendro_trees, {u : mfos[u]['affinity'] for u in mfos})
+        plotvals = get_simu_affy(label, dendro_trees, {u : mfos[u]['affinity'] for u in mfos})
         n_trees = len(dendro_trees)
     else:
         assert False
+
+    write_abdn_csv(label, all_seqfos)
 
     hists = {}
     for pkey, pvals in plotvals.items():
@@ -382,14 +351,10 @@ hclists = {t : {'distr' : [], 'max' : []} for t in abtypes}
 fnames = [[], [], []]
 for idir, tlab in dlabels:
     utils.prep_dir('%s/plots/%s'%(args.outdir, tlab), wildlings=['*.csv', '*.svg'])
-# reads input files and TODO writes abundance csv summary files (probably stop doing the latter?)
-    affy_hists = read_input_files(tlab)
+    lhists = read_input_files(tlab)  # puts affinity hists in lhists
     for abtype in abtypes:
-        if 'affinity' in abtype:
-            lhists = affy_hists
-        else:
-# TODO merge with read_input_files() (?)
-            lhists = plot_abdn_stuff('%s/plots/%s'%(args.outdir, tlab), tlab, abtype)
+        if 'affinity' not in abtype:
+            plot_abdn_stuff(lhists, '%s/plots/%s'%(args.outdir, tlab), tlab, abtype)  # adds abdn hists to lhists
         for hn in lhists[abtype]:
             hclists[abtype][hn].append(lhists[abtype][hn])
 
