@@ -207,7 +207,7 @@ def read_input_files(label):
                 if gcn not in all_seqfos:
                     all_seqfos[gcn] = []
                 affinity = line['delta_bind_CGG_FVS_additive']
-                hdist = utils.hamming_distance(args.naive_seq, line['IgH_nt_sequence']+line['IgK_nt_sequence'])  # this is different to nmuts in the next line, not yet sure why
+                hdist = utils.hamming_distance(args.naive_seq, line['IgH_nt_sequence']+line['IgK_nt_sequence'])  # this is different to nmuts in the next line, not yet sure why (UPDATE: one is nuc/other is AA, docs/column names maybe will be changed in gcreplay)
                 # nmuts = int(line['n_mutations_HC']) + int(line['n_mutations_LC'])
                 # print '  %2d  %2d  %s' % (hdist, nmuts, utils.color('red', '<--') if hdist!=nmuts else '')
                 # print '      %s' % utils.color_mutants(NAIVE_SEQUENCE, line['IgH_nt_sequence']+line['IgK_nt_sequence'])
