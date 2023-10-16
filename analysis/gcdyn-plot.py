@@ -246,19 +246,22 @@ def read_input_files(label):
             print '    skipped %d / %d gcs with fewer than %d seqs' % (n_too_small, len(all_seqfos), args.min_seqs_per_gc)
         n_trees = len(all_seqfos) - n_too_small
     elif label == 'simu':
-        with open('%s/meta.json'%args.simu_dir) as mfile:
-            mfos = json.load(mfile)
+        mfos = {}
+        with open('%s/leaf-meta.csv'%args.simu_dir) as mfile:
+            reader = csv.DictReader(mfile)
+            for line in reader:
+                mfos[line['name']] = line
         tmp_seqfos = utils.read_fastx('%s/seqs.fasta'%args.simu_dir)
         for sfo in tmp_seqfos:
             if 'naive' in sfo['name']:
                 continue
-            sfo['n_muts'] = mfos[sfo['name']]['n_muts']
+            sfo['n_muts'] = int(mfos[sfo['name']]['n_muts'])
             gcn, nname = sfo['name'].split('-')
             if gcn not in all_seqfos:
                 all_seqfos[gcn] = []
             all_seqfos[gcn].append(sfo)
         dendro_trees = [treeutils.get_dendro_tree(treestr=s) for s in treeutils.get_treestrs_from_file('%s/trees.nwk'%args.simu_dir)]
-        plotvals = get_simu_affy(label, dendro_trees, {u : mfos[u]['affinity'] for u in mfos})
+        plotvals = get_simu_affy(label, dendro_trees, {u : float(mfos[u]['affinity']) for u in mfos})
         n_trees = len(dendro_trees)
     else:
         assert False
@@ -298,7 +301,7 @@ def hist_distance(h1, h2, dbgstr='hist', weighted=False, debug=False):
 # ----------------------------------------------------------------------------------------
 def compare_plots(hname, plotdir, hists, labels, abtype, diff_vals):
     ytitle = hists[0].ytitle
-    if args.normalize:
+    if not args.dont_normalize:
         for htmp in hists:
             htmp.normalize()
         if 'fraction of' in hists[0].ytitle:
@@ -321,6 +324,7 @@ ustr = """
 """
 parser = argparse.ArgumentParser(usage=ustr)
 parser.add_argument('--data-dir')
+# NOTE there's other scripts that process gcreplay results for partis input here: partis/datascripts/meta/taraki-gctree-2021-20
 parser.add_argument('--gcreplay-dir', default='/fh/fast/matsen_e/data/taraki-gctree-2021-10')
 parser.add_argument('--simu-dir')
 parser.add_argument('--outdir')
@@ -331,7 +335,7 @@ parser.add_argument('--GCs', default=[0, 1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15
 parser.add_argument('--is-simu', action='store_true')
 parser.add_argument('--gcdyn-dir', default='%s/work/partis/projects/gcdyn'%os.getenv('HOME'))
 parser.add_argument('--max-gc-plots', type=int, default=0, help='only plot individual (per-GC) plots for this  many GCs')
-parser.add_argument('--normalize', action='store_true')
+parser.add_argument('--dont-normalize', action='store_true')
 parser.add_argument('--naive-seq', default="GAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCTCAGACTCTGTCCCTCACCTGTTCTGTCACTGGCGACTCCATCACCAGTGGTTACTGGAACTGGATCCGGAAATTCCCAGGGAATAAACTTGAGTACATGGGGTACATAAGCTACAGTGGTAGCACTTACTACAATCCATCTCTCAAAAGTCGAATCTCCATCACTCGAGACACATCCAAGAACCAGTACTACCTGCAGTTGAATTCTGTGACTACTGAGGACACAGCCACATATTACTGTGCAAGGGACTTCGATGTCTGGGGCGCAGGGACCACGGTCACCGTCTCCTCAGACATTGTGATGACTCAGTCTCAAAAATTCATGTCCACATCAGTAGGAGACAGGGTCAGCGTCACCTGCAAGGCCAGTCAGAATGTGGGTACTAATGTAGCCTGGTATCAACAGAAACCAGGGCAATCTCCTAAAGCACTGATTTACTCGGCATCCTACAGGTACAGTGGAGTCCCTGATCGCTTCACAGGCAGTGGATCTGGGACAGATTTCACTCTCACCATCAGCAATGTGCAGTCTGAAGACTTGGCAGAGTATTTCTGTCAGCAATATAACAGCTATCCTCTCACGTTCGGCTCGGGGACTAAGCTAGAAATAAAA")
 parser.add_argument(
     "--random-seed", type=int, default=1, help="random seed for subsampling"
