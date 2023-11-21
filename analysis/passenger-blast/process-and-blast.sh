@@ -23,3 +23,6 @@ run_blast around-deleted-8a.fasta AV_IgYKSTOP_8A_collapse-unique.atleast2.fasta
 
 bash ./filter-to-atleast2.sh ../../nextflow/data/passenger/tiago-processed/AV_IgYKSTOP_9A_collapse-unique.fastq.gz
 run_blast around-deleted-9a.fasta AV_IgYKSTOP_9A_collapse-unique.atleast2.fasta
+
+bash ./filter-to-atleast2.sh ../../nextflow/data/passenger/tiago-processed/AV_IgYKSTOP_11A_collapse-unique.fastq.gz
+run_blast around-deleted-11a.fasta AV_IgYKSTOP_11A_collapse-unique.atleast2.fasta
