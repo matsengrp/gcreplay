@@ -128,5 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Blast files
+# Passenger analysis
+## Blast files
 *.db.n*
+analysis/passenger-blast/*fasta
+analysis/passenger-blast/*blast.tsv
+_ignore/
+
