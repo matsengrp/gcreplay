@@ -323,9 +323,9 @@ def create_mutation_heatmap(data_df):
     plt.show()
 
 
-
 class Passenger:
     def __init__(self, chigy_stop_trimmed, region_dict):
+        assert chigy_stop_trimmed == "".join(region_dict.values())
         self.chigy_stop_trimmed = chigy_stop_trimmed
         self.region_dict = region_dict
         self.aligner = PairwiseAligner()
@@ -380,13 +380,11 @@ class Passenger:
         return processed_stop_df
 
 
-
-
     def make_mutation_rate_plot(self, chigy_believable):
         # Calculate the positions where each sequence ends in the full sequence
-        positions = np.cumsum([len(self.region_dict[key]) for key in ["FW1", "CDR1", "FW2", "CDR2", "FW3", "CDR3", "FW4"]])
+        labels = self.region_dict.keys()
+        positions = np.cumsum([len(self.region_dict[key]) for key in labels])
         colors = ['blue', 'red', 'green', 'yellow', 'purple', 'orange', 'cyan']
-        labels = ["FW1", "CDR1", "FW2", "CDR2", "FW3", "CDR3", "FW4"]
 
         # Get the unique datasets
         unique_datasets = chigy_believable['dataset'].unique()
