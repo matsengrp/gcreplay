@@ -80,9 +80,8 @@ def blast_df_of_blast_files(blast_paths):
 
         assert len(blast_df) == len(set(blast_df["subject"]))
 
-        # assert that s_start is greater than s_end for every row, meaning that the subject is on the positive strand
-        assert np.all(blast_df["s_start"] < blast_df["s_end"])
-
+        # only keep rows such that s_start is greater than s_end for every row, meaning that the subject is on the positive strand
+        blast_df = blast_df[blast_df["s_start"] < blast_df["s_end"]]
         blast_df = blast_df.drop(columns=['query'])
         return blast_df
 
