@@ -258,20 +258,20 @@ def compute_mutation_counts_by_base(df, wt_sequence):
     """
     Compute mutation counts by position and by mutated base from a filtered dataframe.
     Entries corresponding to the wild-type base in wt_sequence will have a count of -1.
-    Returns a DataFrame with columns 'to_A', 'to_C', 'to_G', 'to_T' and index as position.
+    Returns a DataFrame with columns 'A', 'C', 'G', 'T' and index as position.
     """
     max_position = df['mutation_positions'].apply(lambda x: max(x) if x else 0).max()
     bases = ['A', 'C', 'G', 'T']
-    data = {f'to_{base}': [0] * (max_position + 1) for base in bases}
+    data = {f'{base}': [0] * (max_position + 1) for base in bases}
 
     for index, row in df.iterrows():
         for position, base in zip(row['mutation_positions'], row['mutation_bases']):
             if base in bases:
-                data[f'to_{base}'][position] += 1
+                data[f'{base}'][position] += 1
                 
     for position, base in enumerate(wt_sequence): 
         if position <= max_position:
-            data[f'to_{base}'][position] = -1
+            data[f'{base}'][position] = -1
 
     mutation_counts_df = pd.DataFrame(data)
     return mutation_counts_df
@@ -284,10 +284,10 @@ def test_compute_mutation_counts_by_base():
         'mutation_bases':     [['A', 'C'], ['G', 'A'], ['A', 'G'], ['C']]
     })
     expected_df = pd.DataFrame({
-        'to_A': [-1, 1, 0, 2, 0],
-        'to_C': [0, 1, 1, 0, -1],
-        'to_G': [0, -1, 1, 0, 1],
-        'to_T': [0, 0, -1, -1, 0],
+        'A': [-1, 1, 0, 2, 0],
+        'C': [0, 1, 1, 0, -1],
+        'G': [0, -1, 1, 0, 1],
+        'T': [0, 0, -1, -1, 0],
     })
 
     result_df = compute_mutation_counts_by_base(test_df, wt_sequence)
@@ -295,9 +295,6 @@ def test_compute_mutation_counts_by_base():
 
 
 def create_mutation_heatmap(data_df):
-    # Replace the column names
-    data_df = data_df.rename(columns=lambda x: x.split('_')[-1])
-    
     # Replace -1 with NaN
     data_df = data_df.replace(-1, np.nan)
 
