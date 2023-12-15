@@ -36,8 +36,7 @@ RUN apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /opt/.conda \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    ./Miniconda3-py38_4.8.3-Linux-x86_64.sh -b -p /opt/miniconda3 \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda3 \
     && rm -f Miniconda3-latest-Linux-x86_64.sh
 
 # install pip

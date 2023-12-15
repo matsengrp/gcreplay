@@ -2,9 +2,12 @@
 
 set -e
 
-nextflow run simulations.nf \
-        --simulations "data/simulations/*.fasta" \
-        --results "results/$(date -I)-sim-docker" \
-        -work-dir "work/$(date -I)-sim-docker" \
-        -profile docker \
-        -with-dag "results/$(date -I)/sim-dag.svg"
+nextflow run beast.nf \
+    -with-report \
+    -profile docker \
+    --results results/$(date -I)-beast-alloc-test \
+    --chain_length 100000 \
+    --log_every 1000 \
+    --burn_frac 0.0 \
+    --save_pkl_trees false
+    # -resume
