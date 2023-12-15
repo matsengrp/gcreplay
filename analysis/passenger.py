@@ -13,6 +13,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from Bio import SeqIO
 from Bio.Align import PairwiseAligner
+from Bio.Seq import Seq
 
 def umi_histogram(fastq_gz_path, max_count):
     conscount_values = []
@@ -317,6 +318,23 @@ def create_mutation_heatmap(data_df):
 
     plt.tight_layout()
     plt.show()
+
+
+def translate_sequences(nt_sequences):
+    aa_sequences = []
+    for seq in nt_sequences:
+        if len(seq) % 3 != 0:
+            raise ValueError(f"The sequence '{seq}' is not a multiple of 3.")
+        aa_seq = str(Seq(seq).translate())
+        aa_seq = aa_seq.replace("X", "N")
+        if "*" in aa_seq:
+            raise ValueError(f"The sequence '{seq}' contains a stop codon.")
+        aa_sequences.append(aa_seq)
+    return aa_sequences
+
+
+def translate_sequence(nt_sequence):
+    return translate_sequences([nt_sequence])[0]
 
 
 class Passenger:
