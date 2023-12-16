@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.stats import pearsonr
 from Bio import SeqIO
 from Bio.Align import PairwiseAligner
 from Bio.Seq import Seq
@@ -452,6 +453,33 @@ def matches_RGYW(kmer):
 
     # Check if the kmer matches either of the motifs
     return bool(re.match(regex_WRCYN, kmer)) or bool(re.match(regex_NRGYW, kmer))
+
+def plot_mutation_rate_vs_normed_s5f(df):
+    plt.figure(figsize=(8, 8))  # Square aspect ratio
+    scatter = plt.scatter(df['rate'], df['normed_s5f'], c=df['matches_RGYW'], cmap='coolwarm', alpha=0.8)
+
+    plt.xscale('log')
+    plt.yscale('log')
+
+    plt.xlabel('Mutation Rate Estimate (log scale)')
+    plt.ylabel('Normalized Fivemer Mutability (log scale)')
+
+    # Calculate Pearson correlation
+    corr, _ = pearsonr(df['rate'], df['normed_s5f'])
+
+    plt.annotate(f'Pearson r: {corr:.2f}', xy=(0.55, 0.95), xycoords='axes fraction', fontsize=12, bbox=dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='white'))
+
+    legend_labels = ['No', 'Yes']
+    handles = [plt.Line2D([0], [0], marker='o', color='w', label=legend_labels[i], 
+                        markersize=10, markerfacecolor=scatter.cmap(scatter.norm(i))) for i in range(2)]
+    plt.legend(handles, legend_labels, title="Matches RGYW")
+
+    # Add y=x line
+    min_limit = min(df['rate'].min(), df['normed_s5f'].min())
+    max_limit = max(df['rate'].max(), df['normed_s5f'].max())
+    plt.plot([min_limit, max_limit], [min_limit, max_limit], 'k--')  # Add x=y line
+
+    plt.show()
 
 
 class Passenger:
