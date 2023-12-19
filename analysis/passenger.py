@@ -598,7 +598,7 @@ class Passenger:
             filtered_df = chigy_believable[chigy_believable["dataset"] == dataset]
 
             mutation_frequency_by_position = mutation_frequency_by_position_of(
-                chigy_believable
+                filtered_df
             )
 
             ax.scatter(
