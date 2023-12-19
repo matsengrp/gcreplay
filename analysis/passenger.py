@@ -67,29 +67,33 @@ def oneline_print_alignment(alignment):
     print(aligned_seq2_str)
 
 
+def read_blast_file(blast_file):
+    return pd.read_csv(
+        blast_file,
+        sep="\t",
+        header=None,
+        names=[
+            "query",
+            "subject",
+            "identity",
+            "length",
+            "mismatches",
+            "gap_openings",
+            "q_start",
+            "q_end",
+            "s_start",
+            "s_end",
+            "evalue",
+            "bitscore",
+        ],
+    )
+
+
 def blast_df_of_blast_files(blast_paths):
     dfs = []
 
     for blast_file in blast_paths:
-        blast_results = pd.read_csv(
-            blast_file,
-            sep="\t",
-            header=None,
-            names=[
-                "query",
-                "subject",
-                "identity",
-                "length",
-                "mismatches",
-                "gap_openings",
-                "q_start",
-                "q_end",
-                "s_start",
-                "s_end",
-                "evalue",
-                "bitscore",
-            ],
-        )
+        blast_results = read_blast_file(blast_file)
         # Add a "dataset" column to the dataframe
         blast_results["dataset"] = os.path.basename(blast_file).split(".")[0]
 
@@ -112,12 +116,18 @@ def blast_df_of_blast_files(blast_paths):
 
         blast_df = blast_df[blast_df["length"] == 20]
 
-        assert len(blast_df) == len(set(blast_df["subject"]))
+        if len(blast_df) != len(set(blast_df["subject"])):
+            print(
+                f"Warning: duplicate sequences found in blast results for {blast_file}."
+            )
+            print(f"Original length: {len(blast_df)}")
+            print(f"Unique length: {len(set(blast_df['subject']))}")
 
         # only keep rows such that s_start is greater than s_end for every row, meaning that the subject is on the positive strand
         blast_df = blast_df[blast_df["s_start"] < blast_df["s_end"]]
         blast_df = blast_df.drop(columns=["query"])
-        return blast_df
+
+    return blast_df
 
 
 def correct_alignment(aligned_seq):
@@ -454,30 +464,49 @@ def matches_RGYW(kmer):
     # Check if the kmer matches either of the motifs
     return bool(re.match(regex_WRCYN, kmer)) or bool(re.match(regex_NRGYW, kmer))
 
+
 def plot_mutation_rate_vs_normed_s5f(df):
     plt.figure(figsize=(8, 8))  # Square aspect ratio
-    scatter = plt.scatter(df['rate'], df['normed_s5f'], c=df['matches_RGYW'], cmap='coolwarm', alpha=0.8)
+    scatter = plt.scatter(
+        df["rate"], df["normed_s5f"], c=df["matches_RGYW"], cmap="coolwarm", alpha=0.8
+    )
 
-    plt.xscale('log')
-    plt.yscale('log')
+    plt.xscale("log")
+    plt.yscale("log")
 
-    plt.xlabel('Mutation Rate Estimate (log scale)')
-    plt.ylabel('Normalized Fivemer Mutability (log scale)')
+    plt.xlabel("Mutation Rate Estimate (log scale)")
+    plt.ylabel("Normalized Fivemer Mutability (log scale)")
 
     # Calculate Pearson correlation
-    corr, _ = pearsonr(df['rate'], df['normed_s5f'])
+    corr, _ = pearsonr(df["rate"], df["normed_s5f"])
 
-    plt.annotate(f'Pearson r: {corr:.2f}', xy=(0.55, 0.95), xycoords='axes fraction', fontsize=12, bbox=dict(boxstyle="round,pad=0.3", edgecolor='black', facecolor='white'))
+    plt.annotate(
+        f"Pearson r: {corr:.2f}",
+        xy=(0.55, 0.95),
+        xycoords="axes fraction",
+        fontsize=12,
+        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="white"),
+    )
 
-    legend_labels = ['No', 'Yes']
-    handles = [plt.Line2D([0], [0], marker='o', color='w', label=legend_labels[i], 
-                        markersize=10, markerfacecolor=scatter.cmap(scatter.norm(i))) for i in range(2)]
+    legend_labels = ["No", "Yes"]
+    handles = [
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            label=legend_labels[i],
+            markersize=10,
+            markerfacecolor=scatter.cmap(scatter.norm(i)),
+        )
+        for i in range(2)
+    ]
     plt.legend(handles, legend_labels, title="Matches RGYW")
 
     # Add y=x line
-    min_limit = min(df['rate'].min(), df['normed_s5f'].min())
-    max_limit = max(df['rate'].max(), df['normed_s5f'].max())
-    plt.plot([min_limit, max_limit], [min_limit, max_limit], 'k--')  # Add x=y line
+    min_limit = min(df["rate"].min(), df["normed_s5f"].min())
+    max_limit = max(df["rate"].max(), df["normed_s5f"].max())
+    plt.plot([min_limit, max_limit], [min_limit, max_limit], "k--")  # Add x=y line
 
     plt.show()
 
@@ -611,3 +640,17 @@ LC_REGION_DICT = {
 }
 
 CHIGY_LC = Passenger(CHIGY_LC_STOP_TRIMMED, LC_REGION_DICT)
+
+CHIGY_HC_STOP_TRIMMED = "GAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCTCAGACTCTGTCCCTCACCTGTTCTGTCACTGGCGACTCCATCACCAGTGGTTACTGGAACTGGATCCGGAAATTCCCAGGGAATAAACTTGAGTACATGGGGTACATAAGCTACAGTGGTAGCACTTACTACAATCCATCTCTCAAAAGTCGAATCTCCATCACTCGAGACACATCCAAGAACCAGTACTACCTGCAGTTGAATTCTGTGACTACTGAGGACACAGCCACATATTACTGTGCAAGGGACTTCGATGTCTGGGGCGCAGGGACCACGGTCACCGTCTCCTCAG".upper()
+
+HC_REGION_DICT = {
+    "FW1": "GAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCTCAGACTCTGTCCCTCACCTGTTCTGTCACT",
+    "CDR1": "GGCGACTCCATCACCAGTGGTTAC",
+    "FW2": "TGGAACTGGATCCGGAAATTCCCAGGGAATAAACTTGAGTACATGGGGTAC",
+    "CDR2": "ATAAGCTACAGTGGTAGCACT",
+    "FW3": "TACTACAATCCATCTCTCAAAAGTCGAATCTCCATCACTCGAGACACATCCAAGAACCAGTACTACCTGCAGTTGAATTCTGTGACTACTGAGGACACAGCCACATATTACTGT",
+    "CDR3": "GCAAGGGACTTCGATGTC",
+    "FW4": "TGGGGCGCAGGGACCACGGTCACCGTCTCCTCAG",
+}
+
+CHIGY_HC = Passenger(CHIGY_HC_STOP_TRIMMED, HC_REGION_DICT)
