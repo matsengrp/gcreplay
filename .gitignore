@@ -129,9 +129,9 @@ dmypy.json
 .pyre/
 
 # Passenger analysis
-## Blast files
+passenger/input
+passenger/passenger-blast/*fasta
+passenger/passenger-blast/*blast.tsv
 *.db.n*
-analysis/passenger-blast/*fasta
-analysis/passenger-blast/*blast.tsv
 _ignore/
 

@@ -1,0 +1,156 @@
+BLASTN 2.14.1+
+
+
+Reference: Stephen F. Altschul, Thomas L. Madden, Alejandro A.
+Schaffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J.
+Lipman (1997), "Gapped BLAST and PSI-BLAST: a new generation of
+protein database search programs", Nucleic Acids Res. 25:3389-3402.
+
+
+
+Database: 5_IgM_S1_R1_001_atleast-2.fasta
+           22,312 sequences; 9,340,307 total letters
+
+
+
+Query= around-deleted-igh
+
+Length=19
+                                                                      Score     E
+Sequences producing significant alignments:                          (Bits)  Value
+
+ACGGGCGAGCGTTGTAG|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGH...  38.2    2e-04
+AGGGACGAACAACAGAG|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGH...  38.2    2e-04
+CAACACGAAGCAGAAAA|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGH...  38.2    2e-04
+AGAAGCAAGAGCCAGGA|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGH...  38.2    2e-04
+CGGGGCGCAACCCGGTT|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGH...  38.2    2e-04
+GAGGGCCAATAGATCCA|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGH...  38.2    2e-04
+ACACACATATAATAGAT|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGH...  38.2    2e-04
+GGTGTGTCCGTCGAGTA|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGH...  38.2    2e-04
+
+
+>ACGGGCGAGCGTTGTAG|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGHM-InternalC|CONSCOUNT=6|DUPCOUNT=1
+Length=437
+
+ Score = 38.2 bits (19),  Expect = 2e-04
+ Identities = 19/19 (100%), Gaps = 0/19 (0%)
+ Strand=Plus/Plus
+
+Query  1   AACCGGTGTGTACATTCCG  19
+           |||||||||||||||||||
+Sbjct  76  AACCGGTGTGTACATTCCG  94
+
+
+>AGGGACGAACAACAGAG|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGHM-InternalC|CONSCOUNT=2|DUPCOUNT=2
+Length=469
+
+ Score = 38.2 bits (19),  Expect = 2e-04
+ Identities = 19/19 (100%), Gaps = 0/19 (0%)
+ Strand=Plus/Plus
+
+Query  1    AACCGGTGTGTACATTCCG  19
+            |||||||||||||||||||
+Sbjct  108  AACCGGTGTGTACATTCCG  126
+
+
+>CAACACGAAGCAGAAAA|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGHM-InternalC|CONSCOUNT=10|DUPCOUNT=3
+Length=407
+
+ Score = 38.2 bits (19),  Expect = 2e-04
+ Identities = 19/19 (100%), Gaps = 0/19 (0%)
+ Strand=Plus/Plus
+
+Query  1   AACCGGTGTGTACATTCCG  19
+           |||||||||||||||||||
+Sbjct  46  AACCGGTGTGTACATTCCG  64
+
+
+ Score = 16.4 bits (8),  Expect = 649
+ Identities = 8/8 (100%), Gaps = 0/8 (0%)
+ Strand=Plus/Plus
+
+Query  11   TACATTCC  18
+            ||||||||
+Sbjct  238  TACATTCC  245
+
+
+>AGAAGCAAGAGCCAGGA|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGHM-InternalC|CONSCOUNT=25|DUPCOUNT=5
+Length=471
+
+ Score = 38.2 bits (19),  Expect = 2e-04
+ Identities = 19/19 (100%), Gaps = 0/19 (0%)
+ Strand=Plus/Plus
+
+Query  1    AACCGGTGTGTACATTCCG  19
+            |||||||||||||||||||
+Sbjct  110  AACCGGTGTGTACATTCCG  128
+
+
+>CGGGGCGCAACCCGGTT|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGHM-InternalC|CONSCOUNT=462|DUPCOUNT=16
+Length=443
+
+ Score = 38.2 bits (19),  Expect = 2e-04
+ Identities = 19/19 (100%), Gaps = 0/19 (0%)
+ Strand=Plus/Plus
+
+Query  1   AACCGGTGTGTACATTCCG  19
+           |||||||||||||||||||
+Sbjct  82  AACCGGTGTGTACATTCCG  100
+
+
+>GAGGGCCAATAGATCCA|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGHM-InternalC|CONSCOUNT=4|DUPCOUNT=2
+Length=459
+
+ Score = 38.2 bits (19),  Expect = 2e-04
+ Identities = 19/19 (100%), Gaps = 0/19 (0%)
+ Strand=Plus/Plus
+
+Query  1    AACCGGTGTGTACATTCCG  19
+            |||||||||||||||||||
+Sbjct  98   AACCGGTGTGTACATTCCG  116
+
+
+>ACACACATATAATAGAT|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGHM-InternalC|CONSCOUNT=2|DUPCOUNT=2
+Length=468
+
+ Score = 38.2 bits (19),  Expect = 2e-04
+ Identities = 19/19 (100%), Gaps = 0/19 (0%)
+ Strand=Plus/Plus
+
+Query  1    AACCGGTGTGTACATTCCG  19
+            |||||||||||||||||||
+Sbjct  107  AACCGGTGTGTACATTCCG  125
+
+
+>GGTGTGTCCGTCGAGTA|PRCONS=Mus-p5-IgM|SEQORIENT=F|CREGION=Mouse-IGHM-InternalC|CONSCOUNT=5|DUPCOUNT=5
+Length=469
+
+ Score = 38.2 bits (19),  Expect = 2e-04
+ Identities = 19/19 (100%), Gaps = 0/19 (0%)
+ Strand=Plus/Plus
+
+Query  1    AACCGGTGTGTACATTCCG  19
+            |||||||||||||||||||
+Sbjct  108  AACCGGTGTGTACATTCCG  126
+
+
+
+Lambda      K        H
+    1.37    0.711     1.31 
+
+Gapped
+Lambda      K        H
+    1.37    0.711     1.31 
+
+Effective search space used: 54301506
+
+
+  Database: 5_IgM_S1_R1_001_atleast-2.fasta
+    Posted date:  Dec 19, 2023  7:53 AM
+  Number of letters in database: 9,340,307
+  Number of sequences in database:  22,312
+
+
+
+Matrix: blastn matrix 1 -3
+Gap Penalties: Existence: 5, Extension: 2
