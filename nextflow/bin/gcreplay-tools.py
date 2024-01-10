@@ -65,25 +65,9 @@ final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
     "aa_substitutions_IMGT", "aa_sequence",
 
-    "delta_bind_CGG_FVS_additive",
-    "delta_expr_FVS_additive",
-    "delta_psr_FVS_additive",
-
-    "delta_bind_CGG_FMVS_additive",
-    "delta_expr_FMVS_additive",
-    "delta_psr_FMVS_additive",
-
-    "delta_bind_CGG_FMVS_ground_truth",
-    "delta_expr_FMVS_ground_truth",
-    "delta_psr_FMVS_ground_truth",
-
-    "delta_bind_CGG_tdms_model_pred",
-    "delta_expr_tdms_model_pred",
-    "delta_psr_tdms_model_pred",
-
-    "delta_bind_CGG_tdms_linear_model_pred",
-    "delta_expr_tdms_linear_model_pred",
-    "delta_psr_tdms_linear_model_pred",
+    "delta_bind",
+    "delta_expr",
+    "delta_psr",
 
     "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
     "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
@@ -563,21 +547,6 @@ def query_df(dataframe, query_string, output):
 @click.argument("idmapfile", type=click.Path(exists=True))
 @click.argument("variant_scores", type=click.Path(exists=False))
 @click.option(
-    "--multi_variant_scores",
-    type=click.Path(exists=False),
-    default=None
-)
-@click.option(
-    "--tdms_model",
-    type=click.Path(exists=False),
-    default=None
-)
-@click.option(
-    "--tdms_model_linear",
-    type=click.Path(exists=False),
-    default=None
-)
-@click.option(
     "--naive_sites",
     type=click.Path(exists=False),
     default="https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
@@ -615,9 +584,6 @@ def node_featurize(
     gctree_file,
     idmapfile,
     variant_scores,
-    multi_variant_scores,
-    tdms_model,
-    tdms_model_linear,
     naive_sites,
     igk_idx,
     igh_frame,
@@ -647,28 +613,6 @@ def node_featurize(
     )
     # remove linker sites
     final_variant_scores = final_variant_scores[final_variant_scores.chain != "link"]
-
-    # Final Multi Variant Scores 
-    # TODO Pass this in pipeline
-    final_multi_variant_scores = (
-        pd.read_csv(multi_variant_scores, index_col="aa_substitutions_IMGT")
-        #.query("library == 'dms'") # TODO we are not going to add pred with octet data
-        if multi_variant_scores is not None
-        else None
-    )
-
-    # torchdms models
-    tdms_model_binary = (
-        torch.load(tdms_model, map_location="cpu")
-        if tdms_model is not None
-        else None
-    )
-
-    tdms_model_linear_binary = (
-        torch.load(tdms_model_linear, map_location="cpu")
-        if tdms_model_linear is not None
-        else None
-    )
 
     # position maps for scFv
     pos_df = pd.read_csv(
@@ -752,49 +696,16 @@ def node_featurize(
                     np.nan if (igh_has_stop or igk_has_stop) 
                     else final_variant_scores.loc[all_mutations, phenotype].sum()
                 )
-                node_features[f"{phenotype}_FVS_additive"].append(additive_score)
-                node.add_feature(f"{phenotype}_FVS_additive", additive_score)
-
-
-            # each of the 'additive' phenotypes from GE training prep
-            if final_multi_variant_scores is not None:
-                
-                additive_score = (
-                    np.nan if (igh_has_stop or igk_has_stop)
-                    else final_multi_variant_scores.loc[all_mutations, phenotype].sum()
-                )
-
-                node_features[f"{phenotype}_FMVS_additive"].append(additive_score)
-                node.add_feature(f"{phenotype}_FMVS_additive", additive_score)
-
-            # each of the phenotype predictions for a global epistasis non linear model
-            if tdms_model_binary is not None:
-                seq_binary = tdms_model_binary.seq_to_binary(aa_tdms_seq)
-                pred = tdms_model_binary(seq_binary).detach().numpy()[i]
-                node_features[f"{phenotype}_tdms_model_pred"].append(pred)
-                node.add_feature(f"{phenotype}_tdms_model_pred", pred)
-
-                # TODO call tdms_model.to_latent ... only if the model latent makes sense
-                # for each of the latent nodes attached to a prediction individually.
-                #seq_binary = tdms_model_binary.seq_to_binary(aa_tdms_seq)
-                #node_features[f"{phenotype}_tdms_model_pred_latent"] = (
-                #    tdms_model_binary.to_latent(seq_binary).detach().numpy()[i]
-                #)
-
-            # each of the predictions from a perceptron tdms model
-            if tdms_model_linear_binary is not None:
-                seq_binary = tdms_model_linear_binary.seq_to_binary(aa_tdms_seq)
-                pred = tdms_model_linear_binary(seq_binary).detach().numpy()[i]
-                node_features[f"{phenotype}_tdms_linear_model_pred"].append(pred)
-                node.add_feature(f"{phenotype}_tdms_linear_model_pred", pred)
+                node_features[phenotype[:10]].append(additive_score)
+                node.add_feature(phenotype[:10], additive_score)
 
     df = pd.DataFrame(node_features).set_index("name")
     df.to_csv(f"{output_dir}/node_data.csv")
 
     phenotypes = [
-        "delta_bind_CGG_FVS_additive", 
-        "delta_expr_FVS_additive", 
-        "delta_psr_FVS_additive"
+        "delta_bind", 
+        "delta_expr", 
+        "delta_psr"
     ]
     # render tree with colormapped features
     for phenotype in phenotypes + ["LBI", "LBR"]:
@@ -850,21 +761,6 @@ def node_featurize(
     default="https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
 )
 @click.option(
-    "--multi_variant_scores",
-    type=click.Path(exists=False),
-    default=None
-)
-@click.option(
-    "--tdms_model",
-    type=click.Path(exists=False),
-    default=None
-)
-@click.option(
-    "--tdms_model_linear",
-    type=click.Path(exists=False),
-    default=None
-)
-@click.option(
     "--naive_sites",
     type=click.Path(exists=False),
     default="https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
@@ -882,9 +778,6 @@ def featurize_seqs(
     igk_frame,
     igk_idx,
     variant_scores,
-    multi_variant_scores,
-    tdms_model,
-    tdms_model_linear,
     naive_sites,
     output
 ):
@@ -904,28 +797,7 @@ def featurize_seqs(
     )
     # remove linker sites
     final_variant_scores = final_variant_scores[final_variant_scores.chain != "link"]
-
-    # Final Multi Variant Scores 
-    final_multi_variant_scores = (
-        pd.read_csv(multi_variant_scores, index_col="aa_substitutions_IMGT")
-        # .query("library == 'dms'") # TODO we are not going to add pred with octet data
-        if multi_variant_scores is not None
-        else None
-    )
-
-    # torchdms models
-    tdms_model_binary = (
-        torch.load(tdms_model, map_location="cpu")
-        if tdms_model is not None
-        else None
-    )
-
-    tdms_model_linear_binary = (
-        torch.load(tdms_model_linear, map_location="cpu")
-        if tdms_model_linear is not None
-        else None
-    )
-
+    
     # position maps for scFv
     pos_df = pd.read_csv(
         naive_sites,
@@ -978,41 +850,9 @@ def featurize_seqs(
 
             if final_variant_scores is not None:
 
-                seq_pheno_preds[f"{phenotype}_FVS_additive"].append(
+                seq_pheno_preds[phenotype[:10]].append(
                     np.nan if (igh_has_stop or igk_has_stop) 
                     else final_variant_scores.loc[all_mutations, phenotype].sum()
-                )
-
-            # each of the 'additive' phenotypes from GE training prep
-            if final_multi_variant_scores is not None:
-
-                # compute additive score from final multi variant scores
-                additive_score = (
-                    np.nan if (igh_has_stop or igk_has_stop) 
-                    else final_multi_variant_scores.loc[all_mutations, phenotype].sum()
-                )
-
-                seq_pheno_preds[f"{phenotype}_FMVS_additive"].append(additive_score)
-
-            # each of the phenotype predictions for a global epistasis non linear model
-            if tdms_model_binary is not None:
-                seq_binary = tdms_model_binary.seq_to_binary(aa_tdms_seq)
-                seq_pheno_preds[f"{phenotype}_tdms_model_pred"].append(
-                    tdms_model_binary(seq_binary).detach().numpy()[i]
-                )
-
-                # TODO call tdms_model.to_latent ... only if the model latent makes sense
-                # for each of the latent nodes attached to a prediction individually.
-                #seq_binary = tdms_model_binary.seq_to_binary(aa_tdms_seq)
-                #seq_pheno_preds[f"{phenotype}_tdms_model_pred_latent"] = (
-                #    tdms_model_binary.to_latent(seq_binary).detach().numpy()[i]
-                #)
-
-            # each of the predictions from a perceptron tdms model
-            if tdms_model_linear_binary is not None:
-                seq_binary = tdms_model_linear_binary.seq_to_binary(aa_tdms_seq)
-                seq_pheno_preds[f"{phenotype}_tdms_linear_model_pred"].append(
-                    tdms_model_linear_binary(seq_binary).detach().numpy()[i]
                 )
         
     df = pd.DataFrame(seq_pheno_preds)

@@ -8,11 +8,12 @@ nextflow/data/beast/annotated-PR-1-6-1-LB-19-GC.fasta
 **/building-xvfb/
 **/work
 
-# ignore all other intermediate results
-# from these directories after they've been
-# manually added / tracked by LFS (or not)
-nextflow/results/2023-12-17-PR2.1-rhino/*
-nextflow/results/2023-12-15-PR1.6-rhino/*
+nextflow/run_scripts*
+nextflow/.nextflow*
+nextflow/data/_ignore/
+nextflow/data/torchdms/
+nextflow/pipeline_trace.txt
+nextflow/results/*
 
 # all log files at top level dir
 *.log*
