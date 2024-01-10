@@ -27,7 +27,7 @@ nextflow.enable.dsl = 2
 
 
 /*
- * Define the default parameters - example data get's run by default
+ * Define the default parameters
  */
 
 params.reads_prefix     = "$projectDir"
@@ -36,9 +36,6 @@ params.key =        "PR-1-9"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
-params.dms_mvscores     = "data/torchdms/prepped-dms/final-multi-variant-scores.csv"
-params.tdms_model       = "data/torchdms/prepped-dms/tdms-fully-connected.model"
-params.tdms_model_lin   = "data/torchdms/prepped-dms/tdms-linear.model"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.igk_idx          = 336
 

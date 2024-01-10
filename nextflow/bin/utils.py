@@ -26,7 +26,7 @@ import matplotlib
 
 
 ##################
-# GLOBAL CONSTANTS
+# CONSTANTS
 ##################
 
 naive_hk_bcr_nt = ("GAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCT"
@@ -60,25 +60,9 @@ final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
     "aa_substitutions_IMGT", "aa_sequence",
 
-    "delta_bind_CGG_FVS_additive",
-    "delta_expr_FVS_additive",
-    "delta_psr_FVS_additive",
-
-    "delta_bind_CGG_FMVS_additive",
-    "delta_expr_FMVS_additive",
-    "delta_psr_FMVS_additive",
-
-    "delta_bind_CGG_FMVS_ground_truth",
-    "delta_expr_FMVS_ground_truth",
-    "delta_psr_FMVS_ground_truth",
-
-    "delta_bind_CGG_tdms_model_pred",
-    "delta_expr_tdms_model_pred",
-    "delta_psr_tdms_model_pred",
-
-    "delta_bind_CGG_tdms_linear_model_pred",
-    "delta_expr_tdms_linear_model_pred",
-    "delta_psr_tdms_linear_model_pred",
+    "delta_bind",
+    "delta_expr",
+    "delta_psr",
 
     "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
     "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
