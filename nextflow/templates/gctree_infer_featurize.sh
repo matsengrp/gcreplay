@@ -49,11 +49,6 @@ DMS_VSCORES=!{params.dms_vscores}
 # Gives you the DMS wild type sites
 DMS_SITES=!{params.dms_sites}
 
-
-DMS_MULTI_SCORES=!{params.reads_prefix}/!{params.dms_mvscores}
-TDMS_MODEL=!{params.reads_prefix}/!{params.tdms_model}
-TDMS_MODEL_LINEAR=!{params.reads_prefix}/!{params.tdms_model_lin}
-
 # parameters for hdag mutation models (?)
 SUB=!{params.reads_prefix}/!{params.hdag_sub}
 MUT=!{params.reads_prefix}/!{params.hdag_mut}
@@ -73,9 +68,6 @@ export PYTHONHASHSEED=0
 gcreplay-tools.py featurize-seqs \
     $GCDF \
     --variant_scores ${DMS_VSCORES} \
-    --multi_variant_scores ${DMS_MULTI_SCORES} \
-    --tdms_model ${TDMS_MODEL} \
-    --tdms_model_linear ${TDMS_MODEL_LINEAR} \
     --naive_sites ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
     --output observed_seqs.csv
@@ -158,9 +150,6 @@ xvfb-run -a gcreplay-tools.py featurize-nodes \
     ${OUTDIR}/gctree.inference.1.p \
     ${GC_DEF}.idmap \
     ${DMS_VSCORES} \
-    --multi_variant_scores ${DMS_MULTI_SCORES} \
-    --tdms_model ${TDMS_MODEL} \
-    --tdms_model_linear ${TDMS_MODEL_LINEAR} \
     --tau 1.0 \
     --tau0 1.0 \
     ${DMS_SITES} \
