@@ -19,6 +19,7 @@ from Bio.Seq import Seq
 
 def umi_histogram(fastq_gz_path, max_count):
     conscount_values = []
+    conscount_truncated = []
 
     # Regular expression to find CONSCOUNT field and extract the number
     pattern = re.compile(r"CONSCOUNT=(\d+)")
@@ -30,13 +31,13 @@ def umi_histogram(fastq_gz_path, max_count):
             if match:
                 conscount = int(match.group(1))
                 # All values greater than max_count are set to max_count
-                conscount = min(conscount, max_count)
                 conscount_values.append(conscount)
+                conscount_truncated.append(min(conscount, max_count))
 
     # Plot the histogram
     # bins should be one more than max_count to include the last bin
     plt.hist(
-        conscount_values,
+        conscount_truncated,
         bins=max_count + 1,
         range=(0, max_count + 1),
         edgecolor="black",
@@ -52,6 +53,8 @@ def umi_histogram(fastq_gz_path, max_count):
     plt.xticks(ticks, labels, rotation=90)
 
     plt.show()
+
+    return conscount_values
 
 
 def oneline_print_alignment(alignment):
