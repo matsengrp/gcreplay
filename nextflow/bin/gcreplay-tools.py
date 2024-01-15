@@ -28,65 +28,6 @@ from utils import *
 
 
 #################################
-# GLOBALS
-#################################
-
-# TODO we should probably just store the important sequences in fasta
-# matter of fact, this already exists for the partis annotation. We'll
-# just pass that.
-naive_hk_bcr_nt = ("GAGGTGCAGCTTCAGGAGTCAGGACCTAGCCTCGTGAAACCTTCT"
-                   "CAGACTCTGTCCCTCACCTGTTCTGTCACTGGCGACTCCATCACCAGTGGTTACTGGAACTGGA"
-                   "TCCGGAAATTCCCAGGGAATAAACTTGAGTACATGGGGTACATAAGCTACAGTGGTAGCACTTA"
-                   "CTACAATCCATCTCTCAAAAGTCGAATCTCCATCACTCGAGACACATCCAAGAACCAGTACTAC"
-                   "CTGCAGTTGAATTCTGTGACTACTGAGGACACAGCCACATATTACTGTGCAAGGGACTTCGATG"
-                   "TCTGGGGCGCAGGGACCACGGTCACCGTCTCCTCAGACATTGTGATGACtCAGTCTCAAAAATT"
-                   "CATGTCCACATCAGTAGGAGACAGGGTCAGCGTCACCTGCAAGGCCAGTCAGAATGTGGGTACT"
-                   "AATGTAGCCTGGTATCAACAGAAACCAGGGCAATCTCCTAAAGCACTGATTTACTCGGCATCCT"
-                   "ACAGGTACAGTGGAGTCCCTGATCGCTTCACAGGCAGTGGATCTGGGACAGATTTCACTCTCAC"
-                   "CATCAGCAATGTGCAGTCTGAAGACTTGGCAGAGTATTTCTGTCAGCAATATAACAGCTATCCT"
-                   "CTCACGTTCGGCTCGGGGACtAAGCTaGAAATAAAA")
-
-naive_hk_bcr_aa = ("EVQLQESGPSLVKPSQTLSLTCSVTGDSITSGYWNWIRKFPGNKLEYMGYISYSG"
-                   "STYYNPSLKSRISITRDTSKNQYYLQLNSVTTEDTATYYCARDFDVWGAGTTVTVSSDIVMTQS"
-                   "QKFMSTSVGDRVSVTCKASQNVGTNVAWYQQKPGQSPKALIYSASYRYSGVPDRFTGSGSGTDF"
-                   "TLTISNVQSEDLAEYFCQQYNSYPLTFGSGTKLEIK")
-
-partis_airr_to_drop = [
-    "j_sequence_end", "j_germline_start", "j_germline_end", "rev_comp",
-    "junction", "clone_id", "vj_in_frame", "stop_codon", "np1", "np2", "duplicate_count",
-    "cdr3_start", "cdr3_end", "cell_id", "v_support", "v_identity", "v_sequence_start",
-    "v_sequence_end", "v_germline_start", "v_germline_end", "d_support", "d_identity",
-    "d_sequence_start", "d_sequence_end", "d_germline_start", "d_germline_end",
-    "j_support", "j_identity", "j_sequence_start", "j_sequence_end", "j_germline_start",
-    "j_germline_end",
-]
-
-final_HK_col_order = [
-    "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
-    "aa_substitutions_IMGT", "aa_sequence",
-
-    "delta_bind",
-    "delta_expr",
-    "delta_psr",
-
-    "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
-    "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
-    "Productive_HC", "Productive_LC",
-    "V_HC", "V_LC", "D_HC", "D_LC", "J_HC", "J_LC",
-    "AAjunction_HC", "AAjunction_LC", "locus_HC", "locus_LC",
-    "miseq_plate_HC", "miseq_plate_LC",
-    "barcode_HC", "barcode_LC", "row_HC", "row_LC", "column_HC", "column_LC",
-    "chain_HC", "chain_LC", "rank_HC", "rank_LC", "counts_HC", "counts_LC",
-    "seq_nt_length_HC", "seq_nt_length_LC", "seq_aa_length_HC", "seq_aa_length_LC",
-    "fasta_header_HC", "fasta_header_LC", "fasta_seq_HC", "fasta_seq_LC", 
-    "partis_sequence_HC", "partis_sequence_LC",
-    "seq_aa_HC", "seq_aa_LC",
-    "seq_nt_HC", "seq_nt_LC", 
-    # "date",
-]
-
-
-#################################
 # CLI
 #################################
 
@@ -842,6 +783,8 @@ def featurize_seqs(
         # Individual chain mutations
         seq_pheno_preds["IgH_mutations"].append(igh_mutations)
         seq_pheno_preds["IgK_mutations"].append(igk_mutations)
+        seq_pheno_preds["n_mutations_HC"].append(len(igh_mutations))
+        seq_pheno_preds["n_mutations_LC"].append(len(igk_mutations))
         
         # substitutions to (hopefully) match those in FMVS
         seq_pheno_preds["aa_substitutions_IMGT"].append(" ".join(all_mutations))
@@ -856,7 +799,7 @@ def featurize_seqs(
                 )
         
     df = pd.DataFrame(seq_pheno_preds)
-    ret = pd.concat([df, hk_df], axis=1)
+    ret = pd.concat([df, hk_df.drop(["n_mutations_HC", "n_mutations_LC"], axis=1)], axis=1)
 
     # TODO ADD NEW PHENOTYPES
     ret = ret.loc[:, [c for c in final_HK_col_order if c in ret.columns]]
