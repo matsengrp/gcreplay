@@ -50,8 +50,10 @@ DMS_VSCORES=!{params.dms_vscores}
 DMS_SITES=!{params.dms_sites}
 
 # parameters for hdag mutation models (?)
-SUB=!{params.reads_prefix}/!{params.hdag_sub}
-MUT=!{params.reads_prefix}/!{params.hdag_mut}
+# SUB=!{params.reads_prefix}/!{params.hdag_sub}
+# MUT=!{params.reads_prefix}/!{params.hdag_mut}
+SUB=!{hdag_sub}
+MUT=!{hdag_mut}
 IGK_IDX=!{params.igk_idx}
 
 ls $SUB

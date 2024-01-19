@@ -58,7 +58,7 @@ partis_airr_to_drop = [
 
 final_HK_col_order = [
     "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
-    "aa_substitutions_IMGT", "aa_sequence",
+    "aa_substitutions_IMGT",
 
     "delta_bind",
     "delta_expr",

@@ -36,7 +36,7 @@ params.reads_prefix     = "$projectDir"
 params.manifest         = "data/test/manifest.csv"
 params.plate_barcodes   = "data/barcodes/plateBC.txt"
 params.well_barcodes    = "data/barcodes/96FBC.txt"
-params.partis_anno_dir  = "$projectDir/data/partis_annotation/"
+params.partis_anno_dir  = "$projectDir/data/partis_annotation/germlines"
 params.results          = "$projectDir/results/"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
@@ -81,12 +81,12 @@ workflow BCR_COUNTS {
 
   main:
 
-    TRIM_COMBINE_MATES(filepair)
-    DEMULTIPLEX_PLATES(TRIM_COMBINE_MATES.out) \
+    TRIM_COMBINE_MATES(filepair) | set { trimmed_ch }
+    DEMULTIPLEX_PLATES(trimmed_ch, file("$params.plate_barcodes")) \
       | transpose() | filter{ file(it[2]).size()>0 } \
       | set { dmplxd_plates_ch }
 
-    DEMULTIPLEX_WELLS(dmplxd_plates_ch) \
+    DEMULTIPLEX_WELLS(dmplxd_plates_ch, file("$params.well_barcodes")) \
       | transpose() | filter{ file(it[2]).size()>0 } \
       | set { dmplxd_wells_ch }
 
@@ -123,8 +123,9 @@ workflow {
     } | BCR_COUNTS
 
   PARTIS_ANNOTATION(BCR_COUNTS.out) \
-    | PARTIS_WRANGLE \
-    | flatten() | GCTREE \
+    | PARTIS_WRANGLE | flatten() | set{partis_wrangle_ch}
+
+  GCTREE(partis_wrangle_ch, file("$params.hdag_sub"), file("$params.hdag_mut")) \
     | collect | MERGE_RESULTS
 
 }

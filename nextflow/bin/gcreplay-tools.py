@@ -581,14 +581,6 @@ def node_featurize(
         igh_aa = aa(node.sequence[:igk_idx], igh_frame)
         igk_aa = aa(node.sequence[igk_idx:], igk_frame)
 
-        # Make the aa seq for tdms 
-        aa_tdms = pos_df.amino_acid.copy()
-        aa_tdms.iloc[pos_df.chain == "H"] = igh_aa
-        # note: replay light chains are shorter than dms seq by one aa
-        aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
-        aa_tdms_seq = "".join(aa_tdms)
-        node.add_feature("aa_sequence", aa_tdms_seq)
-
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
         igh_has_stop = any("*" in x for x in igh_mutations)
@@ -620,7 +612,6 @@ def node_featurize(
         node_features["IgH_aa_sequence"].append(str(igh_aa))
         node_features["IgK_nt_sequence"].append(node.sequence[igk_idx:])
         node_features["IgK_aa_sequence"].append(str(igk_aa))
-        node_features["aa_sequence"].append(aa_tdms_seq)
 
         
         # substitutions to (hopefully) match those in FMVS
@@ -763,14 +754,9 @@ def featurize_seqs(
         # Infer mutations from nt seq available
         igh_aa = aa(row.seq_nt_HC, igh_frame)
         igk_aa = aa(row.seq_nt_LC, igk_frame)
-
-        # Make the aa seq for tdms 
-        aa_tdms = pos_df.amino_acid.copy()
-        aa_tdms.iloc[pos_df.chain == "H"] = igh_aa
-        # note: replay light chains are shorter than dms seq by one aa
-        aa_tdms.iloc[(pos_df.chain == "L") & (pos_df.index < pos_df.index[-1])] = igk_aa
-        aa_tdms_seq = "".join(aa_tdms)
-        seq_pheno_preds["aa_sequence"].append(aa_tdms_seq)
+        
+        assert igh_aa == row.seq_aa_HC
+        assert igk_aa == row.seq_aa_LC
 
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
