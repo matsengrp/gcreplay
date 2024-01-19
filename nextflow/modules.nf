@@ -28,15 +28,18 @@ process TRIM_COMBINE_MATES {
 process DEMULTIPLEX_PLATES {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/demultiplexed_plates_fasta/" 
-  input: tuple val(key), val(key_file), val(date), path(key_fasta)
+  input: 
+    tuple val(key), val(key_file), val(date), path(key_fasta)
+    path(plate_barcodes)
   output: tuple val(key), val(key_file), path("${key}.${date}.*")
   script:
   """
   cat ${key_fasta} | fastx_barcode_splitter.pl \
-    --bcfile ${params.reads_prefix}/${params.plate_barcodes} --eol \
+    --bcfile ${plate_barcodes} --eol \
     --prefix ${key}.${date}. --exact
   """
 }
+// --bcfile ${params.reads_prefix}/${params.plate_barcodes} --eol \
 
 /*
  * Process 1C: Demultiplex each plate into the 96 wells per plate
@@ -44,14 +47,17 @@ process DEMULTIPLEX_PLATES {
 process DEMULTIPLEX_WELLS {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/demultiplexed_wells_fasta/"
-  input: tuple val(key), val(key_file), path(plate)
+  input: 
+    tuple val(key), val(key_file), path(plate)
+    path(well_barcodes)
   output: tuple val(key), val(key_file), path("${plate}.*")
   script:
   """
   cat ${plate} | fastx_barcode_splitter.pl \
-    --bcfile ${params.reads_prefix}/${params.well_barcodes} --bol --prefix ${plate}.
+    --bcfile ${well_barcodes} --bol --prefix ${plate}.
   """
 }
+// --bcfile ${params.reads_prefix}/${params.well_barcodes} --bol --prefix ${plate}.
 
 
 /*
@@ -62,7 +68,7 @@ process DEMULTIPLEX_WELLS {
 process SPLIT_HK {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/split_HK/"
-  label 'multithread'
+  label 'small_multithread'
   input: 
     tuple val(key), val(key_file), path(well) 
     val(motif)
@@ -70,7 +76,7 @@ process SPLIT_HK {
   output: tuple val(key), val(key_file), path("${well}.${chain}")
   script:
   """
-  cutadapt --cores 8 -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
+  cutadapt --cores ${task.cpus} -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
   """
 }
 
@@ -80,6 +86,7 @@ process SPLIT_HK {
  * demultiplexed files into  
  */
 process COLLAPSE_RANK_PRUNE {
+  label 'small'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/rank_collapsed/"
   input: tuple val(key), val(key_file), path(well_chain)
@@ -98,6 +105,7 @@ process COLLAPSE_RANK_PRUNE {
  * Process 1F: Merge the top ranked BCR's
  */
 process MERGE_BCRS {
+  label 'small'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/ranked_bcr_sequences_per_well/"
   input: tuple val(key), val(key_file), path(all_coll_rank)
@@ -116,13 +124,15 @@ process MERGE_BCRS {
 process PARTIS_ANNOTATION {
   container 'quay.io/matsengrp/partis:main'
   publishDir "$params.results/partis_annotation/"
-  input: tuple val(key), val(key_file), path(merged_fasta)
+  input: 
+    tuple val(key), val(key_file), path(merged_fasta)
+    // path(partis_anno_dir)
   output: tuple val(key), val(key_file), path(merged_fasta), path("${key}/")
   script:
   """
   wd=\$PWD
   cd /partis
-  initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${key} ${params.partis_anno_dir}germlines/
+  initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${key} $params.partis_anno_dir
   """
 }
 
@@ -167,7 +177,10 @@ process GCTREE {
   publishDir "$params.results/gctrees/", mode: "copy"
   label "mem_large"
   //errorStrategy 'ignore'
-  input: path(single_mouse_gc_df)
+  input: 
+    path single_mouse_gc_df
+    path hdag_sub
+    path hdag_mut
   output: path("PR*")
   shell:
   template "gctree_infer_featurize.sh"
