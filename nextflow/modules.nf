@@ -173,7 +173,7 @@ process PARTIS_WRANGLE {
  */
 process GCTREE {
   //container '093db2c8b33a'
-  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
+  container 'quay.io/matsengrp/gcreplay-pipeline:gctree-4.1.2-historydag-1.2.0'
   publishDir "$params.results/gctrees/", mode: "copy"
   label "mem_large"
   //errorStrategy 'ignore'
