@@ -3,15 +3,21 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.9
+  - python=3.11
   - seaborn
   - biopython
   - pandas
   - jupyter
-  - statsmodels
-  - gctree
+  - scikit-learn
+  - jax
   - git-lfs
   - pip
   - pip:
+    - gctree
+    - equinox
+    - diffrax
     - jaxopt
+    - ott-jax
+    - pomegranate
     - openpyxl  # for reading excel files
+    - fcsparser
