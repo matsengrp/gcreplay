@@ -8,3 +8,4 @@
 nextflow/data/** filter=lfs diff=lfs merge=lfs -text
 nextflow/results/** filter=lfs diff=lfs merge=lfs -text
 analysis/output/** filter=lfs diff=lfs merge=lfs -text
+passenger/output/** filter=lfs diff=lfs merge=lfs -text
