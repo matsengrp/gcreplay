@@ -19,14 +19,21 @@ xscales=0.1:1:5:10; xshifts=-5:-2:-1:0:1:2:5
 # echo $bin $common --label vs-n-trees --version v7 --carry-cap-list 150 --xscale-list 2 --xshift-list=-0.5,3 --n-replicates 2 --n-trials-list 500:5000:50000 --simu-extra-args=\"--n-max-procs 20\" --perf-metrics all-test-dl --plot-metrics group-expts --final-plot-xvar n-trees-per-expt --n-trees-per-expt-list 1:5:10:50:100
 # echo ./projects/cf-gcdyn.py --actions dl-infer --n-max-procs 2 --base-outdir /fh/fast/matsen_e/dralph/partis/gcdyn --label test-simu-test --version v1 --carry-cap-list 150 --xscale-values-list 2 --xshift-range-list=-0.5,3 --n-replicates 2 --n-trials-list 500:5000 --simu-extra-args="--n-max-procs 20 --n-trees-per-param-set 10" --dl-extra-args="--no-shuffle" --perf-metrics all-test-dl --plot-metrics group-expts --final-plot-xvar n-trees-per-expt --n-trees-per-expt-list 1:5 --params-to-predict xshift --dry
 # echo ./projects/cf-gcdyn.py --actions dl-infer --n-max-procs 4 --base-outdir /fh/fast/matsen_e/dralph/partis/gcdyn --label vary-trees-per-param-set --version v0 --carry-cap-list 150 --xscale-values-list 2 --xshift-range-list=-0.5,3 --n-replicates 2 --n-trials-list 500:5000 --n-trees-per-param-set-list 10:50 --simu-extra-args="--n-max-procs 20" --dl-extra-args="--no-shuffle" --perf-metrics all-test-dl --plot-metrics group-expts --final-plot-xvar n-trees-per-expt --n-trees-per-expt-list 1:5 --params-to-predict xshift --dry
-echo $bin $common --label bundle-xshift --version v8 --carry-cap-list 150 --xscale-values-list 2 --xshift-range-list=-0.5,3 --n-replicates 1 --n-trials-list 5000:50000 --simu-bundle-size 50 --simu-extra-args=\"--n-max-procs 20\" --perf-metrics all-test-dl --plot-metrics group-expts --final-plot-xvar n-trees-per-expt --n-trees-per-expt-list 1:5 --params-to-predict xshift
-# NOTE made bundle size 250 for 500k sample (could use zip vars for this, but also want to zip n-trials with epochs)
-echo $bin $common --label bundle-xscale-xshift --version v0 --carry-cap-list 150 --xscale-range-list 0.5,5 --xshift-range-list=-0.5,3 --n-replicates 1 --n-trials-list 5000:50000:500000 --epochs-list 1000:5000:1000 --zip-vars n-trials:epochs --simu-bundle-size 50 --simu-extra-args=\"--n-max-procs 20\" --params-to-predict xscale:xshift --dropout-rate-list 0:0.2:0.5 --learning-rate-list 0.001:0.01 --ema-momentum-list 0.9:0.99
-echo $bin $common --label new-constraints --version v0 --carry-cap-list 150 --xscale-range-list 0.5,5 --xshift-range-list=-0.5,3 --yscale-range-list 1,50 --initial-birth-rate-range-list 2,10 --n-replicates 1 --n-trials-list 100 --time-to-sampling-values-list 5 --simu-extra-args=\"--n-max-procs 20\" --params-to-predict xscale:xshift:yscale
-# --params-to-predict xshift
-# xshift 1  update:maybe not
-# include larger xscale values like 5-10
-# also try to infer xshift
+# echo $bin $common --label bundle-xshift --version v8 --carry-cap-list 150 --xscale-values-list 2 --xshift-range-list=-0.5,3 --n-replicates 1 --n-trials-list 5000:50000 --simu-bundle-size 50 --simu-extra-args=\"--n-max-procs 20\" --perf-metrics all-test-dl --plot-metrics group-expts --final-plot-xvar n-trees-per-expt --n-trees-per-expt-list 1:5 --params-to-predict xshift
+# NOTE in line below, --simu-bundle-size is 250 for 500k sample (could use zip vars for this, but also want to zip n-trials with epochs)
+# echo $bin $common --label bundle-xscale-xshift --version v0 --carry-cap-list 150 --xscale-range-list 0.5,5 --xshift-range-list=-0.5,3 --n-replicates 1 --n-trials-list 5000:50000:500000 --epochs-list 1000:5000:1000 --zip-vars n-trials:epochs --simu-bundle-size 50 --simu-extra-args=\"--n-max-procs 20\" --params-to-predict xscale:xshift --dropout-rate-list 0:0.2:0.5 --learning-rate-list 0.001:0.01 --ema-momentum-list 0.9:0.99
+# pranges="--xscale-range-list 0.5,5 --xshift-range-list=-0.5,3 --yscale-range-list 1,50 --initial-birth-rate-range-list 4,10"
+# NOTE use 100 sub procs for <1 milliong, otherwise 500 sub procs
+# echo $bin $common --label new-constraints --version v2 --carry-cap-range-list 150,150 $pranges --n-replicates 1 --n-trials-list 5000:50000:500000:5000000 --simu-bundle-size 50 --epochs-list 100:250 --simu-extra-args=\"--n-max-procs 20\" --params-to-predict xscale:xshift:yscale
+# echo $bin $common --label new-constraints --version v3 --carry-cap-range-list 150,150 $pranges --n-replicates 1 --n-trials-list 5000:50000:500000 --time-to-sampling-range-list 10,30 --simu-bundle-size 50 --epochs-list 50:250:1000 --prebundle-layer-cfg-list small:default:big --simu-extra-args=\"--n-max-procs 20\" --params-to-predict xscale:xshift:yscale
+# pranges="--xscale-range-list 0.5,5 --xshift-range-list=-0.5,3 --yscale-range-list 1,50 --initial-birth-rate-range-list 4,10 --time-to-sampling-range-list 10,30 --carry-cap-range-list 100,300"
+# also ran with epochs 250 and dl-bundle-size 1:10:50, and   
+# echo $bin $common --label vary-all --version v0 $pranges --n-replicates 1 --n-trials-list 5000:50000:500000 --simu-bundle-size 50 --epochs-list 50:250:1000 --simu-extra-args=\"--n-max-procs 20\"
+pranges="--xscale-range-list 0.01,2 --xshift-range-list=-0.5,3 --yscale-range-list 1,50 --initial-birth-rate-range-list 4,10 --time-to-sampling-range-list 10,30 --carry-cap-range-list 100,300 --n-seqs-range-list 40,90"
+ppl="--params-to-predict-list xscale:xshift:yscale:xscale,xshift:xscale,yscale:xshift,yscale:xscale,xshift,yscale"
+echo $bin $common --label vary-all --version v1 $pranges --n-replicates 1 --n-trials-list 5000:50000:500000:670000 --simu-bundle-size-list 1:50:67 --dl-bundle-size-list 1:50:67 --zip-vars simu-bundle-size:dl-bundle-size --epochs-list 250 --simu-extra-args=\"--n-max-procs 20\" $ppl
+# echo ./projects/cf-gcdyn.py --actions data --n-max-procs 5 --n-sub-procs 100 --base-outdir /fh/fast/matsen_e/dralph/partis/gcdyn --label test-data --version v0 --dry --dl-model-dir $dld --dl-bundle-size-list 1
+
 
 exit 0
 
