@@ -1,7 +1,6 @@
 ### description of metadata files (metadata.PR1.csv and petadata.PR2.csv)
 These files describe the properties of each GC, e.g. timepoint, mouse, etc. At the moment, they're separate since they came from different sources, but should probably be merged at some point.
 
-  - PR1 file has decimal-style 1.xx but PR2 doesn't, so PR2 doesn't match to e.g. gctree output files
   - the w10 (week 10) samples used lymph node (LN) sampling rather than GC sampling because there weren't any GCs big enough to find (GC number for these is arbitrary, at the moment it's just sampling order)                                                                                                    
 
 ###### samples labeled "lmp2a"

@@ -145,7 +145,7 @@ should be the plate ID, and the second the oligonucleotide barcode
 * Specifies the barcodes (at the **end** of read) for demultiplexing
 individual wells from each of the plate-demultiplexed NGS Fastq files.
 
-* formatted with two, space-deliminated, columns. The first column
+* formatted with two, space-delimited, columns. The first column
 should be the well ID, and the second the oligonucleotide barcode  
 
 #### `--partis_anno_dir`
@@ -158,7 +158,7 @@ should be the well ID, and the second the oligonucleotide barcode
 * This parameter is used after
 
 
-#### `results`
+#### `--results`
 
 * where you would like the final results to be places
 
@@ -167,7 +167,13 @@ should be the well ID, and the second the oligonucleotide barcode
     
 ## Pipeline results
 
-TODO
+The primary results produced by the main pipeline will be stored under the specified `--results`
+path. Beneath this you'll find a few different subdirectories containing the intermediate files
+from individual steps of the pipeline. The primary outputs consist of the individual inferred trees
+for each clonal family. The most relevant outputs that we track in this repository are:
+ 
+1. Under the [results/gctrees](results/gctrees), you'll find subdirectories containing all intermediate input and output files from running `gctree`.
+2. Under the [results/merged-results](results/merged-results), you'll find the summary of all tree nodes across all trees, and all observed BCR's in the form of tabular csv files.
 
 ## Schematic Outline
 
@@ -175,12 +181,5 @@ TODO
 
 ## Requirements 
 
-TODO
-
 required software components reported in the following section. See the included 
 [Dockerfile](docker/Dockerfile) for the configuration details.
- 
-## Components 
-
-TODO
-
