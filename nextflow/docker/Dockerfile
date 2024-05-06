@@ -72,7 +72,3 @@ RUN curl -L 'https://github.com/agordon/fastx_toolkit/releases/download/0.0.14/f
 RUN git clone https://github.com/neufeld/pandaseq.git \
   && (cd pandaseq && ./autogen.sh && ./configure && make && make install && ldconfig)
 
-# install torchdms
-RUN git clone https://github.com/matsengrp/torchdms.git \
-  && (cd torchdms && make install)
-
