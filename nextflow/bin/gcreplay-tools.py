@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
-import torch
 import click
 from click import Choice, Path, command, group, option, argument
 import regex
