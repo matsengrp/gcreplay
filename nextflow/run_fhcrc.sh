@@ -11,7 +11,7 @@ ml nextflow
 # Load the Apptainer module (if running on rhino/gizmo with Apptainer)
 ml Apptainer
 export PATH=$APPTAINERROOT/bin/:$PATH
-results_dir="results"
+results_dir="results/2024-05-15-fresh"
 workdir="/fh/scratch/delete30/matsen_e/jgallowa/work"
 manifest="manifest.csv"
 prefix="data/input"
