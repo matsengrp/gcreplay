@@ -122,7 +122,8 @@ process MERGE_BCRS {
  * Process 2A: Annotate the top ranked seqs
  */
 process PARTIS_ANNOTATION {
-  container 'quay.io/matsengrp/partis:main'
+  label 'mem_large'
+  container 'quay.io/matsengrp/gcreplay-pipeline:partis'
   publishDir "$params.results/partis_annotation/"
   input: 
     tuple val(key), val(key_file), path(merged_fasta)
@@ -173,7 +174,7 @@ process PARTIS_WRANGLE {
  */
 process GCTREE {
   //container '093db2c8b33a'
-  container 'quay.io/matsengrp/gcreplay-pipeline:gctree-4.1.2-historydag-1.2.0'
+  container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/gctrees/", mode: "copy"
   label "mem_large"
   //errorStrategy 'ignore'
