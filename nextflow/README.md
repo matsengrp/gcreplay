@@ -183,3 +183,20 @@ for each clonal family. The most relevant outputs that we track in this reposito
 
 required software components reported in the following section. See the included 
 [Dockerfile](docker/Dockerfile) for the configuration details.
+
+# Beast pipeline
+
+The beast pipeline takes in any number of fasta's containing the naive sequence, and the
+observed BCR sequences from a single germinal center. The pipeline then prepares the
+xml files from [beastgen](TODO) and a given template (pre-configured templates can be found in the [data/beast/beast_templates](data/beast/beast_templates) directory). The pipeline then runs the beast on the given sequences and produces time estimates for each sequence. 
+
+## Quick start
+
+## Input files
+
+Given the main replay pipeline has been run, we can now use the intermediate files that
+provide a single csv for each GC in the pipeline manifest, containing all observed BCR's
+(e.g. [results/archive/2024-05-15-full/single_gc_wrangle/](results/archive/2024-05-15-full/single_gc_wrangle/)). From here, we simply need to convert 
+
+
+## Output files

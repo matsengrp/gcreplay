@@ -4,6 +4,7 @@ from Bio import SeqIO
 import warnings
 import os
 import sys
+import argparse
 
 def add_date_to_fasta(original_file, updated_file=None, delim='@', keyword='naive', keyword_time=0, other_seq_time=20):
     """ 
@@ -52,4 +53,20 @@ def add_date_to_fasta(original_file, updated_file=None, delim='@', keyword='naiv
     return
 
 if __name__ == '__main__':
-    add_date_to_fasta(sys.argv[1], keyword='naive', keyword_time=0, other_seq_time=20)
+    parser = argparse.ArgumentParser(description='Add sequence time to fasta headers')
+    parser.add_argument('fasta_file', type=str, help='The fasta file path to be modified')
+    parser.add_argument('--delim', type=str, default='@', help='A delimiter that seperates the orginal record and the added time')
+    parser.add_argument('--naive_keyword', type=str, default='naive', help='A particular sequence name to be set at a give time')
+    parser.add_argument('--naive_seq_time', type=float, default=0, help='Time of the keyword sequence')
+    parser.add_argument('--observed_seq_time', type=float, default=20, help='Time of the rest of the sequences')
+    parser.add_argument('--output', type=str, default=None, help='The modified fasta file will be written into. Default is None, which will create a new file with "_with_time" appended to the original file name.')
+    args = parser.parse_args()
+
+    add_date_to_fasta(
+        args.fasta_file, 
+        updated_file=args.output, 
+        delim=args.delim, 
+        keyword=args.naive_keyword, 
+        keyword_time=args.naive_seq_time, 
+        other_seq_time=args.observed_seq_time
+    )
