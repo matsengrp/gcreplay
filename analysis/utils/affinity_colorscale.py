@@ -10,7 +10,7 @@ import numpy as np
 class dms:
     """Based on Tyler's R code for DMS heatmaps"""
     colors = ["#A94E35", "#A94E35", "#F48365", "#FFFFFF", "#7378B9", "#383C6C"]
-    norm = norm = mc.Normalize(vmin=-3.5, vmax=1)
+    norm = mc.Normalize(vmin=-3.5, vmax=1)
     positions = np.array([0, 1, 2.25, 3.5, 4, 4.5]) / 4.5
     cmap = mc.LinearSegmentedColormap.from_list("custom_cmap",
                                                 list(zip(positions, colors)))
@@ -18,8 +18,11 @@ class dms:
 
 
 class trees:
-    norm = mc.CenteredNorm(vcenter=0, halfrange=3)
-    cmap = plt.cm.get_cmap("seismic_r")
+    colors = ["#A94E35", "#F48365", "#FFFFFF", "#7378B9", "#383C6C"]
+    norm = mc.Normalize(vmin=-3, vmax=3)
+    positions = np.array([0, 0.25, 0.5, 0.75, 1])
+    cmap = mc.LinearSegmentedColormap.from_list("custom_cmap",
+                                                list(zip(positions, colors)))
     cmap.set_bad(color="#b3b3b3")
 
 
