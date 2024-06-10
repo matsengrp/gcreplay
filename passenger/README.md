@@ -1,5 +1,16 @@
 # Passenger allele analysis
 
+## Installation
+
+Here's a working set of steps for a conda environment:
+
+```
+mamba create -n gcreplay python=3.9
+conda activate gcreplay
+pip install seaborn biopython pandas ipykernel scipy
+conda install -c bioconda blast
+```
+
 ## To replicate analysis
 
 All instructions are relative to `gcreplay/passenger/`.
