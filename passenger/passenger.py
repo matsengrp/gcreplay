@@ -125,6 +125,13 @@ def blast_df_of_blast_files(blast_paths):
             )
             print(f"Original length: {len(blast_df)}")
             print(f"Unique length: {len(set(blast_df['subject']))}")
+            # Print the duplicated sequences
+            duplicated_seqs = blast_df[
+                blast_df.duplicated(subset="subject", keep=False)
+            ]["subject"]
+            print("Duplicated sequences:")
+            for seq in duplicated_seqs:
+                print(seq)
 
         # only keep rows such that s_start is greater than s_end for every row, meaning that the subject is on the positive strand
         blast_df = blast_df[blast_df["s_start"] < blast_df["s_end"]]
