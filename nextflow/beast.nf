@@ -155,11 +155,9 @@ workflow {
         | BEAST_TIMETREE \
         | set {beast_outputs}
 
-    if (params.convert_to_ete) {
-        | ETE_CONVERSION \
-        | collect | set {all_slice_dfs}
-    MERGE_SLICE_DFS(all_slice_dfs) | view()
-    }
+    if (params.convert_to_ete)
+        ETE_CONVERSION(beast_outputs) \
+        | collect | MERGE_SLICE_DFS
 
 }
 
