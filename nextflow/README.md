@@ -192,6 +192,35 @@ xml files from [beastgen](TODO) and a given template (pre-configured templates c
 
 ## Quick start
 
+There's a testing set of sequences in the [data/beast/](data/beast/) directory. To run the beast pipeline on this data (with a small number of MCMC iterations for quick execution), you can use the following command:
+
+```
+nextflow run beast/main.nf --chain_length 1000 --log_every 100 -profile docker -resume
+```
+
+## Pipeline parameters
+
+* `--seqs` is a string parameter specifying a file path pattern to the fasta files containing the naive and observed BCR sequences. The beast pipeline will be run on each of the files matching this pattern.
+
+* `--beast_template` is a string parameter specifying the path to the beast template file. The pipeline will use this template to generate the xml files for the beast runs.
+
+* `--results` is a string parameter specifying the path to the directory where the results of the beast runs will be stored.
+
+* `--chain_length` is an integer parameter specifying the number of MCMC iterations to run the beast for.
+
+* `--log_every` is an integer parameter specifying the interval at which MCMC-step trees are recorded.
+
+* `--convert_to_ete` is a boolean parameter specifying whether to convert the beast trees to ete trees.
+
+* `--dms_vscores` is the url to the dms variant scores for adding phenotypes to the ete converted trees.
+
+* `--dms_sites` is the url to the dms sites for adding phenotypes to the ete converted trees.
+
+* `--burn_frac` is the fraction of the chain to discard as burn-in instead of converting to ete.
+
+* `--save_pkl_trees` is a boolean parameter specifying whether to save the ete trees as pickle files. This can be very memory intensive when there are many logged tree iterations for each tree.
+
+
 ## Input files
 
 Given the main replay pipeline has been run, we can now use the intermediate files that
