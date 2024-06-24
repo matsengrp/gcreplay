@@ -26,6 +26,7 @@
 nextflow.enable.dsl = 2
 
 
+
 /*
  * Define the default parameters - example data get's run by default
  */
@@ -33,12 +34,13 @@ nextflow.enable.dsl = 2
 params.seqs    = "$projectDir/data/beast/test-observed-seqs.fasta"
 params.beast_template   = "$projectDir/data/beast/beast_templates/skyline_histlog.template.patch"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
+// params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/improved-Kd-fitting/tite-seq-modeling/output/final_variant_scores.csv"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.results          = "$projectDir/results"
 params.chain_length     = 50000000
 params.log_every        = 10000
 params.burn_frac        = 0.9
-params.save_pkl_trees    = false
+params.save_pkl_trees   = false
 
 log.info """\
 G C Re - F L O W (beast)!
@@ -86,10 +88,10 @@ process NAIVE_ROOT_PATCH {
 }
 
 process BEAST_TIMETREE {
-  label 'longtime'
+  label 'threaded'
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
-  publishDir "$params.results/beast"
+  publishDir "$params.results/beast", mode: "copy"
   input: path(beastgen_output)
   output: path(beastgen_output)
   shell:
@@ -150,10 +152,10 @@ workflow {
     seqs | ADD_TIME_TO_FASTA | combine(beast_template) \
         | BEASTGEN 
         | NAIVE_ROOT_PATCH \
-        | BEAST_TIMETREE \
-        | ETE_CONVERSION \
-        | collect | set {all_slice_dfs}
-    MERGE_SLICE_DFS(all_slice_dfs) | view()
+        | BEAST_TIMETREE 
+        // | ETE_CONVERSION \
+        // | collect | set {all_slice_dfs}
+    // MERGE_SLICE_DFS(all_slice_dfs) | view()
 
 }
 
