@@ -121,20 +121,19 @@ def blast_df_of_blast_files(blast_paths):
 
         if len(blast_df) != len(set(blast_df["subject"])):
             print(
-                f"Warning: duplicate sequences found in blast results for {blast_file}."
+                f"Note: multiple hits found in BLAST results for {blast_file}."
             )
             print(f"Original length: {len(blast_df)}")
-            print(f"Unique length: {len(set(blast_df['subject']))}")
-            # Print the duplicated sequences
             duplicated_seqs = blast_df[
                 blast_df.duplicated(subset="subject", keep=False)
             ]["subject"]
-            print("Duplicated sequences:")
-            for seq in duplicated_seqs:
-                print(seq)
+            # Remove rows from blast_df where "subject" matches anything in duplicated_seqs.
+            # These are probably PCR recombinants.
+            blast_df = blast_df[~blast_df["subject"].isin(duplicated_seqs)].reset_index(drop=True)
+            print(f"After dropping sequences with multiple hits: {len(blast_df)}\n")
 
         # only keep rows such that s_start is greater than s_end for every row, meaning that the subject is on the positive strand
-        blast_df = blast_df[blast_df["s_start"] < blast_df["s_end"]]
+        blast_df = blast_df[blast_df["s_start"] < blast_df["s_end"]].reset_index(drop=True)
         blast_df = blast_df.drop(columns=["query"])
 
     return blast_df

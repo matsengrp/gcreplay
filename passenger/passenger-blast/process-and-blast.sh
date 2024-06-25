@@ -33,9 +33,9 @@ run_blast around-deleted-11a.fasta AV_IgYKSTOP_11A_collapse-unique.atleast2.fast
 
 # Heavy chain
 
-for path in ../input/[567]_Ig*atleast-2.fastq.gz; do
+for path in ../input/outname_[567]*atleast-2.fastq.gz; do
     base_path=$(basename "$path" .fastq.gz)
     fasta_path="$base_path".fasta
     gzcat "$path" | seqtk seq -a > $fasta_path
-    run_blast around-deleted-igh.fasta $fasta_path
+    run_blast around-inserted-igh.fasta $fasta_path
 done
