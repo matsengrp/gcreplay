@@ -17,15 +17,19 @@ All instructions are relative to `gcreplay/passenger/`.
 
 Download these files into `input`:
 
-    5_IgG_S4_R1_001_atleast-2.fastq.gz
-    5_IgM_S1_R1_001_atleast-2.fastq.gz
-    6_IgG_S5_R1_001_atleast-2.fastq.gz
-    6_IgM_S2_R1_001_atleast-2.fastq.gz
-    7_IgG_S6_R1_001_atleast-2.fastq.gz
-    7_IgM_S3_R1_001_atleast-2.fastq.gz
-    AV_IgYKSTOP_11A_collapse-unique.fastq.gz
-    AV_IgYKSTOP_8A_collapse-unique.fastq.gz
-    AV_IgYKSTOP_9A_collapse-unique.fastq.gz
+    outname_5_IgG_S4_R1_001_atleast-2.fastq.gz
+    outname_5_IgM_S1_R1_001_atleast-2.fastq.gz
+    outname_6_IgG_S5_R1_001_atleast-2.fastq.gz
+    outname_6_IgM_S2_R1_001_atleast-2.fastq.gz
+    outname_7_IgG_S6_R1_001_atleast-2.fastq.gz
+    outname_7_IgM_S3_R1_001_atleast-2.fastq.gz
+    outname_5_S1_R1_001_atleast-2.fastq.gz
+    outname_6A_S2_R1_001_atleast-2.fastq.gz
+    outname_7B_S3_R1_001_atleast-2.fastq.gz
+    outname_AV_IgYKSTOP_11A_S1_R1_001_atleast-2.fastq.gz
+    outname_AV_IgYKSTOP_8A_S2_R1_001_atleast-2.fastq.gz
+    outname_AV_IgYKSTOP_9A_S3_R1_001_atleast-2.fastq.gz
+
 
 Enter the `passenger-blast` directory and execute
 
