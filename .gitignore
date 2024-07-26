@@ -153,6 +153,7 @@ dmypy.json
 passenger/input
 passenger/passenger-blast/*fasta
 passenger/passenger-blast/*blast.tsv
+passenger/passenger-blast/old
 *.db.n*
 _ignore/
 
