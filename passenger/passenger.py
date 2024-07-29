@@ -591,12 +591,33 @@ class Passenger:
 
         return processed_stop_df
 
-    def make_mutation_rate_plot(self, chigy_believable):
-        # Calculate the positions where each sequence ends in the full sequence
+    def plot_mutation_rates(self, mutation_rates, ax):
         labels = self.region_dict.keys()
         positions = np.cumsum([len(self.region_dict[key]) for key in labels])
         colors = ["blue", "red", "green", "yellow", "purple", "orange", "cyan"]
 
+        ax.scatter(
+            range(len(mutation_rates)),
+            mutation_rates,
+            alpha=0.5,
+            color="black",
+        )
+
+        start_pos = 0
+        for pos, color, label in zip(positions, colors, labels):
+            ax.axvspan(start_pos, pos, facecolor=color, alpha=0.2)
+            ax.text(
+                (start_pos + pos) / 2,
+                ax.get_ylim()[1] * 0.95,
+                label,
+                horizontalalignment="center",
+            )
+            start_pos = pos + 1e-9  # Add a tiny offset to avoid overlapping
+
+        ax.set_xlabel("Position")
+        ax.set_ylabel("Mutation Frequency")
+
+    def mutation_rate_plot_of_counts(self, chigy_believable):
         # Get the unique datasets
         unique_datasets = chigy_believable["dataset"].unique()
 
@@ -614,27 +635,8 @@ class Passenger:
                 filtered_df
             )
 
-            ax.scatter(
-                range(len(mutation_frequency_by_position)),
-                mutation_frequency_by_position,
-                alpha=0.5,
-                color="black",
-            )
-
-            start_pos = 0
-            for pos, color, label in zip(positions, colors, labels):
-                ax.axvspan(start_pos, pos, facecolor=color, alpha=0.2)
-                ax.text(
-                    (start_pos + pos) / 2,
-                    ax.get_ylim()[1] * 0.95,
-                    label,
-                    horizontalalignment="center",
-                )
-                start_pos = pos + 1e-9  # Add a tiny offset to avoid overlapping
-
+            self.plot_mutation_rates(mutation_frequency_by_position, ax)
             ax.set_title(f"Mutation Frequency by Position - Dataset: {dataset}")
-            ax.set_xlabel("Position")
-            ax.set_ylabel("Mutation Frequency")
 
         plt.tight_layout()
         plt.show()
