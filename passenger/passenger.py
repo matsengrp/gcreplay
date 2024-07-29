@@ -478,22 +478,24 @@ def matches_RGYW(kmer):
     return bool(re.match(regex_WRCYN, kmer)) or bool(re.match(regex_NRGYW, kmer))
 
 
-def plot_mutation_rate_vs_normed_s5f(df):
-    plt.figure(figsize=(8, 8))  # Square aspect ratio
-    scatter = plt.scatter(
+def plot_mutation_rate_vs_normed_s5f(df, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(8, 8))  # Square aspect ratio
+
+    scatter = ax.scatter(
         df["rate"], df["normed_s5f"], c=df["matches_RGYW"], cmap="coolwarm", alpha=0.8
     )
 
-    plt.xscale("log")
-    plt.yscale("log")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
 
-    plt.xlabel("Mutation Rate Estimate (log scale)")
-    plt.ylabel("Normalized Fivemer Mutability (log scale)")
+    ax.set_xlabel("Mutation Rate Estimate (log scale)")
+    ax.set_ylabel("Normalized Fivemer Mutability (log scale)")
 
     # Calculate Pearson correlation
     corr, _ = pearsonr(df["rate"], df["normed_s5f"])
 
-    plt.annotate(
+    ax.annotate(
         f"Pearson r: {corr:.2f}",
         xy=(0.55, 0.95),
         xycoords="axes fraction",
@@ -514,14 +516,13 @@ def plot_mutation_rate_vs_normed_s5f(df):
         )
         for i in range(2)
     ]
-    plt.legend(handles, legend_labels, title="Matches RGYW")
+    ax.legend(handles, legend_labels, title="Matches RGYW")
 
     # Add y=x line
     min_limit = min(df["rate"].min(), df["normed_s5f"].min())
     max_limit = max(df["rate"].max(), df["normed_s5f"].max())
-    plt.plot([min_limit, max_limit], [min_limit, max_limit], "k--")  # Add x=y line
+    ax.plot([min_limit, max_limit], [min_limit, max_limit], "k--")  # Add x=y line
 
-    plt.show()
 
 
 class Passenger:
