@@ -42,10 +42,12 @@ Execute the cells in these notebooks to do processing, as well as some plotting.
 * `passenger-11a.ipynb`
 * `passenger-igh.ipynb`
 
-Then execute these notebooks to make final plots.
+Then execute these notebooks, which perform model inference across sequencing runs.
 
 * `igh_passenger_aggregate.ipynb`
 * `igk_passenger_aggregate.ipynb`
+
+The final plots for the paper are made in `plots_for_paper.ipynb`.
 
 
 ## Key directories
