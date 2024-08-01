@@ -92,7 +92,7 @@ def read_blast_file(blast_file):
     )
 
 
-def blast_df_of_blast_files(blast_paths):
+def blast_df_of_blast_files(blast_paths, query_length):
     dfs = []
 
     for blast_file in blast_paths:
@@ -114,21 +114,31 @@ def blast_df_of_blast_files(blast_paths):
         merged_df = pd.merge(blast_results, seq_df, on="subject", how="inner")
         dfs.append(merged_df)
 
-        # Concatenate the dataframes together
-        blast_df = pd.concat(dfs, ignore_index=True)
+    # Concatenate the dataframes together
+    blast_df = pd.concat(dfs, ignore_index=True)
 
-        blast_df = blast_df[blast_df["length"] == 20]
+    print(f"Before filtering by length: {len(blast_df)}")
 
-        if len(blast_df) != len(set(blast_df["subject"])):
-            print(
-                f"Warning: duplicate sequences found in blast results for {blast_file}."
-            )
-            print(f"Original length: {len(blast_df)}")
-            print(f"Unique length: {len(set(blast_df['subject']))}")
+    blast_df = blast_df[blast_df["length"] == query_length].reset_index(drop=True)
 
-        # only keep rows such that s_start is greater than s_end for every row, meaning that the subject is on the positive strand
-        blast_df = blast_df[blast_df["s_start"] < blast_df["s_end"]]
-        blast_df = blast_df.drop(columns=["query"])
+    print(f"After filtering by length: {len(blast_df)}")
+
+    if len(blast_df) != len(set(blast_df["subject"])):
+        print(
+            f"Note: multiple hits found in BLAST results for {blast_file}."
+        )
+        print(f"Original length: {len(blast_df)}")
+        duplicated_seqs = blast_df[
+            blast_df.duplicated(subset="subject", keep=False)
+        ]["subject"]
+        # Remove rows from blast_df where "subject" matches anything in duplicated_seqs.
+        # These are probably PCR recombinants.
+        blast_df = blast_df[~blast_df["subject"].isin(duplicated_seqs)].reset_index(drop=True)
+        print(f"After dropping sequences with multiple hits: {len(blast_df)}\n")
+
+    # only keep rows such that s_start is greater than s_end for every row, meaning that the subject is on the positive strand
+    blast_df = blast_df[blast_df["s_start"] < blast_df["s_end"]].reset_index(drop=True)
+    blast_df = blast_df.drop(columns=["query"])
 
     return blast_df
 
@@ -468,22 +478,24 @@ def matches_RGYW(kmer):
     return bool(re.match(regex_WRCYN, kmer)) or bool(re.match(regex_NRGYW, kmer))
 
 
-def plot_mutation_rate_vs_normed_s5f(df):
-    plt.figure(figsize=(8, 8))  # Square aspect ratio
-    scatter = plt.scatter(
+def plot_mutation_rate_vs_normed_s5f(df, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(8, 8))  # Square aspect ratio
+
+    scatter = ax.scatter(
         df["rate"], df["normed_s5f"], c=df["matches_RGYW"], cmap="coolwarm", alpha=0.8
     )
 
-    plt.xscale("log")
-    plt.yscale("log")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
 
-    plt.xlabel("Mutation Rate Estimate (log scale)")
-    plt.ylabel("Normalized Fivemer Mutability (log scale)")
+    ax.set_xlabel("Mutation Rate Estimate (log scale)")
+    ax.set_ylabel("Normalized Fivemer Mutability (log scale)")
 
     # Calculate Pearson correlation
     corr, _ = pearsonr(df["rate"], df["normed_s5f"])
 
-    plt.annotate(
+    ax.annotate(
         f"Pearson r: {corr:.2f}",
         xy=(0.55, 0.95),
         xycoords="axes fraction",
@@ -504,14 +516,13 @@ def plot_mutation_rate_vs_normed_s5f(df):
         )
         for i in range(2)
     ]
-    plt.legend(handles, legend_labels, title="Matches RGYW")
+    ax.legend(handles, legend_labels, title="Matches RGYW")
 
     # Add y=x line
     min_limit = min(df["rate"].min(), df["normed_s5f"].min())
     max_limit = max(df["rate"].max(), df["normed_s5f"].max())
-    plt.plot([min_limit, max_limit], [min_limit, max_limit], "k--")  # Add x=y line
+    ax.plot([min_limit, max_limit], [min_limit, max_limit], "k--")  # Add x=y line
 
-    plt.show()
 
 
 class Passenger:
@@ -581,12 +592,33 @@ class Passenger:
 
         return processed_stop_df
 
-    def make_mutation_rate_plot(self, chigy_believable):
-        # Calculate the positions where each sequence ends in the full sequence
+    def plot_mutation_rates(self, mutation_rates, ax):
         labels = self.region_dict.keys()
         positions = np.cumsum([len(self.region_dict[key]) for key in labels])
         colors = ["blue", "red", "green", "yellow", "purple", "orange", "cyan"]
 
+        ax.scatter(
+            range(len(mutation_rates)),
+            mutation_rates,
+            alpha=0.5,
+            color="black",
+        )
+
+        start_pos = 0
+        for pos, color, label in zip(positions, colors, labels):
+            ax.axvspan(start_pos, pos, facecolor=color, alpha=0.2)
+            ax.text(
+                (start_pos + pos) / 2,
+                ax.get_ylim()[1] * 0.95,
+                label,
+                horizontalalignment="center",
+            )
+            start_pos = pos + 1e-9  # Add a tiny offset to avoid overlapping
+
+        ax.set_xlabel("Position")
+        ax.set_ylabel("Mutation Frequency")
+
+    def mutation_rate_plot_of_counts(self, chigy_believable):
         # Get the unique datasets
         unique_datasets = chigy_believable["dataset"].unique()
 
@@ -604,27 +636,8 @@ class Passenger:
                 filtered_df
             )
 
-            ax.scatter(
-                range(len(mutation_frequency_by_position)),
-                mutation_frequency_by_position,
-                alpha=0.5,
-                color="black",
-            )
-
-            start_pos = 0
-            for pos, color, label in zip(positions, colors, labels):
-                ax.axvspan(start_pos, pos, facecolor=color, alpha=0.2)
-                ax.text(
-                    (start_pos + pos) / 2,
-                    ax.get_ylim()[1] * 0.95,
-                    label,
-                    horizontalalignment="center",
-                )
-                start_pos = pos + 1e-9  # Add a tiny offset to avoid overlapping
-
+            self.plot_mutation_rates(mutation_frequency_by_position, ax)
             ax.set_title(f"Mutation Frequency by Position - Dataset: {dataset}")
-            ax.set_xlabel("Position")
-            ax.set_ylabel("Mutation Frequency")
 
         plt.tight_layout()
         plt.show()
