@@ -27,8 +27,8 @@ class affinity_trees:
     cmap.set_bad(color="#b3b3b3")
 
 
-class affinity_trees_grey_middle:
-    colors = ["#A94E35", "#F48365", "#808080", "#7378B9", "#383C6C"]
+class affinity_trees_grey_centered:
+    colors = ["#A94E35", "#F48365", "#D3D3D3", "#7378B9", "#383C6C"]
     norm = mc.Normalize(vmin=-3, vmax=3)
     positions = np.linspace(0, 1, len(colors))
     cmap = mc.LinearSegmentedColormap.from_list(
