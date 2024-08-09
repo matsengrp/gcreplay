@@ -1,11 +1,11 @@
 *.ipynb filter=strip-notebook-metadata diff=strip-notebook-metadata
-*.pdf filter=lfs diff=lfs merge=lfs -text
-*.svg filter=lfs diff=lfs merge=lfs -text
-*.p filter=lfs diff=lfs merge=lfs -text
-*.csv filter=lfs diff=lfs merge=lfs -text
-*.nk filter=lfs diff=lfs merge=lfs -text
-*.zip filter=lfs diff=lfs merge=lfs -text
-nextflow/data/** filter=lfs diff=lfs merge=lfs -text
-nextflow/results/** filter=lfs diff=lfs merge=lfs -text
-analysis/output/** filter=lfs diff=lfs merge=lfs -text
-passenger/output/** filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=off merge=lfs -text
+*.svg filter=lfs diff=off merge=lfs -text
+*.p filter=lfs diff=off merge=lfs -text
+*.csv filter=lfs diff=off merge=lfs -text
+*.nk filter=lfs diff=off merge=lfs -text
+*.zip filter=lfs diff=off merge=lfs -text
+nextflow/data/** filter=lfs diff=off merge=lfs -text
+nextflow/results/** filter=lfs diff=off merge=lfs -text
+analysis/output/** filter=lfs diff=off merge=lfs -text
+passenger/output/** filter=lfs diff=off merge=lfs -text

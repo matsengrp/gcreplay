@@ -11,6 +11,7 @@ nextflow/data/beast/annotated-PR-1-6-1-LB-19-GC.fasta
 nextflow/run_scripts*
 nextflow/.nextflow*
 nextflow/data/_ignore/
+nextflow/data/input/*.fastq
 nextflow/data/torchdms/
 nextflow/pipeline_trace.txt
 nextflow/results/*

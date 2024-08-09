@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 """
 @file: gcreplay-tools-dev.py
-
-Right now a sandbox for throwing code into
-it'll be a simple click CLI with all the logic right here.
 """
-# TODO ADD all authors
 
-
+import os
 import re
 import pickle
 import glob
@@ -244,7 +240,7 @@ def wrangle_annotation(
         
                 # Let's make sure this code isn't effecting any unwanted
                 # normal GC's. I assume it won't
-                assert row.gc == 20
+                assert row.gc == 55
 
                 key_row = row.row.split(".")
                 key_col = [int(c) for c in row.col.split(".")]
@@ -574,11 +570,17 @@ def node_featurize(
     tree.local_branching(tau=tau, tau0=tau0)
 
     node_features = defaultdict(list)
-    naive_igh_aa = aa(tree.tree.sequence[:igk_idx], igh_frame)
-    naive_igk_aa = aa(tree.tree.sequence[igk_idx:], igk_frame)
+    naive_igh_nt = tree.tree.sequence[:igk_idx]
+    naive_igk_nt = tree.tree.sequence[igk_idx:]
+    naive_igh_aa = aa(naive_igh_nt, igh_frame)
+    naive_igk_aa = aa(naive_igk_nt, igk_frame)
     for node in tree.tree.traverse():
-        igh_aa = aa(node.sequence[:igk_idx], igh_frame)
-        igk_aa = aa(node.sequence[igk_idx:], igk_frame)
+        igh_nt = node.sequence[:igk_idx]
+        igk_nt = node.sequence[igk_idx:]
+        igh_aa = aa(igh_nt, igh_frame)
+        igk_aa = aa(igk_nt, igk_frame)
+        igh_nt_mutations = nt_mutations(naive_igh_nt, igh_nt)
+        igk_nt_mutations = nt_mutations(naive_igk_nt, igk_nt, site_idx_offset=igk_idx)
 
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
@@ -597,10 +599,17 @@ def node_featurize(
         node_features["parent_name"].append(node.up.name if node.up else None)
         node_features["abundance"].append(node.abundance)
         node_features["sampled_cell_ids"].append(idmap[node.name] if node.name in idmap else "")
-        node_features["n_mutations_HC"].append(len(igh_mutations))
-        node_features["n_mutations_LC"].append(len(igk_mutations))
-        node_features["IgH_mutations"].append(",".join(igh_mutations))
-        node_features["IgK_mutations"].append(",".join(igk_mutations))
+
+        node_features["n_nt_mutations_HC"].append(len(igh_nt_mutations))
+        node_features["n_nt_mutations_LC"].append(len(igk_nt_mutations))
+        node_features["IgH_nt_mutations"].append(",".join(igh_nt_mutations))
+        node_features["IgK_nt_mutations"].append(",".join(igk_nt_mutations))
+
+        node_features["n_aa_mutations_HC"].append(len(igh_mutations))
+        node_features["n_aa_mutations_LC"].append(len(igk_mutations))
+        node_features["IgH_aa_mutations"].append(",".join(igh_mutations))
+        node_features["IgK_aa_mutations"].append(",".join(igk_mutations))
+
         node_features["IgH_productive"].append(not igh_has_stop)
         node_features["IgK_productive"].append(not igk_has_stop)
         node_features["isotype"].append(isotype)
@@ -744,11 +753,19 @@ def featurize_seqs(
 
     # construct new dataframe with all sequence phenotype predictions
     seq_pheno_preds = defaultdict(list)
-    naive_igh_aa = aa(naive_hk_bcr_nt[:igk_idx], igh_frame)
-    naive_igk_aa = aa(naive_hk_bcr_nt[igk_idx:], igk_frame)
+    naive_igh_nt = naive_hk_bcr_nt[:igk_idx]
+    naive_igk_nt = naive_hk_bcr_nt[igk_idx:]
 
+    naive_igh_aa = aa(naive_igh_nt, igh_frame)
+    naive_igk_aa = aa(naive_igk_nt, igk_frame)
+    
     # Well make a prediction for each of the observed sequences
     for idx, row in hk_df.iterrows():
+        igh_nt = row.seq_nt_HC
+        igk_nt = row.seq_nt_LC
+
+        igh_nt_mutations = nt_mutations(naive_igh_nt, igh_nt)
+        igk_nt_mutations = nt_mutations(naive_igk_nt, igk_nt, site_idx_offset=igk_idx)
 
         # Infer mutations from nt seq available
         igh_aa = aa(row.seq_nt_HC, igh_frame)
@@ -766,10 +783,16 @@ def featurize_seqs(
 
         # Now, we'll add all the phenotype predictions        
         # Individual chain mutations
-        seq_pheno_preds["IgH_mutations"].append(igh_mutations)
-        seq_pheno_preds["IgK_mutations"].append(igk_mutations)
-        seq_pheno_preds["n_mutations_HC"].append(len(igh_mutations))
-        seq_pheno_preds["n_mutations_LC"].append(len(igk_mutations))
+        seq_pheno_preds["n_nt_mutations_HC"].append(len(igh_nt_mutations))
+        seq_pheno_preds["n_nt_mutations_LC"].append(len(igk_nt_mutations))
+        seq_pheno_preds["IgH_nt_mutations"].append(",".join(igh_nt_mutations))
+        seq_pheno_preds["IgK_nt_mutations"].append(",".join(igk_nt_mutations))
+        
+        seq_pheno_preds["n_aa_mutations_HC"].append(len(igh_mutations))
+        seq_pheno_preds["n_aa_mutations_LC"].append(len(igk_mutations))
+        seq_pheno_preds["IgH_aa_mutations"].append(",".join(igh_mutations))
+        seq_pheno_preds["IgK_aa_mutations"].append(",".join(igk_mutations))
+
         
         # substitutions to (hopefully) match those in FMVS
         seq_pheno_preds["aa_substitutions_IMGT"].append(" ".join(all_mutations))
@@ -784,7 +807,8 @@ def featurize_seqs(
                 )
         
     df = pd.DataFrame(seq_pheno_preds)
-    ret = pd.concat([df, hk_df.drop(["n_mutations_HC", "n_mutations_LC"], axis=1)], axis=1)
+    # ret = pd.concat([df, hk_df.drop(["n_aa_mutations_HC", "n_aa_mutations_LC"], axis=1)], axis=1)
+    ret = pd.concat([df, hk_df], axis=1)
 
     # TODO ADD NEW PHENOTYPES
     ret = ret.loc[:, [c for c in final_HK_col_order if c in ret.columns]]
@@ -817,20 +841,27 @@ def merge_results(
     """
     merge all the gc results.
     """
-    
+
+    # TODO should we remove, or rename the "HK_key_" prefix from each of these csv's?
+
     gcdf, gctree = pd.DataFrame(), pd.DataFrame()
     for gct_out in glob.glob(glob_pattern):
         gcdf = pd.concat([gcdf, pd.read_csv(f"{gct_out}/observed_seqs.csv")])
         PR, mouse, node, gc, ct = gct_out.split("-")
 
         if ct == "GC":
-            node_data = pd.read_csv(f"{gct_out}/node_data.csv")
-            node_data.insert(0, "PR", PR)
-            node_data.insert(1, "HK_key_mouse", mouse)
-            node_data.insert(2, "HK_key_node", node)
-            node_data.insert(3, "HK_key_gc", gc)
-            node_data.insert(4, "HK_key_cell_type", ct)
-            gctree = pd.concat([gctree, node_data])
+            # loop through each of the ranking coeff sub-directories under the gct_out directory
+            for rc in glob.glob(f"{gct_out}/*"):
+                if os.path.isdir(rc):
+                    ranking_coeff_strategy = rc.split("/")[-1]
+                    node_data = pd.read_csv(f"{rc}/node_data.csv")
+                    node_data.insert(0, "ranking_coeff_strategy", ranking_coeff_strategy)
+                    node_data.insert(1, "PR", PR)
+                    node_data.insert(2, "HK_key_mouse", mouse)
+                    node_data.insert(3, "HK_key_node", node)
+                    node_data.insert(4, "HK_key_gc", gc)
+                    node_data.insert(5, "HK_key_cell_type", ct)
+                    gctree = pd.concat([gctree, node_data])
 
     gcdf.to_csv(output_gcdf, index=False)
     gctree.to_csv(output_gctree, index=False)

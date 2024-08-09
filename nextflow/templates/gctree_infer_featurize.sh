@@ -76,7 +76,8 @@ gcreplay-tools.py featurize-seqs \
 
 
 # ADD FEATURIZED SEQS TO
-mkdir $OUTDIR && cp observed_seqs.csv $OUTDIR
+mkdir $OUTDIR
+cp observed_seqs.csv $OUTDIR
 cp $GCDF $OUTDIR
 
 
@@ -131,30 +132,86 @@ cp $GC_DEF.fasta $OUTDIR
 
 # Run inference on sequences, 
 TMPDIR="/tmp"
+
+# DEFAULT RANKING STRAT
+SUBDIR=${OUTDIR}/default
+mkdir -p ${SUBDIR}
 xvfb-run -a gctree infer outfile abundances.csv \
-    --idmapfile $GC_DEF.idmap \
     --chain_split $IGK_IDX \
+    --ranking_strategy "B,C,A,0R" \
     --summarize_forest \
     --mutability $MUT \
     --substitution $SUB \
     --root naive \
     --verbose \
-    --outbase ${OUTDIR}/gctree \
-    | tee gctree.inference.log
-echo \(LOG\) done: gctree
+    --outbase ${SUBDIR}/gctree \
+    | tee gctree_default.inference.log
 
-cp gctree.inference.log ${OUTDIR}
+cp gctree_default.inference.log ${SUBDIR}
 
-# Run will's featurize code
 xvfb-run -a gcreplay-tools.py featurize-nodes \
-    ${OUTDIR}/gctree.inference.1.p \
+    ${SUBDIR}/gctree.inference.1.p \
     ${GC_DEF}.idmap \
     ${DMS_VSCORES} \
     --tau 1.0 \
     --tau0 1.0 \
     ${DMS_SITES} \
     --igk_idx ${IGK_IDX} \
-    --output_dir ${OUTDIR}
+    --output_dir ${SUBDIR}
+
+
+# NAIVE REVERSIONS FIRST
+SUBDIR=${OUTDIR}/naive_reversions_first
+mkdir -p ${SUBDIR}
+xvfb-run -a gctree infer ${OUTDIR}/default/gctree.inference.parsimony_forest.p \
+    --chain_split $IGK_IDX \
+    --ranking_strategy "R,B,C,A" \
+    --summarize_forest \
+    --mutability $MUT \
+    --substitution $SUB \
+    --root naive \
+    --verbose \
+    --outbase ${SUBDIR}/gctree \
+    | tee gctree_naive_reversions_first.inference.log
+
+cp gctree_naive_reversions_first.inference.log ${SUBDIR}
+
+xvfb-run -a gcreplay-tools.py featurize-nodes \
+    ${SUBDIR}/gctree.inference.1.p \
+    ${GC_DEF}.idmap \
+    ${DMS_VSCORES} \
+    --tau 1.0 \
+    --tau0 1.0 \
+    ${DMS_SITES} \
+    --igk_idx ${IGK_IDX} \
+    --output_dir ${SUBDIR}
+
+
+# NAIVE REVERSIONS NO BP
+SUBDIR=${OUTDIR}/naive_reversions_no_bp
+mkdir -p ${SUBDIR}
+xvfb-run -a gctree infer ${OUTDIR}/default/gctree.inference.parsimony_forest.p \
+    --chain_split $IGK_IDX \
+    --ranking_strategy "R,C,A,0B" \
+    --summarize_forest \
+    --mutability $MUT \
+    --substitution $SUB \
+    --root naive \
+    --verbose \
+    --outbase ${SUBDIR}/gctree \
+    | tee gctree_naive_reversions_no_bp.inference.log
+
+cp gctree_naive_reversions_no_bp.inference.log ${SUBDIR}
+
+xvfb-run -a gcreplay-tools.py featurize-nodes \
+    ${SUBDIR}/gctree.inference.1.p \
+    ${GC_DEF}.idmap \
+    ${DMS_VSCORES} \
+    --tau 1.0 \
+    --tau0 1.0 \
+    ${DMS_SITES} \
+    --igk_idx ${IGK_IDX} \
+    --output_dir ${SUBDIR}
 
 echo \(LOG\) done: Viz
 fi

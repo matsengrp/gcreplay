@@ -66,9 +66,10 @@ process DEMULTIPLEX_WELLS {
  * for common motifs
  */
 process SPLIT_HK {
+  maxForks 50
+  label 'small_multithread'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/split_HK/"
-  label 'small_multithread'
   input: 
     tuple val(key), val(key_file), path(well) 
     val(motif)
@@ -86,6 +87,7 @@ process SPLIT_HK {
  * demultiplexed files into  
  */
 process COLLAPSE_RANK_PRUNE {
+  maxForks 100
   label 'small'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/rank_collapsed/"
@@ -143,7 +145,6 @@ process PARTIS_ANNOTATION {
  */
 process PARTIS_WRANGLE {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  //container '093db2c8b33a'
   publishDir "$params.results/single_gc_wrangle/"
   input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
   output: path "annotated-${key}*.csv"
@@ -173,11 +174,9 @@ process PARTIS_WRANGLE {
  * Process 3A: Wrangle and featurize nodes
  */
 process GCTREE {
-  //container '093db2c8b33a'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/gctrees/", mode: "copy"
   label "mem_large"
-  //errorStrategy 'ignore'
   input: 
     path single_mouse_gc_df
     path hdag_sub
@@ -202,9 +201,3 @@ process MERGE_RESULTS {
   gcreplay-tools.py merge-results
   """
 }
-
-
-
-
-
-

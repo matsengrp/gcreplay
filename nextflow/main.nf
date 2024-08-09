@@ -32,6 +32,7 @@ nextflow.enable.dsl = 2
  * Define the default parameters - example data get's run by default
  */
 
+// rename to "manifest_path_prefix"
 params.reads_prefix     = "$projectDir"
 params.manifest         = "data/test/manifest.csv"
 params.plate_barcodes   = "data/barcodes/plateBC.txt"
