@@ -47,7 +47,7 @@ RUN conda install -c bioconda phylip
 
 # Other pip deps
 RUN pip install --upgrade --no-cache-dir \
-    gctree==4.2.1 \
+    gctree==4.3.0 \
     cutadapt \
     regex \
     click \
