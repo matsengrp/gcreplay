@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-@file: gcreplay-tools-dev.py
+@file: gcreplay-tools.py
 """
 
 import os
@@ -579,8 +579,8 @@ def node_featurize(
         igk_nt = node.sequence[igk_idx:]
         igh_aa = aa(igh_nt, igh_frame)
         igk_aa = aa(igk_nt, igk_frame)
-        igh_nt_mutations = nt_mutations(naive_igh_nt, igh_nt)
-        igk_nt_mutations = nt_mutations(naive_igk_nt, igk_nt, site_idx_offset=igk_idx)
+        igh_nt_mutations = nt_mutations(naive_igh_nt.upper(), igh_nt.upper())
+        igk_nt_mutations = nt_mutations(naive_igk_nt.upper(), igk_nt.upper(), site_idx_offset=igk_idx)
 
         igh_mutations = mutations(naive_igh_aa, igh_aa, igh_pos_map, "(H)")
         igk_mutations = mutations(naive_igk_aa, igk_aa, igk_pos_map, "(L)")
@@ -602,13 +602,13 @@ def node_featurize(
 
         node_features["n_nt_mutations_HC"].append(len(igh_nt_mutations))
         node_features["n_nt_mutations_LC"].append(len(igk_nt_mutations))
-        node_features["IgH_nt_mutations"].append(",".join(igh_nt_mutations))
-        node_features["IgK_nt_mutations"].append(",".join(igk_nt_mutations))
+        node_features["IgH_nt_mutations"].append(" ".join(igh_nt_mutations))
+        node_features["IgK_nt_mutations"].append(" ".join(igk_nt_mutations))
 
         node_features["n_aa_mutations_HC"].append(len(igh_mutations))
         node_features["n_aa_mutations_LC"].append(len(igk_mutations))
-        node_features["IgH_aa_mutations"].append(",".join(igh_mutations))
-        node_features["IgK_aa_mutations"].append(",".join(igk_mutations))
+        node_features["IgH_aa_mutations"].append(" ".join(igh_mutations))
+        node_features["IgK_aa_mutations"].append(" ".join(igk_mutations))
 
         node_features["IgH_productive"].append(not igh_has_stop)
         node_features["IgK_productive"].append(not igk_has_stop)
@@ -764,8 +764,8 @@ def featurize_seqs(
         igh_nt = row.seq_nt_HC
         igk_nt = row.seq_nt_LC
 
-        igh_nt_mutations = nt_mutations(naive_igh_nt, igh_nt)
-        igk_nt_mutations = nt_mutations(naive_igk_nt, igk_nt, site_idx_offset=igk_idx)
+        igh_nt_mutations = nt_mutations(naive_igh_nt.upper(), igh_nt.upper())
+        igk_nt_mutations = nt_mutations(naive_igk_nt.upper(), igk_nt.upper(), site_idx_offset=igk_idx)
 
         # Infer mutations from nt seq available
         igh_aa = aa(row.seq_nt_HC, igh_frame)
@@ -785,13 +785,13 @@ def featurize_seqs(
         # Individual chain mutations
         seq_pheno_preds["n_nt_mutations_HC"].append(len(igh_nt_mutations))
         seq_pheno_preds["n_nt_mutations_LC"].append(len(igk_nt_mutations))
-        seq_pheno_preds["IgH_nt_mutations"].append(",".join(igh_nt_mutations))
-        seq_pheno_preds["IgK_nt_mutations"].append(",".join(igk_nt_mutations))
+        seq_pheno_preds["IgH_nt_mutations"].append(" ".join(igh_nt_mutations))
+        seq_pheno_preds["IgK_nt_mutations"].append(" ".join(igk_nt_mutations))
         
         seq_pheno_preds["n_aa_mutations_HC"].append(len(igh_mutations))
         seq_pheno_preds["n_aa_mutations_LC"].append(len(igk_mutations))
-        seq_pheno_preds["IgH_aa_mutations"].append(",".join(igh_mutations))
-        seq_pheno_preds["IgK_aa_mutations"].append(",".join(igk_mutations))
+        seq_pheno_preds["IgH_aa_mutations"].append(" ".join(igh_mutations))
+        seq_pheno_preds["IgK_aa_mutations"].append(" ".join(igk_mutations))
 
         
         # substitutions to (hopefully) match those in FMVS
