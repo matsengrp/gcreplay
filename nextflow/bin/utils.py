@@ -64,7 +64,9 @@ final_HK_col_order = [
     "delta_expr",
     "delta_psr",
 
-    "n_mutations_HC", "n_mutations_LC", "IgH_mutations", "IgK_mutations",
+    "n_nt_mutations_HC", "n_nt_mutations_LC", "IgH_nt_mutations", "IgK_nt_mutations",
+    "n_aa_mutations_HC", "n_aa_mutations_LC", "IgH_aa_mutations", "IgK_aa_mutations",
+
     "isotype_HC", "isotype_LC", "ID_HC", "ID_LC",
     "Productive_HC", "Productive_LC",
     "V_HC", "V_LC", "D_HC", "D_LC", "J_HC", "J_LC",
@@ -77,7 +79,6 @@ final_HK_col_order = [
     "partis_sequence_HC", "partis_sequence_LC",
     "seq_aa_HC", "seq_aa_LC",
     "seq_nt_HC", "seq_nt_LC", 
-    # "date",
 ]
 
 #########
@@ -200,6 +201,15 @@ def mutations(naive_aa, aa, pos_map, chain_annotation):
         f"{aa1}{pos_map[pos]}{chain_annotation}{aa2}"
         for pos, (aa1, aa2) in enumerate(zip(naive_aa, aa))
         if aa1 != aa2
+    ]
+
+def nt_mutations(naive_nt, nt, site_idx_offset=0):
+    """Nucleotide substitutions between two sequences, in sequential coordinates."""
+    assert len(naive_nt) == len(nt)
+    return [
+        f"{nt1}{pos + site_idx_offset}{nt2}"
+        for pos, (nt1, nt2) in enumerate(zip(naive_nt, nt))
+        if nt1 != nt2
     ]
 
 

@@ -7,10 +7,12 @@ analysis/beast/output/
 nextflow/data/beast/annotated-PR-1-6-1-LB-19-GC.fasta
 **/building-xvfb/
 **/work
+analysis/output/NDS-LB/*/trees/
 
 nextflow/run_scripts*
 nextflow/.nextflow*
 nextflow/data/_ignore/
+nextflow/data/input/*.fastq
 nextflow/data/torchdms/
 nextflow/pipeline_trace.txt
 nextflow/results/*

@@ -50,6 +50,7 @@ Rockefeller University, New York NY.
 ================================
 """
 
+// TODO add naive sequence to the fasta's?
 
 process ADD_TIME_TO_FASTA {
   label 'small'
@@ -146,8 +147,8 @@ process MERGE_SLICE_DFS {
 
 workflow {
 
-    seqs = Channel.fromPath("$params.seqs")
-    beast_template = Channel.fromPath("$params.beast_template")
+    seqs = Channel.fromPath("$params.seqs", checkIfExists: true)
+    beast_template = Channel.fromPath("$params.beast_template", checkIfExists: true)
 
     seqs | ADD_TIME_TO_FASTA | combine(beast_template) \
         | BEASTGEN 

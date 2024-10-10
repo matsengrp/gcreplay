@@ -3,6 +3,151 @@
 A Nextflow pipeline for running the analysis of germinal center replay 
 (gcreplay) experimental analysis.
 
+    
+## Pipeline results
+
+The primary results produced by the main pipeline will be stored under the specified `--results`
+path. Beneath this you'll find a few different subdirectories containing the intermediate files
+from individual steps of the pipeline. The primary outputs consist of the individual inferred trees
+for each clonal family. The most relevant outputs that we track in this repository are:
+
+
+### [results/merged-results](results/merged-results), 
+
+Here, you'll find the summary of all tree nodes across all trees, and all observed BCR's in the form of two tabular csv files. 
+
+[observed-seqs.csv](results/merged-results/observed-seqs.csv) contains the observed BCR sequences, with the following columns:
+ID_HK,well,HK_key_plate,HK_key_mouse,HK_key_gc,HK_key_node,HK_key_cell_type,aa_substitutions_IMGT,delta_bind,delta_expr,delta_psr,n_nt_mutations_HC,n_nt_mutations_LC,IgH_nt_mutations,IgK_nt_mutations,n_aa_mutations_HC,n_aa_mutations_LC,IgH_aa_mutations,IgK_aa_mutations,isotype_HC,isotype_LC,ID_HC,ID_LC,Productive_HC,Productive_LC,V_HC,V_LC,D_HC,D_LC,J_HC,J_LC,AAjunction_HC,AAjunction_LC,locus_HC,locus_LC,miseq_plate_HC,miseq_plate_LC,barcode_HC,barcode_LC,row_HC,row_LC,column_HC,column_LC,chain_HC,chain_LC,rank_HC,rank_LC,counts_HC,counts_LC,seq_nt_length_HC,seq_nt_length_LC,seq_aa_length_HC,seq_aa_length_LC,fasta_header_HC,fasta_header_LC,fasta_seq_HC,fasta_seq_LC,partis_sequence_HC,partis_sequence_LC,seq_aa_HC,seq_aa_LC,seq_nt_HC,seq_nt_LC
+
+- ID_HK: unique identifier for the BCR
+- well: well from which the BCR was identified, in the format of <row><column>
+- HK_key_plate: barcode of the plate
+- HK_key_mouse: mouse identifier (according to the metadata "mouse" col)
+- HK_key_gc: germinal center identifier (according to the metadata "gc" col)
+- HK_key_node: lymph node identifier (according to the metadata "node" col)
+- HK_key_cell_type: cell type identifier (according to the metadata "cell_type" col)
+- aa_substitutions_IMGT: amino acid substitutions in IMGT format
+
+The next three columns are the inferred delta values for each of the three metrics, according to the main pipeline params.dms_vscores, TODO point to Kd pipeline?
+
+- delta_bind: delta binding energy, as inferred through additive Kd model
+- delta_expr: delta expression, as inferred through additive expression values of individual mutations
+- delta_psr: delta polyspecificity, as inferred through additive polyspecificity values of individual mutations
+
+The next four columns are the number of mutations in the heavy and light chains, and the number of amino acid mutations in the heavy and light chains.
+
+- n_nt_mutations_HC: number of nucleotide mutations in the heavy chain
+- n_nt_mutations_LC: number of nucleotide mutations in the light chain
+- IgH_nt_mutations: nucleotide mutations in the heavy chain, formatted like <wt><sequential-site>-<mut> 
+- IgK_nt_mutations: nucleotide mutations in the light chain, formatted like <wt><sequential-site>-<mut>
+- n_aa_mutations_HC: number of amino acid mutations in the heavy chain
+- n_aa_mutations_LC: number of amino acid mutations in the light chain
+- IgH_aa_mutations: Same as 'aa_substitutions_IMGT', but just the IgH mutations
+- IgK_aa_mutations: Same as 'aa_substitutions_IMGT', but just the IgK mutations
+
+The next two columns are the isotypes of the heavy and light chains. Isotypes are inferred via fuzzy motif matching
+
+- isotype_HC: isotype of the heavy chain
+- isotype_LC: isotype of the light chain
+
+The next two columns are the unique identifiers for the heavy and light chains - they are essentially the same as the ID_HK, but one for each chain
+
+- ID_HC: unique identifier for the heavy chain
+- ID_LC: unique identifier for the light chain
+
+The following columns are partis annotations: TODO ask duncan to annotate?
+
+- Productive_HC: 
+- Productive_LC:
+- V_HC:
+- V_LC:
+- D_HC:
+- D_LC:
+- J_HC:
+- J_LC:
+- AAjunction_HC:
+- AAjunction_LC:
+- locus_HC:
+- locus_LC:
+
+Other misc annotations regarding the barcode and plate locations the cell derived from
+
+- miseq_plate_HC:
+- miseq_plate_LC:
+- barcode_HC:
+- barcode_LC:
+- row_HC: The row of the 96 well plate from which this cell was derived
+- row_LC: The row of the 96 well plate from which this cell was derived
+- column_HC: The column of the 96 well plate from which this cell was derived
+- column_LC: The column of the 96 well plate from which this cell was derived
+- chain_HC: ?
+- chain_LC: ?
+- rank_HC: The rank of the cell within the well. ranked from 1 - N seqs that met the bcr count threshold
+- rank_LC: The rank of the cell within the well. ranked from 1 - N seqs that met the bcr count threshold
+- counts_HC: The number of times this cell was observed in the well
+- counts_LC: The number of times this cell was observed in the well
+- seq_nt_length_HC: The length of the nucleotide sequence of the heavy chain
+- seq_nt_length_LC: The length of the nucleotide sequence of the light chain
+- seq_aa_length_HC: The length of the amino acid sequence of the heavy chain
+- seq_aa_length_LC: The length of the amino acid sequence of the light chain
+- fasta_header_HC: The fasta header of the heavy chain
+- fasta_header_LC: The fasta header of the light chain
+- fasta_seq_HC: The fasta sequence of the heavy chain
+- fasta_seq_LC: The fasta sequence of the light chain
+- partis_sequence_HC: The partis sequence of the heavy chain
+- partis_sequence_LC: The partis sequence of the light chain
+- seq_aa_HC: The amino acid sequence of the heavy chain
+- seq_aa_LC: The amino acid sequence of the light chain
+- seq_nt_HC: The nucleotide sequence of the heavy chain
+- seq_nt_LC: The nucleotide sequence of the light chain
+
+
+### [results/gctrees](results/gctrees), 
+
+Here, you'll find subdirectories containing all intermediate input and output files from running `gctree`. Each directory is named in the format PR<PR>-<mouse>-<node>-<gc>
+where each of the fields can be matched to the metadata file to identify the mouse. TODO: this should be updated to just be the <uid>.
+
+For example, in the [results/gctrees/PR1.01-20-LB-55-GC](results/gctrees/PR1.01-20-LB-55-GC) directory, after execution of the pipeline, you'll find the following files
+that were used as input to gctree:
+```
+├── abundances.csv
+├── annotated-PR-1-01-20-LB-55-GC.csv
+├── annotated-PR-1-01-20-LB-55-GC.fasta
+├── annotated-PR-1-01-20-LB-55-GC.idmap
+├── annotated-PR-1-01-20-LB-55-GC.isotypemap
+├── default/
+├── naive_reversions_first/
+├── naive_reversions_no_bp/
+├── observed_seqs.csv
+└── outfile
+```
+where each of the "default", "naive_reversions_first", "naive_reversions_no_bp" strategy directories looks like
+
+```
+nextflow/results/2024-09-30-rank-coeff-renumbered/gctrees/PR1.01-20-LB-55-GC/default
+├── delta_bind.fasta
+├── delta_bind.svg
+├── delta_expr.fasta
+├── delta_expr.svg
+├── delta_psr.fasta
+├── delta_psr.svg
+├── gctree_default.inference.log
+├── gctree.forest_summary.log
+├── gctree.inference.1.nk
+├── gctree.inference.1.p
+├── gctree.inference.1.svg
+├── gctree.inference.abundance_rank.svg
+├── gctree.inference.parsimony_forest.p
+├── gctree.p
+├── LBI.fasta
+├── LBI.svg
+├── LBR.fasta
+├── LBR.svg
+└── node_data.csv
+```
+
+
+
 
 ## Quickstart
 
@@ -164,16 +309,8 @@ should be the well ID, and the second the oligonucleotide barcode
 
 * a relative path (does not need to exist)
 
-    
-## Pipeline results
 
-The primary results produced by the main pipeline will be stored under the specified `--results`
-path. Beneath this you'll find a few different subdirectories containing the intermediate files
-from individual steps of the pipeline. The primary outputs consist of the individual inferred trees
-for each clonal family. The most relevant outputs that we track in this repository are:
- 
-1. Under the [results/gctrees](results/gctrees), you'll find subdirectories containing all intermediate input and output files from running `gctree`.
-2. Under the [results/merged-results](results/merged-results), you'll find the summary of all tree nodes across all trees, and all observed BCR's in the form of tabular csv files.
+
 
 ## Schematic Outline
 

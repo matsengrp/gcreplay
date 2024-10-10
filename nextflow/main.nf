@@ -32,6 +32,7 @@ nextflow.enable.dsl = 2
  * Define the default parameters - example data get's run by default
  */
 
+// rename to "manifest_path_prefix"
 params.reads_prefix     = "$projectDir"
 params.manifest         = "data/test/manifest.csv"
 params.plate_barcodes   = "data/barcodes/plateBC.txt"
@@ -40,7 +41,6 @@ params.partis_anno_dir  = "$projectDir/data/partis_annotation/germlines"
 params.results          = "$projectDir/results/"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
-// params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/main/results/final_variant_scores/final_variant_scores.csv"
 params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/improved-Kd-fitting/tite-seq-modeling/output/final_variant_scores.csv"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.igk_idx          = 336

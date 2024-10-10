@@ -4,9 +4,12 @@ nextflow.enable.dsl =2
  * Process 1A: trim the first three bases of the paired end reads.
  */
 process TRIM_COMBINE_MATES { 
+  time '30m'
+  memory '2g'
+  cpus 8
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/trimmed_combined_fasta/" 
-  label 'multithread'
+  
   input: tuple val(key), val(key_file), val(date), path(read1), path(read2)
   output: tuple val(key), val(key_file), val(date), path("${key}.fasta")
   script:
@@ -26,8 +29,12 @@ process TRIM_COMBINE_MATES {
  */
 //path plate_barcodes
 process DEMULTIPLEX_PLATES {
+  time '10m'
+  memory '2g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/demultiplexed_plates_fasta/" 
+
   input: 
     tuple val(key), val(key_file), val(date), path(key_fasta)
     path(plate_barcodes)
@@ -39,14 +46,17 @@ process DEMULTIPLEX_PLATES {
     --prefix ${key}.${date}. --exact
   """
 }
-// --bcfile ${params.reads_prefix}/${params.plate_barcodes} --eol \
 
 /*
  * Process 1C: Demultiplex each plate into the 96 wells per plate
  */
 process DEMULTIPLEX_WELLS {
+  time '10m'
+  memory '2g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/demultiplexed_wells_fasta/"
+
   input: 
     tuple val(key), val(key_file), path(plate)
     path(well_barcodes)
@@ -66,9 +76,12 @@ process DEMULTIPLEX_WELLS {
  * for common motifs
  */
 process SPLIT_HK {
+  time '20m'
+  memory '2g'
+  cpus 4
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/split_HK/"
-  label 'small_multithread'
+
   input: 
     tuple val(key), val(key_file), path(well) 
     val(motif)
@@ -86,9 +99,12 @@ process SPLIT_HK {
  * demultiplexed files into  
  */
 process COLLAPSE_RANK_PRUNE {
-  label 'small'
+  time '20m'
+  memory '2g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/rank_collapsed/"
+
   input: tuple val(key), val(key_file), path(well_chain)
   output: tuple val(key), val(key_file), path("${well_chain}.R")
   script:
@@ -105,9 +121,12 @@ process COLLAPSE_RANK_PRUNE {
  * Process 1F: Merge the top ranked BCR's
  */
 process MERGE_BCRS {
-  label 'small'
+  time '20m'
+  memory '2g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/ranked_bcr_sequences_per_well/"
+
   input: tuple val(key), val(key_file), path(all_coll_rank)
   output: tuple val(key), val(key_file), path("${key}.fasta")
   script:
@@ -122,12 +141,14 @@ process MERGE_BCRS {
  * Process 2A: Annotate the top ranked seqs
  */
 process PARTIS_ANNOTATION {
-  label 'mem_large'
+  time '30m'
+  memory '4g'
+  cpus 4
   container 'quay.io/matsengrp/gcreplay-pipeline:partis'
   publishDir "$params.results/partis_annotation/"
+
   input: 
     tuple val(key), val(key_file), path(merged_fasta)
-    // path(partis_anno_dir)
   output: tuple val(key), val(key_file), path(merged_fasta), path("${key}/")
   script:
   """
@@ -142,9 +163,12 @@ process PARTIS_ANNOTATION {
  * Process 2B: Wrangle and parse the annotations
  */
 process PARTIS_WRANGLE {
+  time '15m'
+  memory '2g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  //container '093db2c8b33a'
   publishDir "$params.results/single_gc_wrangle/"
+
   input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
   output: path "annotated-${key}*.csv"
   
@@ -173,11 +197,12 @@ process PARTIS_WRANGLE {
  * Process 3A: Wrangle and featurize nodes
  */
 process GCTREE {
-  //container '093db2c8b33a'
+  time '8h'
+  memory '64g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/gctrees/", mode: "copy"
-  label "mem_large"
-  //errorStrategy 'ignore'
+
   input: 
     path single_mouse_gc_df
     path hdag_sub
@@ -192,9 +217,12 @@ process GCTREE {
  * Process 3B: Merge all results
  */
 process MERGE_RESULTS {
+  time '10m'
+  memory '2g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/merged-results/", mode: "copy"
-  label "mem_large"
+
   input: path(all_results)
   output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
   shell:
@@ -202,9 +230,3 @@ process MERGE_RESULTS {
   gcreplay-tools.py merge-results
   """
 }
-
-
-
-
-
-
