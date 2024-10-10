@@ -12,7 +12,7 @@ from individual steps of the pipeline. The primary outputs consist of the indivi
 for each clonal family. The most relevant outputs that we track in this repository are:
 
 
-### [results/merged-results](results/merged-results), 
+### [results/merged-results](results/archive/2024-10-09-rank-coeff-renumbered/merged-results)
 
 Here, you'll find the summary of all tree nodes across all trees, and all observed BCR's in the form of two tabular csv files. 
 
