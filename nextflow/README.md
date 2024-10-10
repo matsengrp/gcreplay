@@ -17,7 +17,6 @@ for each clonal family. The most relevant outputs that we track in this reposito
 Here, you'll find the summary of all tree nodes across all trees, and all observed BCR's in the form of two tabular csv files. 
 
 [observed-seqs.csv](results/merged-results/observed-seqs.csv) contains the observed BCR sequences, with the following columns:
-ID_HK,well,HK_key_plate,HK_key_mouse,HK_key_gc,HK_key_node,HK_key_cell_type,aa_substitutions_IMGT,delta_bind,delta_expr,delta_psr,n_nt_mutations_HC,n_nt_mutations_LC,IgH_nt_mutations,IgK_nt_mutations,n_aa_mutations_HC,n_aa_mutations_LC,IgH_aa_mutations,IgK_aa_mutations,isotype_HC,isotype_LC,ID_HC,ID_LC,Productive_HC,Productive_LC,V_HC,V_LC,D_HC,D_LC,J_HC,J_LC,AAjunction_HC,AAjunction_LC,locus_HC,locus_LC,miseq_plate_HC,miseq_plate_LC,barcode_HC,barcode_LC,row_HC,row_LC,column_HC,column_LC,chain_HC,chain_LC,rank_HC,rank_LC,counts_HC,counts_LC,seq_nt_length_HC,seq_nt_length_LC,seq_aa_length_HC,seq_aa_length_LC,fasta_header_HC,fasta_header_LC,fasta_seq_HC,fasta_seq_LC,partis_sequence_HC,partis_sequence_LC,seq_aa_HC,seq_aa_LC,seq_nt_HC,seq_nt_LC
 
 - ID_HK: unique identifier for the BCR
 - well: well from which the BCR was identified, in the format of <row><column>
@@ -38,8 +37,8 @@ The next four columns are the number of mutations in the heavy and light chains,
 
 - n_nt_mutations_HC: number of nucleotide mutations in the heavy chain
 - n_nt_mutations_LC: number of nucleotide mutations in the light chain
-- IgH_nt_mutations: nucleotide mutations in the heavy chain, formatted like <wt><sequential-site>-<mut> 
-- IgK_nt_mutations: nucleotide mutations in the light chain, formatted like <wt><sequential-site>-<mut>
+- IgH_nt_mutations: nucleotide mutations in the heavy chain, formatted like `<wt><sequential-site>-<mut>` 
+- IgK_nt_mutations: nucleotide mutations in the light chain, formatted like `<wt><sequential-site>-<mut>`
 - n_aa_mutations_HC: number of amino acid mutations in the heavy chain
 - n_aa_mutations_LC: number of amino acid mutations in the light chain
 - IgH_aa_mutations: Same as 'aa_substitutions_IMGT', but just the IgH mutations
