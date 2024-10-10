@@ -24,6 +24,7 @@ ml Apptainer
 
 # define the path to the Apptainer binary
 export PATH=$APPTAINERROOT/bin/:$PATH
+export APPTAINER_TMPDIR=$TMPDIR
 
 # define where you would like the results to be stored
 results_dir="results/$(date -I)-rank-coeff-renumbered"
