@@ -101,12 +101,12 @@ Other misc annotations regarding the barcode and plate locations the cell derive
 - seq_nt_LC: The nucleotide sequence of the light chain
 
 
-### [results/gctrees](results/gctrees), 
+### [results/gctrees](results/archive/2024-10-09-rank-coeff-renumbered/gctrees), 
 
-Here, you'll find subdirectories containing all intermediate input and output files from running `gctree`. Each directory is named in the format PR<PR>-<mouse>-<node>-<gc>
-where each of the fields can be matched to the metadata file to identify the mouse. TODO: this should be updated to just be the <uid>.
+Here, you'll find subdirectories containing all intermediate input and output files from running `gctree`. Each directory is named in the format `PR<PR>-<mouse>-<node>-<gc>`
+where each of the `<fields>` can be matched to the [metadata](../metadata.csv) file to identify the mouse. TODO: this should be updated to just be the <uid>.
 
-For example, in the [results/gctrees/PR1.01-20-LB-55-GC](results/gctrees/PR1.01-20-LB-55-GC) directory, after execution of the pipeline, you'll find the following files
+Each gctree subdirectory now contains results for each three ranking coeff approaches used in the manuscript. For example, in the [results/gctrees/PR1.01-20-LB-55-GC](results/gctrees/PR1.01-20-LB-55-GC) directory, after execution of the pipeline, you'll find the following files:
 that were used as input to gctree:
 ```
 ├── abundances.csv
