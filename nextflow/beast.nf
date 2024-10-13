@@ -53,7 +53,9 @@ Rockefeller University, New York NY.
 // TODO add naive sequence to the fasta's?
 
 process ADD_TIME_TO_FASTA {
-  label 'small'
+  time '5m'
+  memory '2g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast-input/", mode: "copy"
   input: path(seqs)
@@ -65,7 +67,10 @@ process ADD_TIME_TO_FASTA {
 }
 
 process BEASTGEN {
-  label 'small'
+  // label 'small'
+  time '5m'
+  memory '2g'
+  cpus 1
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   input: tuple path(seqs_with_time), path(beast_template)
@@ -75,7 +80,10 @@ process BEASTGEN {
 }
 
 process NAIVE_ROOT_PATCH {
-  label 'small'
+  // label 'small'
+  time '5m'
+  memory '2g'
+  cpus 1
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
   publishDir "$params.results/beastgen"
   input: path(beastgen_output)
@@ -89,7 +97,10 @@ process NAIVE_ROOT_PATCH {
 }
 
 process BEAST_TIMETREE {
-  label 'threaded'
+  // label 'threaded'
+  time '4h'
+  memory '8g'
+  cpus 16
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast", mode: "copy"

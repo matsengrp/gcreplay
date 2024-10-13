@@ -3,7 +3,28 @@
 A Nextflow pipeline for running the analysis of germinal center replay 
 (gcreplay) experimental analysis.
 
-    
+
+## Quickstart
+
+Install `Nextflow` by using the following command:
+
+    $ curl -s https://get.nextflow.io | bash
+
+Download the `Docker` Desktop, there exists several distibutions packaged for
+various linux flavors
+
+    $ curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+
+Note: the [Dockerfile](docker/Dockerfile) contains all the required dependencies.
+Add the `-profile docker` to enable the containerised execution to the
+example command line shown below.
+
+Launch the pipeline execution with the following command:
+
+    $ git clone git@github.com:matsengrp/gcreplay.git && cd gcreplay
+    $ nextflow run nextflow/main.nf -profile docker -resume
+
+
 ## Pipeline results
 
 The primary results produced by the main pipeline will be stored under the specified `--results`
@@ -144,29 +165,6 @@ nextflow/results/2024-09-30-rank-coeff-renumbered/gctrees/PR1.01-20-LB-55-GC/def
 ├── LBR.svg
 └── node_data.csv
 ```
-
-
-
-
-## Quickstart
-
-Install `Nextflow` by using the following command:
-
-    $ curl -s https://get.nextflow.io | bash
-
-Download the `Docker` Desktop, there exists several distibutions packaged for
-various linux flavors
-
-    $ curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
-
-Note: the [Dockerfile](docker/Dockerfile) contains all the required dependencies.
-Add the `-profile docker` to enable the containerised execution to the
-example command line shown below.
-
-Launch the pipeline execution with the following command:
-
-    $ git clone git@github.com:matsengrp/gcreplay.git && cd gcreplay
-    $ nextflow run nextflow/main.nf -profile docker -resume
 
 ## Obtain results
 
@@ -322,9 +320,17 @@ required software components reported in the following section. See the included
 
 # Beast pipeline
 
-The beast pipeline takes in any number of fasta's containing the naive sequence, and the
-observed BCR sequences from a single germinal center. The pipeline then prepares the
-xml files from [beastgen](TODO) and a given template (pre-configured templates can be found in the [data/beast/beast_templates](data/beast/beast_templates) directory). The pipeline then runs the beast on the given sequences and produces time estimates for each sequence. 
+[beast.nf](beast.nf) runs [BEAST (v1)](https://beast.community/) on a set of naive and observed BCR sequences 
+from a single germinal center to infer time trees for each clonal family.
+
+In more detail, the pipeline prepares the xml files from [beastgen](https://beast.community/beastgen) 
+and a specified template 
+(pre-configured templates can be found in the 
+[data/beast/beast_templates](data/beast/beast_templates) directory). 
+By default, the pipeline uses the [skyline histlog](/data/beast/beast_templates/skyline_histlog.template.patch) template.
+The pipeline then patches the xml to fix the naive sequence in time using the [beast_template_root_fix.py script](bin/beast_template_root_fix.py)
+before running BEAST on the patched xml files.
+
 
 ## Quick start
 
@@ -356,12 +362,3 @@ nextflow run beast/main.nf --chain_length 1000 --log_every 100 -profile docker -
 
 * `--save_pkl_trees` is a boolean parameter specifying whether to save the ete trees as pickle files. This can be very memory intensive when there are many logged tree iterations for each tree.
 
-
-## Input files
-
-Given the main replay pipeline has been run, we can now use the intermediate files that
-provide a single csv for each GC in the pipeline manifest, containing all observed BCR's
-(e.g. [results/archive/2024-05-15-full/single_gc_wrangle/](results/archive/2024-05-15-full/single_gc_wrangle/)). From here, we simply need to convert 
-
-
-## Output files
