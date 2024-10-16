@@ -9,6 +9,7 @@ dependencies:
   - jupyter
   - scikit-learn
   - jax
+  - svgutils
   - git-lfs
   - pip
   - pip:
