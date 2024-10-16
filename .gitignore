@@ -159,3 +159,5 @@ passenger/passenger-blast/old
 *.db.n*
 _ignore/
 
+# temp files in analysis
+outdir/tmp
