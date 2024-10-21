@@ -627,7 +627,7 @@ def node_featurize(
         node_features["aa_substitutions_IMGT"].append(ami)
         node.add_feature("aa_substitutions", ami)
         
-        for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr", "delta_psr"]):
+        for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr"]):
 
             # each of the additive scores from Tylers wrangling
             if final_variant_scores is not None:
@@ -644,8 +644,7 @@ def node_featurize(
 
     phenotypes = [
         "delta_bind", 
-        "delta_expr", 
-        "delta_psr"
+        "delta_expr"
     ]
     # render tree with colormapped features
     for phenotype in phenotypes + ["LBI", "LBR"]:
@@ -655,9 +654,6 @@ def node_featurize(
             vmax = 10
         elif phenotype.startswith("delta_"):
             cmap = "coolwarm"
-            # psr has opposite colormap because increase means it is worse
-            if phenotype != "delta_psr":
-                cmap += "_r"
             vmin = -2
             vmax = 2
         else:
@@ -797,7 +793,7 @@ def featurize_seqs(
         # substitutions to (hopefully) match those in FMVS
         seq_pheno_preds["aa_substitutions_IMGT"].append(" ".join(all_mutations))
         
-        for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr", "delta_psr"]):
+        for i, phenotype in enumerate(["delta_bind_CGG", "delta_expr"]):
 
             if final_variant_scores is not None:
 

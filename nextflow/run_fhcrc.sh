@@ -27,14 +27,14 @@ export PATH=$APPTAINERROOT/bin/:$PATH
 export APPTAINER_TMPDIR=$TMPDIR
 
 # define where you would like the results to be stored
-results_dir="results/$(date -I)-rank-coeff-renumbered"
+results_dir="results/archive/$(date -I)-rank-coeff-renumbered"
 
 # run the Nextflow pipeline
-nextflow run main.nf \
+nextflow -log $results_dir/log.log \
+        run main.nf \
         --manifest "manifest.csv" \
         --reads_prefix "data/input/" \
         --results $results_dir \
         -profile fred_hutch_rhino \
         -with-trace $results_dir/trace.txt \
-        -with-report $results_dir/report.html \
-        -resume
+        -with-report $results_dir/report.html
