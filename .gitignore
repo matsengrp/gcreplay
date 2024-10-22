@@ -8,6 +8,7 @@ nextflow/data/beast/annotated-PR-1-6-1-LB-19-GC.fasta
 **/building-xvfb/
 **/work
 analysis/output/NDS-LB/*/trees/
+.vscode/
 
 nextflow/run_scripts*
 nextflow/.nextflow*

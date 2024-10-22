@@ -85,9 +85,9 @@ cp $GCDF $OUTDIR
 # TODO Should we? I think it fails if not
 # if [[ $(wc -l <$GCDF) -ge 15 ]]
 
-# Check that a file is a cell type = GC
+# Check that a file is a cell type is either "GC" or "LN"
 # If so we'll be doing the gctree inference.
-if [[ "$CELL_TYPE" == "GC" ]];
+if [[ $CELL_TYPE == "GC" ]] || [[ $CELL_TYPE == "LN" ]];
 then
 
 # will not need to do this in the pipeline 
