@@ -41,7 +41,7 @@ params.partis_anno_dir  = "$projectDir/data/partis_annotation/germlines"
 params.results          = "$projectDir/results/"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
-params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/improved-Kd-fitting/tite-seq-modeling/output/final_variant_scores.csv"
+params.dms_vscores      = "data/dms/final_variant_scores.csv"
 params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
 params.igk_idx          = 336
 params.bcr_count_thresh = 5
@@ -126,7 +126,7 @@ workflow {
   PARTIS_ANNOTATION(BCR_COUNTS.out) \
     | PARTIS_WRANGLE | flatten() | set{partis_wrangle_ch}
 
-  GCTREE(partis_wrangle_ch, file("$params.hdag_sub"), file("$params.hdag_mut")) \
+  GCTREE(partis_wrangle_ch, file("$params.hdag_sub"), file("$params.hdag_mut"), file("$params.dms_vscores")) \
     | collect | MERGE_RESULTS
 
 }

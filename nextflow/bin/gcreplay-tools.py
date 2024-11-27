@@ -21,6 +21,8 @@ import matplotlib
 
 from utils import *
 
+from trees import burst_stat
+
 
 #################################
 # CLI
@@ -504,6 +506,7 @@ def query_df(dataframe, query_string, output):
     default=0.1,
     help="Branch length assigned to zero-mutation branches for LBI computation.",
 )
+@click.option("--tau_rei", type=float, default=0.5, help="Tau for REI computation.")
 @click.option(
     "--output_dir",
     "-o",
@@ -526,6 +529,7 @@ def node_featurize(
     igk_frame,
     tau,
     tau0,
+    tau_rei,
     output_dir,
     render_idlabel
 ):
@@ -565,6 +569,9 @@ def node_featurize(
     # load tree object
     with open(gctree_file, "rb") as f:
         tree = pickle.load(f)
+
+    # generate REI node feature
+    burst_stat(tree, "REI", tau=tau_rei)
 
     # generate LBI and LBR node features
     tree.local_branching(tau=tau, tau0=tau0)
@@ -615,6 +622,7 @@ def node_featurize(
         node_features["isotype"].append(isotype)
         node_features["LBI"].append(node.LBI)
         node_features["LBR"].append(node.LBR)
+        node_features["REI"].append(node.REI)
         node_features["descendant_abundance"].append(sum(descendant.abundance for descendant in node.traverse()))
         node_features["IgH_nt_sequence"].append(node.sequence[:igk_idx])
         node_features["IgH_aa_sequence"].append(str(igh_aa))

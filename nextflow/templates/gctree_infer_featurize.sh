@@ -44,7 +44,7 @@ CELL_TYPE=${tokens[7]}
 OUTDIR="${tokens[1]}${tokens[2]}.${tokens[3]}-${MOUSE}-${NODE}-${GC_NUM}-${CELL_TYPE}"
 
 # Final Kd's from individual (?) mutations
-DMS_VSCORES=!{params.dms_vscores}
+DMS_VSCORES=!{dms_vscores}
 
 # Gives you the DMS wild type sites
 DMS_SITES=!{params.dms_sites}
@@ -58,6 +58,7 @@ IGK_IDX=!{params.igk_idx}
 
 ls $SUB
 ls $MUT
+ls $DMS_VSCORES
 
 export MPLBACKEND=Agg
 export PYTHONHASHSEED=0
