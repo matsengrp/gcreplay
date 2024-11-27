@@ -38,4 +38,4 @@ nextflow -log $results_dir/log.log \
         -profile fred_hutch_rhino \
         -with-trace $results_dir/trace.txt \
         -with-report $results_dir/report.html \
-        -resume 2ced828d-7721-49d3-aa95-271274a1aec1
+        -resume

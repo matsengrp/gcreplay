@@ -207,6 +207,7 @@ process GCTREE {
     path single_mouse_gc_df
     path hdag_sub
     path hdag_mut
+    path dms_vscores
   output: path("PR*")
   shell:
   template "gctree_infer_featurize.sh"
