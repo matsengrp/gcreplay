@@ -177,4 +177,4 @@ passenger/passenger-blast/old
 _ignore/
 
 # temp files in analysis
-outdir/tmp
+analysis/outdir/tmp
