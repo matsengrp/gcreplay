@@ -2,7 +2,6 @@
 *.pdf filter=lfs diff=off merge=lfs -text
 *.svg filter=lfs diff=off merge=lfs -text
 *.p filter=lfs diff=off merge=lfs -text
-*.csv filter=lfs diff=off merge=lfs -text
 *.nk filter=lfs diff=off merge=lfs -text
 *.zip filter=lfs diff=off merge=lfs -text
 nextflow/data/** filter=lfs diff=off merge=lfs -text
