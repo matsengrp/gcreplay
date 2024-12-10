@@ -1,4 +1,4 @@
-name: replay
+name: replay2
 channels:
   - conda-forge
 dependencies:
