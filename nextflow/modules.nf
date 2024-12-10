@@ -102,6 +102,7 @@ process COLLAPSE_RANK_PRUNE {
   time '20m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/rank_collapsed/"
 
@@ -124,6 +125,7 @@ process MERGE_BCRS {
   time '20m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/ranked_bcr_sequences_per_well/"
 
@@ -144,6 +146,7 @@ process PARTIS_ANNOTATION {
   time '30m'
   memory '4g'
   cpus 4
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:partis'
   publishDir "$params.results/partis_annotation/"
 
@@ -166,6 +169,7 @@ process PARTIS_WRANGLE {
   time '15m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/single_gc_wrangle/"
 
@@ -200,6 +204,7 @@ process GCTREE {
   time '8h'
   memory '64g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/gctrees/", mode: "copy"
 
@@ -221,6 +226,7 @@ process MERGE_RESULTS {
   time '10m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/merged-results/", mode: "copy"
 
@@ -231,3 +237,40 @@ process MERGE_RESULTS {
   gcreplay-tools.py merge-results
   """
 }
+
+
+/*
+ * Process 4A: NDS-LB analysis notebook papermill
+ */
+process NDS_LB_ANALYSIS {
+  time '10m'
+  memory '2g'
+  cpus 1
+  cache 'lenient'
+  container 'quay.io/matsengrp/gcreplay-pipeline:56_analysis_in_pipeline'
+  publishDir "$params.results/NDS_LB/", mode: "copy"
+
+  input: 
+    tuple path(all_results), path(metadata), val(ranking_coeff_subdir), val(svg_scale) 
+
+  output: 
+    path("NDS_LB.ipynb"), 
+    path("*.pdf"), 
+    path("*.csv"), 
+    path("*.svg")
+
+  shell:
+  """
+  activate_env replay
+  papermill NDS_LB.ipynb NDS_LB.ipynb \
+    -p results './' \
+    -p ranking_subdir ${ranking_coeff_subdir} \
+    -p scale ${svg_scale} \
+    -p metadata_csv ${metadata} \
+    -p outbase './'
+  """
+}
+
+
+
+ 
