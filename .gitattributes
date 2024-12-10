@@ -1,5 +1,3 @@
-metadata.csv -filter -diff -merge -text
-*.csv filter=lfs diff=off merge=lfs -text
 *.ipynb filter=strip-notebook-metadata diff=strip-notebook-metadata
 *.pdf filter=lfs diff=off merge=lfs -text
 *.svg filter=lfs diff=off merge=lfs -text
