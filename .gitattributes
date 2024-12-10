@@ -1,9 +1,9 @@
+metadata.csv -filter -diff -merge -text
+*.csv filter=lfs diff=off merge=lfs -text
 *.ipynb filter=strip-notebook-metadata diff=strip-notebook-metadata
 *.pdf filter=lfs diff=off merge=lfs -text
 *.svg filter=lfs diff=off merge=lfs -text
 *.p filter=lfs diff=off merge=lfs -text
-metadata.csv -filter -diff -merge -text
-*.csv filter=lfs diff=off merge=lfs -text
 *.nk filter=lfs diff=off merge=lfs -text
 *.zip filter=lfs diff=off merge=lfs -text
 nextflow/data/** filter=lfs diff=off merge=lfs -text
