@@ -61,7 +61,7 @@ final_HK_col_order = [
     "aa_substitutions_IMGT",
 
     "delta_bind",
-    "delta_expr"
+    "delta_expr",
 
     "n_nt_mutations_HC", "n_nt_mutations_LC", "IgH_nt_mutations", "IgK_nt_mutations",
     "n_aa_mutations_HC", "n_aa_mutations_LC", "IgH_aa_mutations", "IgK_aa_mutations",

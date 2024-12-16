@@ -47,7 +47,7 @@ OUTDIR="${tokens[1]}${tokens[2]}.${tokens[3]}-${MOUSE}-${NODE}-${GC_NUM}-${CELL_
 DMS_VSCORES=!{dms_vscores}
 
 # Gives you the DMS wild type sites
-DMS_SITES=!{params.dms_sites}
+DMS_SITES=!{dms_sites}
 
 # parameters for hdag mutation models (?)
 # SUB=!{params.reads_prefix}/!{params.hdag_sub}

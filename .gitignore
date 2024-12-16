@@ -14,9 +14,31 @@ nextflow/run_scripts*
 nextflow/.nextflow*
 nextflow/data/_ignore/
 nextflow/data/input/*.fastq
-nextflow/data/torchdms/
 nextflow/pipeline_trace.txt
-nextflow/results/*
+
+# 1) Ignore everything under nextflow/results
+nextflow/results/
+
+# 2) Un-ignore all directories (so we can selectively unignore files later)
+!nextflow/results/**/
+
+# 3) Finally, unignore the specific files we actually want to track
+
+# These are results match the final results sent to GV, but after renaming
+# 
+!nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.inference.1.nk
+!nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.inference.1.svg
+!nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.p
+!nextflow/results/archive/2024-12-19-full/merged-results/*.csv.gz
+
+# These are the results from 3 GC's that only take about an hour to run for comparison
+!nextflow/results/archive/test/GCTREE/*/*/gctree.inference.1.nk
+!nextflow/results/archive/test/GCTREE/*/*/gctree.inference.1.svg
+!nextflow/results/archive/test/GCTREE/*/*/gctree.p
+!nextflow/results/archive/test/MERGE_RESULTS/*.csv.gz
+
+# Beast runs
+!nextflow/results/archive/2024-12-27-beast-full/ete/
 
 # all log files at top level dir
 *.log*

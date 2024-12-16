@@ -31,7 +31,7 @@ nextflow.enable.dsl = 2
 // TODO move to config file
 params.reads_prefix     = "$projectDir"
 params.manifest         = "data/test/manifest.csv"
-params.metadata         = "data/metadata/metadata.csv"
+// params.metadata         = "data/metadata/metadata.csv"
 params.plate_barcodes   = "data/barcodes/plateBC.txt"
 params.well_barcodes    = "data/barcodes/96FBC.txt"
 params.partis_anno_dir  = "$projectDir/data/partis_annotation/germlines"
@@ -39,8 +39,7 @@ params.results          = "$projectDir/results/"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
 params.dms_vscores      = "data/dms/final_variant_scores.csv"
-params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
-// params.dms_sites        = "data/dms/CGGnaive_sites.csv"
+params.dms_sites        = "data/dms/CGGnaive_sites.csv"
 params.igk_idx          = 336
 params.bcr_count_thresh = 5
 
@@ -101,7 +100,7 @@ workflow BCR_COUNTS {
     ) | filter{ file(it[2]).size()>0 } | set { light_ch }
 
     heavy_ch.concat(light_ch) | COLLAPSE_RANK_PRUNE \
-        | groupTuple(by:[0,1]) | MERGE_BCRS
+      | groupTuple(by:[0,1], sort:true) | MERGE_BCRS
 
   emit:
     MERGE_BCRS.out
@@ -122,25 +121,30 @@ workflow {
       )
     } | BCR_COUNTS
 
-  PARTIS_ANNOTATION(BCR_COUNTS.out) \
-    | PARTIS_WRANGLE | flatten() | set{partis_wrangle_ch}
+  // PARTIS_ANNOTATION(BCR_COUNTS.out) \
+  //   | PARTIS_WRANGLE | flatten() | set{partis_wrangle_ch}
 
-  GCTREE(partis_wrangle_ch, file("$params.hdag_sub"), file("$params.hdag_mut"), file("$params.dms_vscores")) \
-    | collect | set{gctree_ch}
-    
-  MERGE_RESULTS(gctree_ch)
+  // GCTREE(
+  //   partis_wrangle_ch, 
+  //   file("$params.hdag_sub"), 
+  //   file("$params.hdag_mut"), 
+  //   file("$params.dms_vscores"),
+  //   file("$params.dms_sites")
+  // ) | collect | set{gctree_ch}
+  
+  // MERGE_RESULTS(gctree_ch)
   
   // // Channel for metadata file as value
-  // metadata_ch = Channel.value(${params.metadata})
+  // metadata_ch = Channel.value(file("${projectDir}/${params.metadata}"))
 
   // // Channel for ranking coefficients
-  // ranking_coeff_ch = Channel.of(${params.ranking_coeff})
+  // ranking_coeff_ch = Channel.of("default", "naive_reversions_first", "naive_reversions_no_bp")
 
   // // [[PR_dir, PR_dir2], metadata, ranking_coeff]
   // gctree_meta_rank_ch = gctree_ch
   //   .map{it -> [it]}
   //   .combine(metadata_ch)
-  //   .combine(Channel.of("default", "naive_reversions_first", "naive_reversions_no_bp"))
+  //   .combine(ranking_coeff_ch)
   
   // // run iterations of scale, and rank through the NDS_LB_ANALYSIS process
   // gctree_meta_rank_ch.combine(Channel.of(5, 20)) | NDS_LB_ANALYSIS

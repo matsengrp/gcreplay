@@ -22,5 +22,5 @@ RUN echo 'source /opt/conda/etc/profile.d/conda.sh' >> ~/.bashrc && \
 WORKDIR /workspace
 
 # Define the default command for the container
-CMD ["bash"]
+ENTRYPOINT ["/bin/bash"]
 

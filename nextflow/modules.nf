@@ -3,12 +3,15 @@ nextflow.enable.dsl =2
 /*
  * Process 1A: trim the first three bases of the paired end reads.
  */
+
+// meh, let's un-capitalize these process publishDir's
 process TRIM_COMBINE_MATES { 
   time '30m'
   memory '2g'
   cpus 8
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/trimmed_combined_fasta/" 
+  publishDir "$params.results/TRIM_COMBINE_MATES/" 
   
   input: tuple val(key), val(key_file), val(date), path(read1), path(read2)
   output: tuple val(key), val(key_file), val(date), path("${key}.fasta")
@@ -28,12 +31,14 @@ process TRIM_COMBINE_MATES {
  * output it.
  */
 //path plate_barcodes
+// TODO why are we including the date in the prefix? Seems unnecessary
 process DEMULTIPLEX_PLATES {
   time '10m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/demultiplexed_plates_fasta/" 
+  publishDir "$params.results/DEMULTIPLEX_PLATES/" 
 
   input: 
     tuple val(key), val(key_file), val(date), path(key_fasta)
@@ -54,8 +59,9 @@ process DEMULTIPLEX_WELLS {
   time '10m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/demultiplexed_wells_fasta/"
+  publishDir "$params.results/DEMULTIPLEX_WELLS/"
 
   input: 
     tuple val(key), val(key_file), path(plate)
@@ -79,8 +85,9 @@ process SPLIT_HK {
   time '20m'
   memory '2g'
   cpus 4
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/split_HK/"
+  publishDir "$params.results/SPLIT_HK/"
 
   input: 
     tuple val(key), val(key_file), path(well) 
@@ -104,7 +111,7 @@ process COLLAPSE_RANK_PRUNE {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/rank_collapsed/"
+  publishDir "$params.results/COLLAPSE_RANK_PRUNE/"
 
   input: tuple val(key), val(key_file), path(well_chain)
   output: tuple val(key), val(key_file), path("${well_chain}.R")
@@ -127,14 +134,14 @@ process MERGE_BCRS {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/ranked_bcr_sequences_per_well/"
+  publishDir "$params.results/MERGE_BCRS/"
 
   input: tuple val(key), val(key_file), path(all_coll_rank)
   output: tuple val(key), val(key_file), path("${key}.fasta")
   script:
   """
   awk '/>/{sub(">","&"FILENAME".")}1' ${all_coll_rank} > merged.fasta
-  gcreplay-tools.py sort-fasta --fasta merged.fasta -o ${key}.fasta
+  gcreplay-tools-post-collapse.py sort-fasta --fasta merged.fasta -o ${key}.fasta
   """
 }
 
@@ -148,7 +155,7 @@ process PARTIS_ANNOTATION {
   cpus 4
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:partis'
-  publishDir "$params.results/partis_annotation/"
+  publishDir "$params.results/PARTIS_ANNOTATION/"
 
   input: 
     tuple val(key), val(key_file), path(merged_fasta)
@@ -171,7 +178,7 @@ process PARTIS_WRANGLE {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/single_gc_wrangle/"
+  publishDir "$params.results/PARTIS_WRANGLE/"
 
   input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
   output: path "annotated-${key}*.csv"
@@ -181,7 +188,7 @@ process PARTIS_WRANGLE {
   IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
 
   # wrangle annotation -> gc merged dataframe
-  gcreplay-tools.py wrangle-annotation \
+  gcreplay-tools-post-collapse.py wrangle-annotation \
       --igh-airr \$IGH_AIRR \
       --igk-airr \$IGK_AIRR \
       --input-fasta $merged_fasta \
@@ -190,7 +197,7 @@ process PARTIS_WRANGLE {
   
   # now, split the wrangled df into single mouse / gc
   # --sample 10 TODO add this option to pipeline params
-  gcreplay-tools.py df-groupby \
+  gcreplay-tools-post-collapse.py df-groupby \
       -df ${key}-gc-df-hk.csv \
       -o annotated-${key}
   """
@@ -206,13 +213,14 @@ process GCTREE {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/gctrees/", mode: "copy"
+  publishDir "$params.results/GCTREE/", mode: "copy"
 
   input: 
     path single_mouse_gc_df
     path hdag_sub
     path hdag_mut
     path dms_vscores
+    path dms_sites
   output: path("PR*")
   shell:
   template "gctree_infer_featurize.sh"
@@ -222,19 +230,20 @@ process GCTREE {
 /*
  * Process 3B: Merge all results
  */
+// Maybe rename to BCR_AND_NODE_TABLES
 process MERGE_RESULTS {
   time '10m'
   memory '2g'
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/merged-results/", mode: "copy"
+  publishDir "$params.results/MERGE_RESULTS/", mode: "copy"
 
   input: path(all_results)
   output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
-  shell:
+  script:
   """
-  gcreplay-tools.py merge-results
+  gcreplay-tools-post-collapse.py merge-results
   """
 }
 
@@ -248,19 +257,17 @@ process NDS_LB_ANALYSIS {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:56_analysis_in_pipeline'
-  publishDir "$params.results/NDS_LB/", mode: "copy"
+  publishDir "$params.results/NDS_LB_ANALYSIS/", mode: "copy"
 
   input: 
     tuple path(all_results), path(metadata), val(ranking_coeff_subdir), val(svg_scale) 
 
   output: 
-    path("NDS_LB.ipynb"), 
-    path("*.pdf"), 
-    path("*.csv"), 
-    path("*.svg")
+    tuple path("NDS_LB.ipynb"), path("*.pdf"), path("*.csv"), path("*.svg")
 
-  shell:
+  script:
   """
+  #! /bin/bash
   activate_env replay
   papermill NDS_LB.ipynb NDS_LB.ipynb \
     -p results './' \
