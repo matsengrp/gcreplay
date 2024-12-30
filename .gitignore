@@ -23,9 +23,6 @@ nextflow/results/
 !nextflow/results/**/
 
 # 3) Finally, unignore the specific files we actually want to track
-
-# These are results match the final results sent to GV, but after renaming
-# 
 !nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.inference.1.nk
 !nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.inference.1.svg
 !nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.p
@@ -37,8 +34,19 @@ nextflow/results/
 !nextflow/results/archive/test/GCTREE/*/*/gctree.p
 !nextflow/results/archive/test/MERGE_RESULTS/*.csv.gz
 
+!nextflow/results/archive/full/GCTREE/*/*/gctree.inference.1.nk
+!nextflow/results/archive/full/GCTREE/*/*/gctree.inference.1.svg
+!nextflow/results/archive/full/GCTREE/*/*/gctree.p
+!nextflow/results/archive/full/MERGE_RESULTS/*.csv.gz
+
 # Beast runs
 !nextflow/results/archive/2024-12-27-beast-full/ete/
+
+nextflow/data/micro_input/
+nextflow/data/test_input/*.fastq
+
+# ignore run files for now
+nextflow/*.sh
 
 # all log files at top level dir
 *.log*

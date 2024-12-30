@@ -30,8 +30,8 @@ nextflow.enable.dsl = 2
 
 // TODO move to config file
 params.reads_prefix     = "$projectDir"
-params.manifest         = "data/test/manifest.csv"
-// params.metadata         = "data/metadata/metadata.csv"
+params.ngs_manifest     = "data/test_input/ngs_manifest.csv"
+params.gc_metadata      = "data/test_input/gc_metadata.csv"
 params.plate_barcodes   = "data/barcodes/plateBC.txt"
 params.well_barcodes    = "data/barcodes/96FBC.txt"
 params.partis_anno_dir  = "$projectDir/data/partis_annotation/germlines"
@@ -82,25 +82,25 @@ workflow BCR_COUNTS {
 
     TRIM_COMBINE_MATES(filepair) | set { trimmed_ch }
     DEMULTIPLEX_PLATES(trimmed_ch, file("$params.plate_barcodes")) \
-      | transpose() | filter{ file(it[2]).size()>0 } \
+      | transpose() | filter{ file(it[1]).size()>0 } \
       | set { dmplxd_plates_ch }
 
     DEMULTIPLEX_WELLS(dmplxd_plates_ch, file("$params.well_barcodes")) \
-      | transpose() | filter{ file(it[2]).size()>0 } \
+      | transpose() | filter{ file(it[1]).size()>0 } \
       | set { dmplxd_wells_ch }
 
     SPLIT_HEAVY(
       dmplxd_wells_ch,
       "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC", "H"
-    ) | filter{ file(it[2]).size()>0 } | set { heavy_ch }
+    ) | filter{ file(it[1]).size()>0 } | set { heavy_ch }
 
     SPLIT_LIGHT(
       dmplxd_wells_ch,
       "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG", "K"
-    ) | filter{ file(it[2]).size()>0 } | set { light_ch }
+    ) | filter{ file(it[1]).size()>0 } | set { light_ch }
 
     heavy_ch.concat(light_ch) | COLLAPSE_RANK_PRUNE \
-      | groupTuple(by:[0,1], sort:true) | MERGE_BCRS
+      | groupTuple(by:[0], sort:true) | MERGE_BCRS
 
   emit:
     MERGE_BCRS.out
@@ -109,33 +109,36 @@ workflow BCR_COUNTS {
 
 workflow {
 
-  Channel.fromPath(params.manifest)
+  Channel.fromPath(params.ngs_manifest)
     .splitCsv(header:true)
     .map{ row ->
       tuple(
-        "$row.sample_id",
-        file("${params.reads_prefix}/${row.key_file}"),
+        "$row.ngs_id",
         "$row.date",
         file("${params.reads_prefix}/${row.read1}"),
         file("${params.reads_prefix}/${row.read2}"),
       )
     } | BCR_COUNTS
 
-  // PARTIS_ANNOTATION(BCR_COUNTS.out) \
-  //   | PARTIS_WRANGLE | flatten() | set{partis_wrangle_ch}
+  PARTIS_ANNOTATION(BCR_COUNTS.out) | set{partis_anno_ch}
+  PARTIS_WRANGLE(
+    partis_anno_ch, 
+    file("${projectDir}/${params.gc_metadata}")
+  ) | flatten() | set{partis_wrangle_ch}
 
-  // GCTREE(
-  //   partis_wrangle_ch, 
-  //   file("$params.hdag_sub"), 
-  //   file("$params.hdag_mut"), 
-  //   file("$params.dms_vscores"),
-  //   file("$params.dms_sites")
-  // ) | collect | set{gctree_ch}
+  GCTREE(
+    partis_wrangle_ch, 
+    file("$params.hdag_sub"), 
+    file("$params.hdag_mut"), 
+    file("$params.dms_vscores"),
+    file("$params.dms_sites")
+  ) | collect | set{gctree_ch}
+
+  // gctree_ch | view()
   
-  // MERGE_RESULTS(gctree_ch)
+  MERGE_RESULTS(gctree_ch)
   
   // // Channel for metadata file as value
-  // metadata_ch = Channel.value(file("${projectDir}/${params.metadata}"))
 
   // // Channel for ranking coefficients
   // ranking_coeff_ch = Channel.of("default", "naive_reversions_first", "naive_reversions_no_bp")

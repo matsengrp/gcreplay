@@ -57,7 +57,8 @@ partis_airr_to_drop = [
 ]
 
 final_HK_col_order = [
-    "ID_HK", "well", "HK_key_plate", "HK_key_mouse", "HK_key_gc", "HK_key_node", "HK_key_cell_type",
+    "ID_HK", "well", 
+    "uid", "ngs_id", "mouse", "gc", "node", "cell_type", "imm_duration",
     "aa_substitutions_IMGT",
 
     "delta_bind",
@@ -211,54 +212,6 @@ def nt_mutations(naive_nt, nt, site_idx_offset=0):
         if nt1 != nt2
     ]
 
-
-# move this to annotation as well
-def merge_heavy_light_chains(
-        cell_df: pd.DataFrame,
-        key_file: pd.DataFrame
-) -> pd.DataFrame:
-    """
-    """
-
-    GC_df = pd.DataFrame()
-    for idx, row in key_file.iterrows():
-        key_row = row.row.split(".")
-        key_col = [int(c) for c in row.col.split(".")]
-        key_hc_barcodes = [int(c) for c in str(row.hc_barcode).split(".")]
-        key_lc_barcodes = [int(c) for c in str(row.lc_barcode).split(".")]
-
-        HC = cell_df.query(
-            (
-                f"(locus == 'IGH') & "
-                f"(barcode.isin({key_hc_barcodes})) & "
-                f"(column.isin({key_col})) & "
-                f"(row.isin({key_row}))"
-            ),
-            engine="python"
-        )
-        LC = cell_df.query(
-            (
-                f"(locus == 'IGK') & "
-                f"(barcode.isin({key_lc_barcodes})) & "
-                f"(column.isin({key_col})) & "
-                f"(row.isin({key_row}))"
-            ),
-            engine="python"
-        )
-
-        GC = HC.merge(LC, on="well", suffixes=("_HC", "_LC"))
-        GC["HK_key_mouse"] = row.mouse
-        GC["HK_key_gc"] = row.gc
-        GC["HK_key_node"] = row.node
-        GC["HK_key_cell_type"] = row.cell_type
-        GC["HK_key_plate"] = row.plate
-
-        GC_df = pd.concat([GC_df, GC])
-
-    GC_df.loc[:, "ID_HK"] = [f"{i}K" for i in GC_df["ID_HC"]]
-    GC_df = GC_df.query("chain_HC != chain_LC")
-
-    return GC_df
 
 
 

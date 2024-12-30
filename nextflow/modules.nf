@@ -1,4 +1,4 @@
-nextflow.enable.dsl =2
+nextflow.enable.dsl = 2
 
 /*
  * Process 1A: trim the first three bases of the paired end reads.
@@ -13,13 +13,13 @@ process TRIM_COMBINE_MATES {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/TRIM_COMBINE_MATES/" 
   
-  input: tuple val(key), val(key_file), val(date), path(read1), path(read2)
-  output: tuple val(key), val(key_file), val(date), path("${key}.fasta")
+  input: tuple val(ngs_id), val(date), path(read1), path(read2)
+  output: tuple val(ngs_id), val(date), path("${ngs_id}.fasta")
   script:
   """
   fastx_trimmer -Q33 -i ${read1} -f 3 -o t_${read1}
   fastx_trimmer -Q33 -i ${read2} -f 3 -o t_${read2}
-  pandaseq -T 8 -f t_${read1} -r t_${read2} -O 0 -w ${key}.fasta
+  pandaseq -T 8 -f t_${read1} -r t_${read2} -O 0 -w ${ngs_id}.fasta
   """
 }
 
@@ -41,14 +41,17 @@ process DEMULTIPLEX_PLATES {
   publishDir "$params.results/DEMULTIPLEX_PLATES/" 
 
   input: 
-    tuple val(key), val(key_file), val(date), path(key_fasta)
+    tuple val(ngs_id), val(date), path(ngs_id_fasta)
     path(plate_barcodes)
-  output: tuple val(key), val(key_file), path("${key}.${date}.*")
+  output: tuple val(ngs_id), path("${ngs_id}.${date}.*")
   script:
   """
-  cat ${key_fasta} | fastx_barcode_splitter.pl \
-    --bcfile ${plate_barcodes} --eol \
-    --prefix ${key}.${date}. --exact
+  cat ${ngs_id_fasta} | fastx_barcode_splitter.pl \
+    --bcfile ${plate_barcodes} \
+    --eol \
+    --prefix \
+    ${ngs_id}.${date}. \
+    --exact
   """
 }
 
@@ -64,16 +67,17 @@ process DEMULTIPLEX_WELLS {
   publishDir "$params.results/DEMULTIPLEX_WELLS/"
 
   input: 
-    tuple val(key), val(key_file), path(plate)
+    tuple val(ngs_id), path(plate)
     path(well_barcodes)
-  output: tuple val(key), val(key_file), path("${plate}.*")
+  output: tuple val(ngs_id), path("${plate}.*")
   script:
   """
   cat ${plate} | fastx_barcode_splitter.pl \
-    --bcfile ${well_barcodes} --bol --prefix ${plate}.
+    --bcfile ${well_barcodes} \
+    --bol \
+    --prefix ${plate}.
   """
 }
-// --bcfile ${params.reads_prefix}/${params.well_barcodes} --bol --prefix ${plate}.
 
 
 /*
@@ -90,13 +94,18 @@ process SPLIT_HK {
   publishDir "$params.results/SPLIT_HK/"
 
   input: 
-    tuple val(key), val(key_file), path(well) 
+    tuple val(ngs_id), path(well) 
     val(motif)
     val(chain)
-  output: tuple val(key), val(key_file), path("${well}.${chain}")
+  output: tuple val(ngs_id), path("${well}.${chain}")
   script:
   """
-  cutadapt --cores ${task.cpus} -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
+  cutadapt \
+    --cores ${task.cpus} \
+    -g ${motif} \
+    -e 0.2 ${well} \
+    --discard-untrimmed \
+    -o ${well}.${chain}
   """
 }
 
@@ -113,12 +122,13 @@ process COLLAPSE_RANK_PRUNE {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/COLLAPSE_RANK_PRUNE/"
 
-  input: tuple val(key), val(key_file), path(well_chain)
-  output: tuple val(key), val(key_file), path("${well_chain}.R")
+  input: tuple val(ngs_id), path(well_chain)
+  output: tuple val(ngs_id), path("${well_chain}.R")
   script:
   """
   fastx_collapser -i ${well_chain} -o rank_collapsed.fasta
-  gcreplay-tools.py curate-high-count-seqs --fasta rank_collapsed.fasta \
+  prune-low-abundance-bcrs.py \
+    --fasta rank_collapsed.fasta \
     --count-threshold ${params.bcr_count_thresh} \
     -o ${well_chain}.R
   """
@@ -136,12 +146,12 @@ process MERGE_BCRS {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/MERGE_BCRS/"
 
-  input: tuple val(key), val(key_file), path(all_coll_rank)
-  output: tuple val(key), val(key_file), path("${key}.fasta")
+  input: tuple val(ngs_id), path(all_coll_rank)
+  output: tuple val(ngs_id), path("${ngs_id}.fasta")
   script:
   """
   awk '/>/{sub(">","&"FILENAME".")}1' ${all_coll_rank} > merged.fasta
-  gcreplay-tools-post-collapse.py sort-fasta --fasta merged.fasta -o ${key}.fasta
+  sort-fasta.py --fasta merged.fasta -o ${ngs_id}.fasta
   """
 }
 
@@ -158,13 +168,13 @@ process PARTIS_ANNOTATION {
   publishDir "$params.results/PARTIS_ANNOTATION/"
 
   input: 
-    tuple val(key), val(key_file), path(merged_fasta)
-  output: tuple val(key), val(key_file), path(merged_fasta), path("${key}/")
+    tuple val(ngs_id), path(merged_fasta)
+  output: tuple val(ngs_id), path(merged_fasta), path("${ngs_id}/")
   script:
   """
   wd=\$PWD
   cd /partis
-  initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${key} $params.partis_anno_dir
+  initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${ngs_id} $params.partis_anno_dir
   """
 }
 
@@ -172,6 +182,8 @@ process PARTIS_ANNOTATION {
 /*
  * Process 2B: Wrangle and parse the annotations
  */
+// TODO here you'll need to modify the scripts to 
+// deal with the seq id and entire metadata file
 process PARTIS_WRANGLE {
   time '15m'
   memory '2g'
@@ -180,29 +192,32 @@ process PARTIS_WRANGLE {
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
   publishDir "$params.results/PARTIS_WRANGLE/"
 
-  input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
-  output: path "annotated-${key}*.csv"
+  input: 
+    tuple val(ngs_id), path(merged_fasta), path(partis_out)
+    path(gc_metadata)
+  output: path "*.csv"
   
   """  
   IGH_AIRR=${partis_out}/engrd/single-chain/partition-igh.tsv
   IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
 
   # wrangle annotation -> gc merged dataframe
-  gcreplay-tools-post-collapse.py wrangle-annotation \
+  wrangle-annotation.py \
       --igh-airr \$IGH_AIRR \
       --igk-airr \$IGK_AIRR \
       --input-fasta $merged_fasta \
-      --key-file $key_file \
-      -o ${key}-gc-df-hk.csv
+      --gc-metadata $gc_metadata \
+      --ngs-id $ngs_id \
+      -o gc-df-hk.csv
   
   # now, split the wrangled df into single mouse / gc
-  # --sample 10 TODO add this option to pipeline params
-  gcreplay-tools-post-collapse.py df-groupby \
-      -df ${key}-gc-df-hk.csv \
-      -o annotated-${key}
+  df-groupby.py \
+      --dataframe gc-df-hk.csv \
+      --column "uid"
+
+  rm gc-df-hk.csv
   """
 }
-
 
 /*
  * Process 3A: Wrangle and featurize nodes
@@ -221,7 +236,7 @@ process GCTREE {
     path hdag_mut
     path dms_vscores
     path dms_sites
-  output: path("PR*")
+  output: path("${single_mouse_gc_df.baseName}"), type: 'dir'
   shell:
   template "gctree_infer_featurize.sh"
 }
@@ -243,7 +258,7 @@ process MERGE_RESULTS {
   output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
   script:
   """
-  gcreplay-tools-post-collapse.py merge-results
+  merge-results.py
   """
 }
 
