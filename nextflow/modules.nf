@@ -1,22 +1,25 @@
-nextflow.enable.dsl =2
+nextflow.enable.dsl = 2
 
 /*
  * Process 1A: trim the first three bases of the paired end reads.
  */
+
+// meh, let's un-capitalize these process publishDir's
 process TRIM_COMBINE_MATES { 
   time '30m'
   memory '2g'
   cpus 8
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/trimmed_combined_fasta/" 
+  publishDir "$params.results/TRIM_COMBINE_MATES/" 
   
-  input: tuple val(key), val(key_file), val(date), path(read1), path(read2)
-  output: tuple val(key), val(key_file), val(date), path("${key}.fasta")
+  input: tuple val(ngs_id), val(date), path(read1), path(read2)
+  output: tuple val(ngs_id), val(date), path("${ngs_id}.fasta")
   script:
   """
   fastx_trimmer -Q33 -i ${read1} -f 3 -o t_${read1}
   fastx_trimmer -Q33 -i ${read2} -f 3 -o t_${read2}
-  pandaseq -T 8 -f t_${read1} -r t_${read2} -O 0 -w ${key}.fasta
+  pandaseq -T 8 -f t_${read1} -r t_${read2} -O 0 -w ${ngs_id}.fasta
   """
 }
 
@@ -28,22 +31,27 @@ process TRIM_COMBINE_MATES {
  * output it.
  */
 //path plate_barcodes
+// TODO why are we including the date in the prefix? Seems unnecessary
 process DEMULTIPLEX_PLATES {
   time '10m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/demultiplexed_plates_fasta/" 
+  publishDir "$params.results/DEMULTIPLEX_PLATES/" 
 
   input: 
-    tuple val(key), val(key_file), val(date), path(key_fasta)
+    tuple val(ngs_id), val(date), path(ngs_id_fasta)
     path(plate_barcodes)
-  output: tuple val(key), val(key_file), path("${key}.${date}.*")
+  output: tuple val(ngs_id), path("${ngs_id}.${date}.*")
   script:
   """
-  cat ${key_fasta} | fastx_barcode_splitter.pl \
-    --bcfile ${plate_barcodes} --eol \
-    --prefix ${key}.${date}. --exact
+  cat ${ngs_id_fasta} | fastx_barcode_splitter.pl \
+    --bcfile ${plate_barcodes} \
+    --eol \
+    --prefix \
+    ${ngs_id}.${date}. \
+    --exact
   """
 }
 
@@ -54,20 +62,22 @@ process DEMULTIPLEX_WELLS {
   time '10m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/demultiplexed_wells_fasta/"
+  publishDir "$params.results/DEMULTIPLEX_WELLS/"
 
   input: 
-    tuple val(key), val(key_file), path(plate)
+    tuple val(ngs_id), path(plate)
     path(well_barcodes)
-  output: tuple val(key), val(key_file), path("${plate}.*")
+  output: tuple val(ngs_id), path("${plate}.*")
   script:
   """
   cat ${plate} | fastx_barcode_splitter.pl \
-    --bcfile ${well_barcodes} --bol --prefix ${plate}.
+    --bcfile ${well_barcodes} \
+    --bol \
+    --prefix ${plate}.
   """
 }
-// --bcfile ${params.reads_prefix}/${params.well_barcodes} --bol --prefix ${plate}.
 
 
 /*
@@ -79,17 +89,23 @@ process SPLIT_HK {
   time '20m'
   memory '2g'
   cpus 4
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/split_HK/"
+  publishDir "$params.results/SPLIT_HK/"
 
   input: 
-    tuple val(key), val(key_file), path(well) 
+    tuple val(ngs_id), path(well) 
     val(motif)
     val(chain)
-  output: tuple val(key), val(key_file), path("${well}.${chain}")
+  output: tuple val(ngs_id), path("${well}.${chain}")
   script:
   """
-  cutadapt --cores ${task.cpus} -g ${motif} -e 0.2 ${well} --discard-untrimmed -o ${well}.${chain}
+  cutadapt \
+    --cores ${task.cpus} \
+    -g ${motif} \
+    -e 0.2 ${well} \
+    --discard-untrimmed \
+    -o ${well}.${chain}
   """
 }
 
@@ -102,15 +118,17 @@ process COLLAPSE_RANK_PRUNE {
   time '20m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/rank_collapsed/"
+  publishDir "$params.results/COLLAPSE_RANK_PRUNE/"
 
-  input: tuple val(key), val(key_file), path(well_chain)
-  output: tuple val(key), val(key_file), path("${well_chain}.R")
+  input: tuple val(ngs_id), path(well_chain)
+  output: tuple val(ngs_id), path("${well_chain}.R")
   script:
   """
   fastx_collapser -i ${well_chain} -o rank_collapsed.fasta
-  gcreplay-tools.py curate-high-count-seqs --fasta rank_collapsed.fasta \
+  prune-low-abundance-bcrs.py \
+    --fasta rank_collapsed.fasta \
     --count-threshold ${params.bcr_count_thresh} \
     -o ${well_chain}.R
   """
@@ -124,15 +142,16 @@ process MERGE_BCRS {
   time '20m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/ranked_bcr_sequences_per_well/"
+  publishDir "$params.results/MERGE_BCRS/"
 
-  input: tuple val(key), val(key_file), path(all_coll_rank)
-  output: tuple val(key), val(key_file), path("${key}.fasta")
+  input: tuple val(ngs_id), path(all_coll_rank)
+  output: tuple val(ngs_id), path("${ngs_id}.fasta")
   script:
   """
   awk '/>/{sub(">","&"FILENAME".")}1' ${all_coll_rank} > merged.fasta
-  gcreplay-tools.py sort-fasta --fasta merged.fasta -o ${key}.fasta
+  sort-fasta.py --fasta merged.fasta -o ${ngs_id}.fasta
   """
 }
 
@@ -144,17 +163,18 @@ process PARTIS_ANNOTATION {
   time '30m'
   memory '4g'
   cpus 4
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:partis'
-  publishDir "$params.results/partis_annotation/"
+  publishDir "$params.results/PARTIS_ANNOTATION/"
 
   input: 
-    tuple val(key), val(key_file), path(merged_fasta)
-  output: tuple val(key), val(key_file), path(merged_fasta), path("${key}/")
+    tuple val(ngs_id), path(merged_fasta)
+  output: tuple val(ngs_id), path(merged_fasta), path("${ngs_id}/")
   script:
   """
   wd=\$PWD
   cd /partis
-  initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${key} $params.partis_anno_dir
+  initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${ngs_id} $params.partis_anno_dir
   """
 }
 
@@ -162,36 +182,42 @@ process PARTIS_ANNOTATION {
 /*
  * Process 2B: Wrangle and parse the annotations
  */
+// TODO here you'll need to modify the scripts to 
+// deal with the seq id and entire metadata file
 process PARTIS_WRANGLE {
   time '15m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/single_gc_wrangle/"
+  publishDir "$params.results/PARTIS_WRANGLE/"
 
-  input: tuple val(key), path(key_file), path(merged_fasta), path(partis_out)
-  output: path "annotated-${key}*.csv"
+  input: 
+    tuple val(ngs_id), path(merged_fasta), path(partis_out)
+    path(gc_metadata)
+  output: path "*.csv"
   
   """  
   IGH_AIRR=${partis_out}/engrd/single-chain/partition-igh.tsv
   IGK_AIRR=${partis_out}/engrd/single-chain/partition-igk.tsv
 
   # wrangle annotation -> gc merged dataframe
-  gcreplay-tools.py wrangle-annotation \
+  wrangle-annotation.py \
       --igh-airr \$IGH_AIRR \
       --igk-airr \$IGK_AIRR \
       --input-fasta $merged_fasta \
-      --key-file $key_file \
-      -o ${key}-gc-df-hk.csv
+      --gc-metadata $gc_metadata \
+      --ngs-id $ngs_id \
+      -o gc-df-hk.csv
   
   # now, split the wrangled df into single mouse / gc
-  # --sample 10 TODO add this option to pipeline params
-  gcreplay-tools.py df-groupby \
-      -df ${key}-gc-df-hk.csv \
-      -o annotated-${key}
+  df-groupby.py \
+      --dataframe gc-df-hk.csv \
+      --column "uid"
+
+  rm gc-df-hk.csv
   """
 }
-
 
 /*
  * Process 3A: Wrangle and featurize nodes
@@ -200,15 +226,17 @@ process GCTREE {
   time '8h'
   memory '64g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/gctrees/", mode: "copy"
+  publishDir "$params.results/GCTREE/", mode: "copy"
 
   input: 
     path single_mouse_gc_df
     path hdag_sub
     path hdag_mut
     path dms_vscores
-  output: path("PR*")
+    path dms_sites
+  output: path("${single_mouse_gc_df.baseName}"), type: 'dir'
   shell:
   template "gctree_infer_featurize.sh"
 }
@@ -217,17 +245,54 @@ process GCTREE {
 /*
  * Process 3B: Merge all results
  */
+// Maybe rename to BCR_AND_NODE_TABLES
 process MERGE_RESULTS {
   time '10m'
   memory '2g'
   cpus 1
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/merged-results/", mode: "copy"
+  publishDir "$params.results/MERGE_RESULTS/", mode: "copy"
 
   input: path(all_results)
   output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
-  shell:
+  script:
   """
-  gcreplay-tools.py merge-results
+  merge-results.py
   """
 }
+
+
+/*
+ * Process 4A: NDS-LB analysis notebook papermill
+ */
+process NDS_LB_ANALYSIS {
+  time '10m'
+  memory '2g'
+  cpus 1
+  cache 'lenient'
+  container 'quay.io/matsengrp/gcreplay-pipeline:56_analysis_in_pipeline'
+  publishDir "$params.results/NDS_LB_ANALYSIS/", mode: "copy"
+
+  input: 
+    tuple path(all_results), path(metadata), val(ranking_coeff_subdir), val(svg_scale) 
+
+  output: 
+    tuple path("NDS_LB.ipynb"), path("*.pdf"), path("*.csv"), path("*.svg")
+
+  script:
+  """
+  #! /bin/bash
+  activate_env replay
+  papermill NDS_LB.ipynb NDS_LB.ipynb \
+    -p results './' \
+    -p ranking_subdir ${ranking_coeff_subdir} \
+    -p scale ${svg_scale} \
+    -p metadata_csv ${metadata} \
+    -p outbase './'
+  """
+}
+
+
+
+ 

@@ -6,7 +6,7 @@ import os
 import sys
 import argparse
 
-def add_date_to_fasta(original_file, updated_file=None, delim='@', keyword='naive', keyword_time=0, other_seq_time=20):
+def add_date_to_fasta(original_file, updated_file=None, delim='@', keyword='naive', keyword_time=0, other_seq_time=1):
     """ 
     Add sequence time to fasta headers.
     It allows to add a specific time to one sequence, and set another time to the rest of sequences.

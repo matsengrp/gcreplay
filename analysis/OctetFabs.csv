@@ -1,3 +1,32 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c865160d06bde93613be2dd5d4b514ca46d8cc6adf995d770740c5d184037feb
-size 3455
+﻿Fab #,Category,HC vector,LC vector,delta_bind,delta_expr,delta_psr,IgH_mutations,IgK_mutations
+1,Uniform ladder,Replay-1H,Replay-1K,-12.19531,-0.69039,2.17393,"I30(H)V,T35(H)S,F45(H)I,L50(H)F,Y52(H)F,M53(H)V,Y58(H)F,S59(H)T,G63(H)S,K72(H)T,Y87(H)F,A105(H)T,D109(H)V","K9(L)E,N38(L)D,Y68(L)F,Y110(L)F,K119(L)D"
+2,Uniform ladder,Replay-2H,Replay-2K,-9.1538,-0.97991,2.38985,"V25(H)A,N40(H)H,K49(H)R,E51(H)D,N92(H)S,A105(H)T","Y42(L)F,Q48(L)H,S92(L)T,E101(L)D,S109(L)N,Y110(L)N"
+3,Uniform ladder,Replay-3H,Replay-3K,-7.52469,-0.555,0.8499,"N40(H)H,Q86(H)H","S92(L)R,Y110(L)D"
+4,Uniform ladder,Replay-4H,Replay-4K,-5.32024,-0.73088,2.1925,"T35(H)I,N40(H)I,K49(H)G,S57(H)N,N85(H)G,Y87(H)F,A105(H)T","G36(L)E,Y42(L)F,Y66(L)S,S69(L)N,Q105(L)H"
+5,Uniform ladder,Replay-5H,Replay-5K,-3.0738,-1.33981,0.57563,"I56(H)M,S64(H)N,D107(H)E","Y42(L)N,Y55(L)S,S92(L)N"
+6,Uniform ladder,Replay-6H,Replay-6K,-1.41357,-1.84166,0.87274,"S57(H)N,Y102(H)H,T115(H)S","T37(L)I,L112(L)P"
+7,Uniform ladder,Replay-7H,Replay-7K,1.50696,0.11229,0.16275,"D28(H)A,T35(H)A,N40(H)S,Y67(H)F,S74(H)G","Y66(L)H,F103(L)I,N108(L)K"
+8,Uniform ladder,Replay-8H,Replay-8K,2.19166,-0.08753,0.72645,"D28(H)G,S57(H)N,S64(H)G,A105(H)G,V110(H)F","V15(L)E,N28(L)D,Q44(L)E,Q105(L)H,N108(L)K"
+9,Uniform ladder,Replay-9H,Replay-9K,2.70218,0.0596,-0.10394,"D28(H)V,S59(H)T,I76(H)F,Q86(H)H,A105(H)G","F10(L)L,Q105(L)H,N108(L)K,S109(L)I,L112(L)I,E121(L)D"
+10,Uniform ladder,Replay-10H,Replay-10K,3.51789,0.28299,-0.06213,"D28(H)A,G47(H)E,L50(H)F,S64(H)R,K72(H)Q,A105(H)G","V15(L)A,A40(L)G,Q95(L)H,N108(L)H"
+11,"""elbow""",Replay-11H,Replay-11K,-0.67113,-0.60433,-0.22618,,"E97(L)D,Q106(L)H,L112(L)P"
+12,"""elbow""",Replay-12H,Replay-12K,-1.99783,-0.31607,0.01951,"D28(H)A,S57(H)N,S59(H)N,I78(H)L",N108(L)K
+13,"""elbow""",Replay-13H,Replay-13K,-1.04789,-0.06201,0.34083,Y87(H)H,V39(L)I
+14,"""elbow""",Replay-14H,Replay-14K,-3.50008,-0.1772,0.10162,"S64(H)T,K72(H)T,A105(H)V","R67(L)S,D74(L)A"
+15,Burst: LBI #1,Replay-11H,Replay-15K,0.53801,0.03213,0.00931,,"R67(L)K,Q105(L)H,L112(L)I"
+16,Burst: LBI #2,Replay-16H,Replay-16K,0.69114,-0.36431,0.08835,"S64(H)T,N92(H)K","Y42(L)C,N108(L)H"
+17,Burst: LBI #3,Replay-17H,Replay-17K,0.01387,-0.5732,0.17632,"I78(H)L,N92(H)T",Y42(L)C
+18,Burst: LBI #4,Replay-11H,Replay-18K,0.09213,-1.25326,0.92901,,"Y42(L)N,L99(L)V,L120(L)V"
+19,Burst: LBI #5,Replay-19H,Replay-19K,1.08571,0.00901,-0.32219,A105(H)G,S109(L)R
+20,Burst: LBI #6,Replay-20H,Replay-20K,0.7038,-0.04518,-0.0186,K49(H)R,"A52(L)S,R67(L)K"
+21,Burst: LBI #7,Replay-11H,Replay-21K,0.80481,0.01008,-0.25961,,"A40(L)G,S65(L)T"
+22,High potential mouse 1,Replay-22H,Replay-22K,,,,"S36(H)T,I56(H)I,Y58(H)H,T65(H)T,R80(H)R,T101(H)S,Y103(H)F","P50(L)L,S56(L)S,Y66(L)H,G70(L)G,D74(L)E,S83(L)S,Q105(L)N"
+23,High potential mouse 2,Replay-23H,Replay-22K,,,,"S36(H)R,I56(H)I,Y58(H)H,T65(H)W,R80(H)R,T101(H)S,Y103(H)F","P50(L)L,S56(L)S,Y66(L)H,G70(L)G,D74(L)E,S83(L)S,Q105(L)N"
+24,highest GC incidence #3,to make,Replay-GLK,,,,S57(H)N,
+25,"PR1.2-4-47, only bad mut that still have offsprings",to make,Replay-GLK,,,,S59(H)N,
+26,highest GC incidence #1,to make,Replay-GLK,,,,S64(H)N,
+27,common early mut,Replay-19H,Replay-GLK,,,,A105(H)G,
+28,"neutral, associated w increase often",Replay-11H,Replay-17K,,,,,Y42(L)C
+29,highest GC incidence #4,Replay-11H,Replay-12K,,,,,N108(L)K
+30,highest GC incidence #2,Replay-11H,to make,,,,,S109(L)N
+31,associated with #1 burst,Replay-11H,to make,,,,,L112(L)I

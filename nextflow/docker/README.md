@@ -1,9 +1,7 @@
-Docker container
+Dockerfile's to define images hosted at https://quay.io/repository/matsengrp/gcreplay-pipeline?tab=info
 
-The pipline needs the following tools:
+[Dockerfile](./Dockerfile) contains the instructions for the main replay pipeline dependencies.
+[analysis-notebooks/Dockerfile](./analysis-notebooks/Dockerfile) contains the instructions for the analysis notebook steps in the pipeline.
+[beagle-beast](./beagle-beast/Dockerfile) contains the instructions for installing dependencies for the beast.nf pipeline.
+[historydag-ete]() Is deprecated but kept around for the time being for future reference. TODO remove 
 
-- [fastx toolkit](http://hannonlab.cshl.edu/fastx_toolkit/download.html)
-- [pandaseq](https://github.com/neufeld/pandaseq)
-- [cutadapt](https://cutadapt.readthedocs.io/en/stable/installation.html)
-- [partis](https://github.com/psathyrella/partis)
-- [gctree](https://matsengrp.github.io/gctree)

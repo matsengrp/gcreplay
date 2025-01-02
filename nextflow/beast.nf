@@ -34,12 +34,12 @@ nextflow.enable.dsl = 2
 params.seqs    = "$projectDir/data/beast/test-observed-seqs.fasta"
 params.beast_template   = "$projectDir/data/beast/beast_templates/skyline_histlog.template.patch"
 params.results          = "$projectDir/results"
-params.chain_length     = 50000000
+params.chain_length     = 25000000
 params.log_every        = 10000
 params.convert_to_ete   = true
-params.dms_vscores      = "https://media.githubusercontent.com/media/jbloomlab/Ab-CGGnaive_DMS/improved-Kd-fitting/tite-seq-modeling/output/final_variant_scores.csv"
-params.dms_sites        = "https://raw.githubusercontent.com/jbloomlab/Ab-CGGnaive_DMS/main/data/CGGnaive_sites.csv"
-params.burn_frac        = 0.9
+params.dms_vscores      = "data/dms/final_variant_scores.csv"
+params.dms_sites        = "data/dms/CGGnaive_sites.csv"
+params.burn_frac        = 0.2
 params.save_pkl_trees   = false
 
 log.info """\
@@ -56,6 +56,8 @@ process ADD_TIME_TO_FASTA {
   time '5m'
   memory '2g'
   cpus 1
+
+  cache 'lenient'  
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast-input/", mode: "copy"
   input: path(seqs)
@@ -67,10 +69,11 @@ process ADD_TIME_TO_FASTA {
 }
 
 process BEASTGEN {
-  // label 'small'
   time '5m'
   memory '2g'
   cpus 1
+  
+  cache 'lenient'
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   input: tuple path(seqs_with_time), path(beast_template)
@@ -84,6 +87,8 @@ process NAIVE_ROOT_PATCH {
   time '5m'
   memory '2g'
   cpus 1
+
+  cache 'lenient' 
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
   publishDir "$params.results/beastgen"
   input: path(beastgen_output)
@@ -101,9 +106,12 @@ process BEAST_TIMETREE {
   time '4h'
   memory '8g'
   cpus 16
+
+  cache 'lenient' 
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
   publishDir "$params.results/beast", mode: "copy"
+
   input: path(beastgen_output)
   output: path(beastgen_output)
   shell:
@@ -113,12 +121,17 @@ process BEAST_TIMETREE {
 
 }
 
-process ETE_CONVERSION {
+process ETE_CONVERSION {  
+  time '1h'
+  memory '16g'
+  cpus 1
+
+  cache 'lenient' 
   errorStrategy 'retry'
   maxRetries 1
-  label 'mem_large'
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
-  publishDir "$params.results/ete"
+  publishDir "$params.results/ete", mode: "copy"
+
   input: path(beast_output)
   output: path("ete-*")
   shell:
@@ -128,8 +141,8 @@ process ETE_CONVERSION {
   beast2ete.py \
     --xml_file $beast_output/beastgen.naiveroot.xml \
     --nexus_file $beast_output/*.history.trees \
-    --dms_df $params.dms_vscores \
-    --pos_df $params.dms_sites \
+    --dms_df $projectDir/$params.dms_vscores \
+    --pos_df $projectDir/$params.dms_sites \
     --burn_frac $params.burn_frac \
     --outdir \$OUTDIR \
     --save_pkl_trees $params.save_pkl_trees
@@ -137,6 +150,11 @@ process ETE_CONVERSION {
 }
 
 process MERGE_SLICE_DFS {
+  time '5m'
+  memory '4g'
+  cpus 1
+
+  cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
   input: path(all_ete_outputs)
   publishDir "$params.results/phenotype_trajectory", mode: "copy" 
