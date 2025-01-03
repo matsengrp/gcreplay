@@ -12,49 +12,35 @@ analysis/output/NDS-LB/*/trees/
 
 nextflow/run_scripts*
 nextflow/.nextflow*
-nextflow/data/_ignore/
+**/_ignore
+**/Attic
+
 nextflow/data/input/*.fastq
-nextflow/pipeline_trace.txt
-
-# 1) Ignore everything under nextflow/results
-nextflow/results/
-
-# 2) Un-ignore all directories (so we can selectively unignore files later)
-!nextflow/results/**/
-
-# 3) Finally, unignore the specific files we actually want to track
-!nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.inference.1.nk
-!nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.inference.1.svg
-!nextflow/results/archive/2024-12-19-full/gctrees/*/*/gctree.p
-!nextflow/results/archive/2024-12-19-full/merged-results/*.csv.gz
-
-# These are the results from 3 GC's that only take about an hour to run for comparison
-!nextflow/results/archive/test/GCTREE/*/*/gctree.inference.1.nk
-!nextflow/results/archive/test/GCTREE/*/*/gctree.inference.1.svg
-!nextflow/results/archive/test/GCTREE/*/*/gctree.p
-!nextflow/results/archive/test/MERGE_RESULTS/*.csv.gz
-
-!nextflow/results/archive/full/GCTREE/*/*/gctree.inference.1.nk
-!nextflow/results/archive/full/GCTREE/*/*/gctree.inference.1.svg
-!nextflow/results/archive/full/GCTREE/*/*/gctree.p
-!nextflow/results/archive/full/MERGE_RESULTS/*.csv.gz
-
-# Beast runs
-!nextflow/results/archive/2024-12-27-beast-full/ete/
-
-nextflow/data/micro_input/
 nextflow/data/test_input/*.fastq
+nextflow/data/micro_input/
+
+nextflow/results/archive/main-pipeline/GCTREE/*/*/node_data.csv
+nextflow/results/archive/main-pipeline/GCTREE/*/outfile
+nextflow/results/archive/main-pipeline/GCTREE/*/*.csv
+nextflow/results/archive/main-pipeline/GCTREE/*/*.idmap
+nextflow/results/archive/main-pipeline/GCTREE/*/*.fasta
+nextflow/results/archive/main-pipeline/GCTREE/*/*.isotypemap
+nextflow/results/archive/main-pipeline/GCTREE/*/*/gctree.inference.abundance_rank.svg
+nextflow/results/archive/main-pipeline/GCTREE/*/*/gctree.inference.1.p
+nextflow/results/archive/main-pipeline/GCTREE/*/*/delta*
+nextflow/results/archive/main-pipeline/GCTREE/*/*/LB*
+nextflow/results/archive/main-pipeline/GCTREE/*/*/gctree.inference.parsimony_forest.p
+nextflow/results/archive/main-pipeline/*/*.ipynb
+nextflow/results/archive/beast-pipeline/BEAST_TIMETREE/
 
 # ignore run files for now
 nextflow/*.sh
 
 # all log files at top level dir
-*.log*
+**.log
+**/report.html
+**/trace.txt
 
-
-containers/
-
-**/Attic
 **/daemon.json
 
 # C extensions

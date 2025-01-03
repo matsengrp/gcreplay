@@ -1,17 +1,6 @@
 #!/usr/bin/env python
-# import click
 import argparse
 
-parser = argparse.ArgumentParser(description='A script that takes in string and file arguments')
-parser.add_argument('--templated_beast_xml_path', type=str, help='')
-parser.add_argument('--out_path', type=str, help='')
-
-
-
-
-#@click.command()
-#@click.argument("templated_beast_xml_path")
-#@click.argument("out_path")
 def run(templated_beast_xml_path, out_path):
     """
     Read in a templated beast xml file that is missing the '<taxa id="ingroup">'
@@ -57,6 +46,9 @@ def run(templated_beast_xml_path, out_path):
 
 if __name__ == "__main__":
     
+    parser = argparse.ArgumentParser(description='A script that takes in string and file arguments')
+    parser.add_argument('--templated_beast_xml_path', type=str, help='')
+    parser.add_argument('--out_path', type=str, help='')
     args = parser.parse_args()
 
     run(args.templated_beast_xml_path, args.out_path)

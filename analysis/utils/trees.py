@@ -24,10 +24,8 @@ def load_trees(
     """
     trees = {}
     for idx in metadata.index:
-        mouse = metadata.mouse[idx]
-        gc = metadata.gc[idx]
         file = glob.glob(
-            f"{results}/gctrees/PR*-{mouse}-*-{gc}-*/{ranking_subdir}/gctree.p"
+            f"{results}/gctrees/{idx}/{ranking_subdir}/gctree.p"
         )
         if not file:
             print("missing tree for", idx)
