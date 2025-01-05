@@ -14,7 +14,7 @@ class affinity_dms:
     cmap = mc.LinearSegmentedColormap.from_list(
         "custom_cmap", list(zip(positions, colors))
     )
-    cmap.set_bad(color="#b3b3b3")
+    cmap.set_bad(color="#ffd400")
 
 
 class affinity_trees:
@@ -24,7 +24,7 @@ class affinity_trees:
     cmap = mc.LinearSegmentedColormap.from_list(
         "custom_cmap", list(zip(positions, colors))
     )
-    cmap.set_bad(color="#b3b3b3")
+    cmap.set_bad(color="#ffd400")
 
 
 class affinity_trees_grey_centered:
@@ -34,7 +34,7 @@ class affinity_trees_grey_centered:
     cmap = mc.LinearSegmentedColormap.from_list(
         "custom_cmap", list(zip(positions, colors))
     )
-    cmap.set_bad(color="#b3b3b3")
+    cmap.set_bad(color="#ffd400")
 
 
 class expression_dms:
@@ -44,7 +44,7 @@ class expression_dms:
     cmap = mc.LinearSegmentedColormap.from_list(
         "custom_cmap", list(zip(positions, colors))
     )
-    cmap.set_bad(color="#b3b3b3")
+    cmap.set_bad(color="#ffd400")
 
 
 class expression_trees:
@@ -54,7 +54,7 @@ class expression_trees:
     cmap = mc.LinearSegmentedColormap.from_list(
         "custom_cmap", list(zip(positions, colors))
     )
-    cmap.set_bad(color="#b3b3b3")
+    cmap.set_bad(color="#ffd400")
 
 
 class psr_dms:
@@ -64,7 +64,7 @@ class psr_dms:
     cmap = mc.LinearSegmentedColormap.from_list(
         "custom_cmap", list(zip(positions, colors))
     )
-    cmap.set_bad(color="#b3b3b3")
+    cmap.set_bad(color="#ffd400")
 
 
 class psr_trees:
@@ -74,7 +74,7 @@ class psr_trees:
     cmap = mc.LinearSegmentedColormap.from_list(
         "custom_cmap", list(zip(positions, colors))
     )
-    cmap.set_bad(color="#b3b3b3")
+    cmap.set_bad(color="#ffd400")
 
 
 def main():

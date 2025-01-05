@@ -11,7 +11,7 @@ process TRIM_COMBINE_MATES {
   cpus 8
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/TRIM_COMBINE_MATES/" 
+  // publishDir "$params.results/TRIM_COMBINE_MATES/" 
   
   input: tuple val(ngs_id), val(date), path(read1), path(read2)
   output: tuple val(ngs_id), val(date), path("${ngs_id}.fasta")
@@ -38,7 +38,7 @@ process DEMULTIPLEX_PLATES {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/DEMULTIPLEX_PLATES/" 
+  // publishDir "$params.results/DEMULTIPLEX_PLATES/" 
 
   input: 
     tuple val(ngs_id), val(date), path(ngs_id_fasta)
@@ -64,7 +64,7 @@ process DEMULTIPLEX_WELLS {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/DEMULTIPLEX_WELLS/"
+  // publishDir "$params.results/DEMULTIPLEX_WELLS/"
 
   input: 
     tuple val(ngs_id), path(plate)
@@ -91,7 +91,7 @@ process SPLIT_HK {
   cpus 4
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/SPLIT_HK/"
+  // publishDir "$params.results/SPLIT_HK/"
 
   input: 
     tuple val(ngs_id), path(well) 
@@ -120,7 +120,7 @@ process COLLAPSE_RANK_PRUNE {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/COLLAPSE_RANK_PRUNE/"
+  // publishDir "$params.results/COLLAPSE_RANK_PRUNE/"
 
   input: tuple val(ngs_id), path(well_chain)
   output: tuple val(ngs_id), path("${well_chain}.R")
@@ -144,7 +144,7 @@ process MERGE_BCRS {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/MERGE_BCRS/"
+  // publishDir "$params.results/MERGE_BCRS/"
 
   input: tuple val(ngs_id), path(all_coll_rank)
   output: tuple val(ngs_id), path("${ngs_id}.fasta")
@@ -165,7 +165,7 @@ process PARTIS_ANNOTATION {
   cpus 4
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:partis'
-  publishDir "$params.results/PARTIS_ANNOTATION/"
+  // publishDir "$params.results/PARTIS_ANNOTATION/"
 
   input: 
     tuple val(ngs_id), path(merged_fasta)
@@ -190,7 +190,7 @@ process PARTIS_WRANGLE {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/PARTIS_WRANGLE/"
+  // publishDir "$params.results/PARTIS_WRANGLE/"
 
   input: 
     tuple val(ngs_id), path(merged_fasta), path(partis_out)
@@ -268,31 +268,41 @@ process MERGE_RESULTS {
  */
 process NDS_LB_ANALYSIS {
   time '10m'
-  memory '2g'
-  cpus 1
-  cache 'lenient'
-  container 'quay.io/matsengrp/gcreplay-pipeline:56_analysis_in_pipeline'
+  memory '16g'
+  cpus 4
+  // cache 'lenient'
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
   publishDir "$params.results/NDS_LB_ANALYSIS/", mode: "copy"
 
   input: 
-    tuple path(all_results), path(metadata), val(ranking_coeff_subdir), val(svg_scale) 
+    path notebook
+    path utils
+    path metadata
+    tuple path(gctree_dirs), val(ranking_coeff_subdir), val(svg_scale) 
 
   output: 
-    tuple path("NDS_LB.ipynb"), path("*.pdf"), path("*.csv"), path("*.svg")
+    tuple(
+      path("$ranking_coeff_subdir-$svg_scale-milled-$notebook"), 
+      path("*/scatter*.svg"), 
+      path("*/stacked_trees/*.svg"), 
+      path("*/*.html")
+    )
 
   script:
   """
-  #! /bin/bash
-  activate_env replay
-  papermill NDS_LB.ipynb NDS_LB.ipynb \
-    -p results './' \
-    -p ranking_subdir ${ranking_coeff_subdir} \
-    -p scale ${svg_scale} \
-    -p metadata_csv ${metadata} \
-    -p outbase './'
+  # move all gctree directories to a single directory
+  # to organize, and allow notebooks to be still use the ut.trees module
+  mkdir -p gctrees/
+  for dir in ${gctree_dirs}; do
+    mv \$dir gctrees/
+  done
+
+  # run the notebook
+  papermill $notebook $ranking_coeff_subdir-$svg_scale-milled-$notebook \
+    -p results '.' \
+    -p ranking_subdir $ranking_coeff_subdir \
+    -p scale $svg_scale \
+    -p metadata_csv $metadata \
+    -p outbase '.'
   """
 }
-
-
-
- 

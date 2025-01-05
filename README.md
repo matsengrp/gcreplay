@@ -11,7 +11,7 @@ The repository is currently broken into three main directories: [nextflow](nextf
 The metadata file `metadata.csv` contains information about the samples used in the analysis. The columns are as follows:
 
 - "uid": (_unique identifier_) This is in the format of D<imm_duration>_M<mouse>_GC<gc>. 
-- "PR": (_Parallel Replay_) This is a number in the format X.XX, where each unique PR is a different sequencing run.
+- "ngs_id": (_Parallel Replay_) reference to associated sequencing run specified in [ngs_manifest.csv](ngs_manifest.csv).
 - imm_duration: (_immunization duration_) This is the number of weeks after immunization that the sample was taken.
 - mouse: (_mouse number_) This is the unique identifier for the mouse.
 - gc: (_germinal center number_) This is the unique identifier for the germinal center.
@@ -24,11 +24,7 @@ The metadata file `metadata.csv` contains information about the samples used in 
 - row : (_well rows_) Which rows of the 96-well plate contain the sample.
 - col : (_well columns_) Which columns of the 96-well plate contain the sample.
 
-In september of 2024, the mouse and GC identifiers were changed to be more informative. The old identifiers are stored in the following columns for reference:
-
-- old_uid : (_old unique identifier_)
-- old_mouse : (_old mouse number_)
-- old_gc : (_old germinal center number_)
+In september of 2024, and December 2024, the mouse and GC identifiers were changed to be more informative. The old identifiers are stored in [reindex_mapping.csv](reindex_mapping.csv) for reference.
 
 
 ### other notes on non-GC samples.

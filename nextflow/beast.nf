@@ -31,16 +31,18 @@ nextflow.enable.dsl = 2
  * Define the default parameters - example data get's run by default
  */
 
-params.seqs    = "$projectDir/data/beast/test-observed-seqs.fasta"
-params.beast_template   = "$projectDir/data/beast/beast_templates/skyline_histlog.template.patch"
-params.results          = "$projectDir/results"
-params.chain_length     = 25000000
-params.log_every        = 10000
-params.convert_to_ete   = true
-params.dms_vscores      = "data/dms/final_variant_scores.csv"
-params.dms_sites        = "data/dms/CGGnaive_sites.csv"
-params.burn_frac        = 0.2
-params.save_pkl_trees   = false
+params.seqs               = "$projectDir/data/beast/test-observed-seqs.fasta"
+params.results            = "$projectDir/results"
+params.beast_template     = "$projectDir/data/beast/beast_templates/skyline_histlog.template.patch"
+params.dms_vscores        = "$projectDir/data/dms/final_variant_scores.csv"
+params.dms_sites          = "$projectDir/data/dms/CGGnaive_sites.csv"
+params.chain_length       = 25000000
+params.log_every          = 10000
+params.convert_to_ete     = true
+params.burn_frac          = 0.2
+params.save_pkl_trees     = false
+params.naive_seq_time     = 0
+params.observed_seq_time  = 1
 
 log.info """\
 G C Re - F L O W (beast)!
@@ -50,7 +52,6 @@ Rockefeller University, New York NY.
 ================================
 """
 
-// TODO add naive sequence to the fasta's?
 
 process ADD_TIME_TO_FASTA {
   time '5m'
@@ -59,12 +60,18 @@ process ADD_TIME_TO_FASTA {
 
   cache 'lenient'  
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
-  publishDir "$params.results/beast-input/", mode: "copy"
-  input: path(seqs)
-  output: path("*_with_time.fasta")
+  // publishDir "$params.results/ADD_TIME_TO_FASTA/"
+  input: tuple val(id), path(fasta, stageAs: 'input.fasta')
+  output: tuple val(id), path("${id}.fasta")
   shell:
   """
-  add_date_to_fasta.py $seqs
+  add_date_to_fasta.py \
+    --delim "@" \
+    --naive_keyword "naive" \
+    --naive_seq_time $params.naive_seq_time \
+    --observed_seq_time $params.observed_seq_time \
+    --output ${id}.fasta \
+    input.fasta \
   """
 }
 
@@ -76,47 +83,65 @@ process BEASTGEN {
   cache 'lenient'
   stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
-  input: tuple path(seqs_with_time), path(beast_template)
-  output: path("btt-*")
-  shell:
-  template "beastgen.sh"
+  // publishDir "$params.results/BEASTGEN"
+  input: 
+    tuple val(id), path(fasta)
+    path(beast_template)
+  output: tuple val(id), path("${id}.beastgen.xml")
+
+  script:
+  """
+  beastgen \
+    -date_prefix '@' \
+    -date_order -1 \
+    -D "chain_length=${params.chain_length},log_every=${params.log_every}" \
+    $beast_template \
+    $fasta \
+    ${id}.beastgen.xml
+  """
+
 }
 
 process NAIVE_ROOT_PATCH {
-  // label 'small'
   time '5m'
   memory '2g'
   cpus 1
 
   cache 'lenient' 
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
-  publishDir "$params.results/beastgen"
-  input: path(beastgen_output)
-  output: path(beastgen_output)
+  // publishDir "$params.results/NAIVE_ROOT_PATCH"
+  input: tuple val(id), path(beastgen_xml)
+  output: tuple val(id), path("${id}.beastgen.naiveroot.xml")
   shell:
   """
   beast_template_root_fix.py \
-    --templated_beast_xml_path $beastgen_output/beastgen.xml \
-    --out_path $beastgen_output/beastgen.naiveroot.xml
+    --templated_beast_xml_path $beastgen_xml \
+    --out_path ${id}.beastgen.naiveroot.xml
   """  
 }
 
 process BEAST_TIMETREE {
-  // label 'threaded'
   time '4h'
   memory '8g'
   cpus 16
 
   cache 'lenient' 
-  stageInMode 'copy' // I guess beast doesn't like symlinks
+  // stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
-  publishDir "$params.results/beast", mode: "copy"
+  publishDir "$params.results/BEAST_TIMETREE", mode: "copy"
 
-  input: path(beastgen_output)
-  output: path(beastgen_output)
+  input: tuple val(id), path(beastgen_root_patched)
+  output: 
+    tuple(
+      val(id), 
+      path(beastgen_root_patched), 
+      path("${id}.history.trees"), 
+      path("${id}.trees"),
+      path("${id}.log")
+    )
   shell:
   """
-  beast -threads $task.cpus -prefix beast -working $beastgen_output/beastgen.naiveroot.xml
+  beast -threads $task.cpus $beastgen_root_patched
   """
 
 }
@@ -127,24 +152,30 @@ process ETE_CONVERSION {
   cpus 1
 
   cache 'lenient' 
-  errorStrategy 'retry'
-  maxRetries 1
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
-  publishDir "$params.results/ete", mode: "copy"
+  publishDir "$params.results/ETE_CONVERSION", mode: "copy"
 
-  input: path(beast_output)
-  output: path("ete-*")
+  input: 
+    tuple(
+      val(id), 
+      path(beastgen_root_patched), 
+      path(beast_history_trees), 
+      path(beast_trees), 
+      path(beast_log)
+    )
+    path(dms_vscores)
+    path(dms_sites)
+
+  output: path("${id}/"), type: 'dir'
   shell:
   """
-  BEAST_OUTDIR=$beast_output
-  OUTDIR=ete-\${BEAST_OUTDIR#"btt-"}
   beast2ete.py \
-    --xml_file $beast_output/beastgen.naiveroot.xml \
-    --nexus_file $beast_output/*.history.trees \
-    --dms_df $projectDir/$params.dms_vscores \
-    --pos_df $projectDir/$params.dms_sites \
+    --xml_file $beastgen_root_patched \
+    --nexus_file $beast_history_trees \
+    --dms_df $dms_vscores \
+    --pos_df $dms_sites \
     --burn_frac $params.burn_frac \
-    --outdir \$OUTDIR \
+    --outdir ${id} \
     --save_pkl_trees $params.save_pkl_trees
   """
 }
@@ -156,8 +187,10 @@ process MERGE_SLICE_DFS {
 
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
+  publishDir "$params.results/MERGE_SLICE_DFS", mode: "copy" 
+
+
   input: path(all_ete_outputs)
-  publishDir "$params.results/phenotype_trajectory", mode: "copy" 
   output: path("slice_df.csv")
   script:
   """
@@ -168,29 +201,43 @@ process MERGE_SLICE_DFS {
   pd.concat(
     [
       pd.read_csv(f"{ete_dir}/slice_df.csv")
-      for ete_dir in glob.glob('ete-*')
+      for ete_dir in glob.glob("*/")
     ]
   ).to_csv("slice_df.csv", index=False)
   """
 }
 
-workflow {
+workflow BEAST_FLOW {
+    
+    take: id_seq_ch
 
-    seqs = Channel.fromPath("$params.seqs", checkIfExists: true)
-    beast_template = Channel.fromPath("$params.beast_template", checkIfExists: true)
+    main:      
+      ADD_TIME_TO_FASTA(id_seq_ch) | set{id_seq_w_time_ch}
 
-    seqs | ADD_TIME_TO_FASTA | combine(beast_template) \
-        | BEASTGEN 
+      BEASTGEN(id_seq_w_time_ch, file("$params.beast_template")) \
         | NAIVE_ROOT_PATCH \
         | BEAST_TIMETREE \
         | set {beast_outputs}
-
-    if (params.convert_to_ete)
-        ETE_CONVERSION(beast_outputs) \
-        | collect | MERGE_SLICE_DFS
+      
+      if (params.convert_to_ete)
+          ETE_CONVERSION(
+            beast_outputs, 
+            file("$params.dms_vscores"), 
+            file("$params.dms_sites")
+          ) //\
+          //| collect | MERGE_SLICE_DFS
+    
+    emit:
+      //MERGE_SLICE_DFS.out
+      ETE_CONVERSION.out
 
 }
 
+workflow {
 
+    id_seq_ch = Channel.fromPath("$params.seqs", checkIfExists: true) \
+      | map{it -> [it.baseName, it]} 
 
+    id_seq_ch | BEAST_FLOW
 
+}

@@ -134,22 +134,19 @@ workflow {
     file("$params.dms_sites")
   ) | collect | set{gctree_ch}
 
-  // gctree_ch | view()
-  
   MERGE_RESULTS(gctree_ch)
   
-  // // Channel for metadata file as value
+  gctree_ch
+    .map{it -> [it]}
+    .combine(Channel.of("default", "naive_reversions_first", "naive_reversions_no_bp"))
+    .combine(Channel.of(5, 20))
+    .set{nds_lb_ch}
 
-  // // Channel for ranking coefficients
-  // ranking_coeff_ch = Channel.of("default", "naive_reversions_first", "naive_reversions_no_bp")
-
-  // // [[PR_dir, PR_dir2], metadata, ranking_coeff]
-  // gctree_meta_rank_ch = gctree_ch
-  //   .map{it -> [it]}
-  //   .combine(metadata_ch)
-  //   .combine(ranking_coeff_ch)
-  
-  // // run iterations of scale, and rank through the NDS_LB_ANALYSIS process
-  // gctree_meta_rank_ch.combine(Channel.of(5, 20)) | NDS_LB_ANALYSIS
+  NDS_LB_ANALYSIS(
+    file("${projectDir}/notebooks/NDS-LB.ipynb"),
+    file("${projectDir}/notebooks/utils/"),
+    file("${projectDir}/${params.gc_metadata}"),
+    nds_lb_ch
+  )
 
 }
