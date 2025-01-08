@@ -19,7 +19,7 @@ process TRIM_COMBINE_MATES {
   """
   fastx_trimmer -Q33 -i ${read1} -f 3 -o t_${read1}
   fastx_trimmer -Q33 -i ${read2} -f 3 -o t_${read2}
-  pandaseq -T 8 -f t_${read1} -r t_${read2} -O 0 -w ${ngs_id}.fasta
+  pandaseq -T ${task.cpus} -f t_${read1} -r t_${read2} -O 0 -w ${ngs_id}.fasta
   """
 }
 
@@ -302,6 +302,48 @@ process NDS_LB_ANALYSIS {
     -p results '.' \
     -p ranking_subdir $ranking_coeff_subdir \
     -p scale $svg_scale \
+    -p metadata_csv $metadata \
+    -p outbase '.'
+  """
+}
+
+
+/*
+ * Process 4B: fitness-regression analysis notebook papermill
+ */
+process FITNESS_REGRESSION {
+  time '10m'
+  memory '16g'
+  cpus 4
+  // cache 'lenient'
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  publishDir "$params.results/FITNESS_REGRESSION/", mode: "copy"
+
+  input: 
+    path notebook
+    path utils
+    path metadata
+    tuple path(gctree_dirs), val(ranking_coeff_subdir)
+
+  output: 
+    tuple(
+      path("$ranking_coeff_subdir-milled-$notebook"), 
+      path("*/*.pdf")
+    )
+
+  script:
+  """
+  # move all gctree directories to a single directory
+  # to organize, and allow notebooks to be still use the ut.trees module
+  mkdir -p gctrees/
+  for dir in ${gctree_dirs}; do
+    mv \$dir gctrees/
+  done
+
+  # run the notebook
+  papermill $notebook $ranking_coeff_subdir-milled-$notebook \
+    -p results '.' \
+    -p ranking_subdir $ranking_coeff_subdir \
     -p metadata_csv $metadata \
     -p outbase '.'
   """
