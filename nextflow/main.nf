@@ -42,6 +42,8 @@ params.dms_vscores      = "data/dms/final_variant_scores.csv"
 params.dms_sites        = "data/dms/CGGnaive_sites.csv"
 params.igk_idx          = 336
 params.bcr_count_thresh = 5
+params.heavy_chain_motif = "aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC"
+params.light_chain_motif = "aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG"
 
 
 
@@ -70,6 +72,7 @@ include {
     GCTREE;
     MERGE_RESULTS;
     NDS_LB_ANALYSIS;
+    FITNESS_REGRESSION;
   } from './modules.nf'
 
 
@@ -135,18 +138,24 @@ workflow {
   ) | collect | set{gctree_ch}
 
   MERGE_RESULTS(gctree_ch)
-  
+
   gctree_ch
     .map{it -> [it]}
     .combine(Channel.of("default", "naive_reversions_first", "naive_reversions_no_bp"))
-    .combine(Channel.of(5, 20))
-    .set{nds_lb_ch}
+    .set{gctree_rank_ch}
 
   NDS_LB_ANALYSIS(
     file("${projectDir}/notebooks/NDS-LB.ipynb"),
     file("${projectDir}/notebooks/utils/"),
     file("${projectDir}/${params.gc_metadata}"),
-    nds_lb_ch
+    gctree_rank_ch.combine(Channel.of(5, 20))
+  )
+
+  FITNESS_REGRESSION(
+    file("${projectDir}/notebooks/fitness-regression.ipynb"),
+    file("${projectDir}/notebooks/utils/"),
+    file("${projectDir}/${params.gc_metadata}"),
+    gctree_rank_ch
   )
 
 }

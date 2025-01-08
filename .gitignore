@@ -37,7 +37,7 @@ nextflow/results/archive/beast-pipeline/BEAST_TIMETREE/
 nextflow/*.sh
 
 # all log files at top level dir
-**.log
+**log.log.*
 **/report.html
 **/trace.txt
 
