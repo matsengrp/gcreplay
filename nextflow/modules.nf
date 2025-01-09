@@ -282,10 +282,10 @@ process NDS_LB_ANALYSIS {
 
   output: 
     tuple(
-      path("$ranking_coeff_subdir-$svg_scale-milled-$notebook"), 
-      path("*/scatter*.svg"), 
-      path("*/stacked_trees/*.svg"), 
-      path("*/*.html")
+      path("$ranking_coeff_subdir/scale-$svg_scale-$notebook"), 
+      path("$ranking_coeff_subdir/scatter*.svg"), 
+      path("$ranking_coeff_subdir/stacked_trees/*.svg"), 
+      path("$ranking_coeff_subdir/*.html")
     )
 
   script:
@@ -297,8 +297,10 @@ process NDS_LB_ANALYSIS {
     mv \$dir gctrees/
   done
 
+  mkdir -p $ranking_coeff_subdir
+
   # run the notebook
-  papermill $notebook $ranking_coeff_subdir-$svg_scale-milled-$notebook \
+  papermill $notebook $ranking_coeff_subdir/scale-$svg_scale-$notebook \
     -p results '.' \
     -p ranking_subdir $ranking_coeff_subdir \
     -p scale $svg_scale \
@@ -311,13 +313,13 @@ process NDS_LB_ANALYSIS {
 /*
  * Process 4B: fitness-regression analysis notebook papermill
  */
-process FITNESS_REGRESSION {
+process FITNESS_REGRESSION_ANALYSIS {
   time '10m'
   memory '16g'
-  cpus 4
+  cpus 1
   // cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
-  publishDir "$params.results/FITNESS_REGRESSION/", mode: "copy"
+  publishDir "$params.results/FITNESS_REGRESSION_ANALYSIS/", mode: "copy"
 
   input: 
     path notebook
@@ -327,21 +329,73 @@ process FITNESS_REGRESSION {
 
   output: 
     tuple(
-      path("$ranking_coeff_subdir-milled-$notebook"), 
-      path("*/*.pdf")
+      path("$ranking_coeff_subdir/$notebook"), 
+      path("$ranking_coeff_subdir/*.pdf")
     )
 
   script:
   """
-  # move all gctree directories to a single directory
-  # to organize, and allow notebooks to be still use the ut.trees module
   mkdir -p gctrees/
   for dir in ${gctree_dirs}; do
     mv \$dir gctrees/
   done
 
+  mkdir -p $ranking_coeff_subdir
+
   # run the notebook
-  papermill $notebook $ranking_coeff_subdir-milled-$notebook \
+  papermill $notebook $ranking_coeff_subdir/$notebook \
+    -p results '.' \
+    -p ranking_subdir $ranking_coeff_subdir \
+    -p metadata_csv $metadata \
+    -p outbase '.'
+  """
+}
+
+/*
+ * Process 4C: mutations analysis notebook papermill
+ */
+process MUTATIONS_ANALYSIS {
+  time '10m'
+  memory '16g'
+  cpus 4
+  // cache 'lenient'
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  publishDir "$params.results/MUTATIONS_ANALYSIS/", mode: "copy"
+
+  input: 
+    path notebook
+    path utils
+    path metadata
+    path dms_vscores
+    path dms_sites
+    path chigy_hc_mut_rates
+    path chigy_lc_mut_rates
+    path pdb
+    tuple path(gctree_dirs), val(ranking_coeff_subdir)
+
+  output: 
+    tuple(
+      path("$ranking_coeff_subdir/$notebook"), 
+      path("$ranking_coeff_subdir/*.pdf"),
+      path("$ranking_coeff_subdir/data.csv")
+    )
+
+  script:
+  """
+  mkdir -p gctrees/
+  for dir in ${gctree_dirs}; do
+    mv \$dir gctrees/
+  done
+
+  mkdir -p $ranking_coeff_subdir
+
+  # run the notebook
+  papermill $notebook $ranking_coeff_subdir/$notebook \
+    -p final_variant_scores $dms_vscores \
+    -p dms_sites $dms_sites \
+    -p chigy_hc_mut_rates $chigy_hc_mut_rates \
+    -p chigy_lc_mut_rates $chigy_lc_mut_rates \
+    -p pdb $pdb \
     -p results '.' \
     -p ranking_subdir $ranking_coeff_subdir \
     -p metadata_csv $metadata \

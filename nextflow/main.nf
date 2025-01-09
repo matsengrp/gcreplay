@@ -38,6 +38,9 @@ params.partis_anno_dir  = "$projectDir/data/partis_annotation/germlines"
 params.results          = "$projectDir/results/"
 params.hdag_sub         = "data/mutability/MK_RS5NF_substitution.csv"
 params.hdag_mut         = "data/mutability/MK_RS5NF_mutability.csv"
+params.chigy_hc_mut_rates  = "$projectDir/data/mutability/chigy_hc_mutation_rates_nt.csv"
+params.chigy_lc_mut_rates  = "$projectDir/data/mutability/chigy_lc_mutation_rates_nt.csv"
+params.pdb              = "$projectDir/data/AbCGG_structure/combined_ch2_eh2-coot_IMGT.pdb"
 params.dms_vscores      = "data/dms/final_variant_scores.csv"
 params.dms_sites        = "data/dms/CGGnaive_sites.csv"
 params.igk_idx          = 336
@@ -72,7 +75,8 @@ include {
     GCTREE;
     MERGE_RESULTS;
     NDS_LB_ANALYSIS;
-    FITNESS_REGRESSION;
+    FITNESS_REGRESSION_ANALYSIS;
+    MUTATIONS_ANALYSIS;
   } from './modules.nf'
 
 
@@ -139,9 +143,13 @@ workflow {
 
   MERGE_RESULTS(gctree_ch)
 
+  ranking_coeff_strategy_ch = Channel.of(
+    "default", "naive_reversions_first", "naive_reversions_no_bp"
+  )
+
   gctree_ch
     .map{it -> [it]}
-    .combine(Channel.of("default", "naive_reversions_first", "naive_reversions_no_bp"))
+    .combine(ranking_coeff_strategy_ch)
     .set{gctree_rank_ch}
 
   NDS_LB_ANALYSIS(
@@ -151,10 +159,22 @@ workflow {
     gctree_rank_ch.combine(Channel.of(5, 20))
   )
 
-  FITNESS_REGRESSION(
+  FITNESS_REGRESSION_ANALYSIS(
     file("${projectDir}/notebooks/fitness-regression.ipynb"),
     file("${projectDir}/notebooks/utils/"),
     file("${projectDir}/${params.gc_metadata}"),
+    gctree_rank_ch
+  )
+
+  MUTATIONS_ANALYSIS(
+    file("${projectDir}/notebooks/mutations.ipynb"),
+    file("${projectDir}/notebooks/utils/"),
+    file("${projectDir}/${params.gc_metadata}"),
+    file("$params.dms_vscores"),
+    file("$params.dms_sites"),
+    file("$params.chigy_hc_mut_rates"),
+    file("$params.chigy_lc_mut_rates"),
+    file("$params.pdb"),
     gctree_rank_ch
   )
 
