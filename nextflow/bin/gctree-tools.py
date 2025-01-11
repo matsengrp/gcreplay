@@ -293,6 +293,9 @@ def node_featurize(
                 node_features[phenotype[:10]].append(additive_score)
                 node.add_feature(phenotype[:10], additive_score)
 
+        node.add_feature("delta_avidity", node.delta_bind + node.delta_expr)
+        node_features["delta_avidity"].append(node.delta_avidity)
+
     df = pd.DataFrame(node_features).set_index("name")
     df.to_csv(f"{output_dir}/node_data.csv")
 
@@ -455,6 +458,10 @@ def featurize_seqs(
                     np.nan if (igh_has_stop or igk_has_stop) 
                     else final_variant_scores.loc[all_mutations, phenotype].sum()
                 )
+                
+        seq_pheno_preds["delta_avidity"].append(
+            seq_pheno_preds["delta_bind"][-1] + seq_pheno_preds["delta_expr"][-1]
+        )
         
     df = pd.DataFrame(seq_pheno_preds)
     ret = pd.concat([df, hk_df], axis=1)

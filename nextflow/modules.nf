@@ -6,20 +6,21 @@ nextflow.enable.dsl = 2
 
 // meh, let's un-capitalize these process publishDir's
 process TRIM_COMBINE_MATES { 
-  time '30m'
-  memory '2g'
-  cpus 8
+  time '1h'
+  memory '8g'
+  cpus 16
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  // publishDir "$params.results/TRIM_COMBINE_MATES/" 
   
   input: tuple val(ngs_id), val(date), path(read1), path(read2)
   output: tuple val(ngs_id), val(date), path("${ngs_id}.fasta")
   script:
   """
-  fastx_trimmer -Q33 -i ${read1} -f 3 -o t_${read1}
-  fastx_trimmer -Q33 -i ${read2} -f 3 -o t_${read2}
-  pandaseq -T ${task.cpus} -f t_${read1} -r t_${read2} -O 0 -w ${ngs_id}.fasta
+  gunzip -c ${read1} > ${ngs_id}_R1.fastq
+  gunzip -c ${read2} > ${ngs_id}_R2.fastq
+  fastx_trimmer -Q33 -i ${ngs_id}_R1.fastq -f 3 -o t_${ngs_id}_R1.fastq
+  fastx_trimmer -Q33 -i ${ngs_id}_R2.fastq -f 3 -o t_${ngs_id}_R2.fastq
+  pandaseq -T ${task.cpus} -f t_${ngs_id}_R1.fastq -r t_${ngs_id}_R2.fastq -O 0 -w ${ngs_id}.fasta
   """
 }
 
@@ -282,10 +283,10 @@ process NDS_LB_ANALYSIS {
 
   output: 
     tuple(
-      path("$ranking_coeff_subdir-$svg_scale-milled-$notebook"), 
-      path("*/scatter*.svg"), 
-      path("*/stacked_trees/*.svg"), 
-      path("*/*.html")
+      path("$ranking_coeff_subdir/scale-$svg_scale-$notebook"), 
+      path("$ranking_coeff_subdir/scatter*.svg"), 
+      path("$ranking_coeff_subdir/stacked_trees/*.svg"), 
+      path("$ranking_coeff_subdir/*.html")
     )
 
   script:
@@ -297,8 +298,10 @@ process NDS_LB_ANALYSIS {
     mv \$dir gctrees/
   done
 
+  mkdir -p $ranking_coeff_subdir
+
   # run the notebook
-  papermill $notebook $ranking_coeff_subdir-$svg_scale-milled-$notebook \
+  papermill $notebook $ranking_coeff_subdir/scale-$svg_scale-$notebook \
     -p results '.' \
     -p ranking_subdir $ranking_coeff_subdir \
     -p scale $svg_scale \
@@ -311,13 +314,13 @@ process NDS_LB_ANALYSIS {
 /*
  * Process 4B: fitness-regression analysis notebook papermill
  */
-process FITNESS_REGRESSION {
+process FITNESS_REGRESSION_ANALYSIS {
   time '10m'
   memory '16g'
-  cpus 4
+  cpus 1
   // cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
-  publishDir "$params.results/FITNESS_REGRESSION/", mode: "copy"
+  publishDir "$params.results/FITNESS_REGRESSION_ANALYSIS/", mode: "copy"
 
   input: 
     path notebook
@@ -327,21 +330,73 @@ process FITNESS_REGRESSION {
 
   output: 
     tuple(
-      path("$ranking_coeff_subdir-milled-$notebook"), 
-      path("*/*.pdf")
+      path("$ranking_coeff_subdir/$notebook"), 
+      path("$ranking_coeff_subdir/*.pdf")
     )
 
   script:
   """
-  # move all gctree directories to a single directory
-  # to organize, and allow notebooks to be still use the ut.trees module
   mkdir -p gctrees/
   for dir in ${gctree_dirs}; do
     mv \$dir gctrees/
   done
 
+  mkdir -p $ranking_coeff_subdir
+
   # run the notebook
-  papermill $notebook $ranking_coeff_subdir-milled-$notebook \
+  papermill $notebook $ranking_coeff_subdir/$notebook \
+    -p results '.' \
+    -p ranking_subdir $ranking_coeff_subdir \
+    -p metadata_csv $metadata \
+    -p outbase '.'
+  """
+}
+
+/*
+ * Process 4C: mutations analysis notebook papermill
+ */
+process MUTATIONS_ANALYSIS {
+  time '10m'
+  memory '16g'
+  cpus 4
+  // cache 'lenient'
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  publishDir "$params.results/MUTATIONS_ANALYSIS/", mode: "copy"
+
+  input: 
+    path notebook
+    path utils
+    path metadata
+    path dms_vscores
+    path dms_sites
+    path chigy_hc_mut_rates
+    path chigy_lc_mut_rates
+    path pdb
+    tuple path(gctree_dirs), val(ranking_coeff_subdir)
+
+  output: 
+    tuple(
+      path("$ranking_coeff_subdir/$notebook"), 
+      path("$ranking_coeff_subdir/*.pdf"),
+      path("$ranking_coeff_subdir/data.csv")
+    )
+
+  script:
+  """
+  mkdir -p gctrees/
+  for dir in ${gctree_dirs}; do
+    mv \$dir gctrees/
+  done
+
+  mkdir -p $ranking_coeff_subdir
+
+  # run the notebook
+  papermill $notebook $ranking_coeff_subdir/$notebook \
+    -p final_variant_scores $dms_vscores \
+    -p dms_sites $dms_sites \
+    -p chigy_hc_mut_rates $chigy_hc_mut_rates \
+    -p chigy_lc_mut_rates $chigy_lc_mut_rates \
+    -p pdb $pdb \
     -p results '.' \
     -p ranking_subdir $ranking_coeff_subdir \
     -p metadata_csv $metadata \
