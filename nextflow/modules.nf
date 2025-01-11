@@ -6,20 +6,21 @@ nextflow.enable.dsl = 2
 
 // meh, let's un-capitalize these process publishDir's
 process TRIM_COMBINE_MATES { 
-  time '30m'
-  memory '2g'
-  cpus 8
+  time '1h'
+  memory '8g'
+  cpus 16
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  // publishDir "$params.results/TRIM_COMBINE_MATES/" 
   
   input: tuple val(ngs_id), val(date), path(read1), path(read2)
   output: tuple val(ngs_id), val(date), path("${ngs_id}.fasta")
   script:
   """
-  fastx_trimmer -Q33 -i ${read1} -f 3 -o t_${read1}
-  fastx_trimmer -Q33 -i ${read2} -f 3 -o t_${read2}
-  pandaseq -T ${task.cpus} -f t_${read1} -r t_${read2} -O 0 -w ${ngs_id}.fasta
+  gunzip -c ${read1} > ${ngs_id}_R1.fastq
+  gunzip -c ${read2} > ${ngs_id}_R2.fastq
+  fastx_trimmer -Q33 -i ${ngs_id}_R1.fastq -f 3 -o t_${ngs_id}_R1.fastq
+  fastx_trimmer -Q33 -i ${ngs_id}_R2.fastq -f 3 -o t_${ngs_id}_R2.fastq
+  pandaseq -T ${task.cpus} -f t_${ngs_id}_R1.fastq -r t_${ngs_id}_R2.fastq -O 0 -w ${ngs_id}.fasta
   """
 }
 
