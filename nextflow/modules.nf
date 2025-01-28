@@ -306,7 +306,8 @@ process NDS_LB_ANALYSIS {
     -p ranking_subdir $ranking_coeff_subdir \
     -p scale $svg_scale \
     -p metadata_csv $metadata \
-    -p outbase '.'
+    -p outbase '.' \
+    -p workflow_env_exec True
   """
 }
 
