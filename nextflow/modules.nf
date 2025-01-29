@@ -401,6 +401,7 @@ process MUTATIONS_ANALYSIS {
     -p results '.' \
     -p ranking_subdir $ranking_coeff_subdir \
     -p metadata_csv $metadata \
-    -p outbase '.'
+    -p outbase '.' \
+    -p workflow_env_exec True
   """
 }
