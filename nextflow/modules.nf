@@ -170,12 +170,11 @@ process PARTIS_ANNOTATION {
 
   input: 
     tuple val(ngs_id), path(merged_fasta)
+    path(partis_anno_dir)
   output: tuple val(ngs_id), path(merged_fasta), path("${ngs_id}/")
   script:
   """
-  wd=\$PWD
-  cd /partis
-  initial-annotate.sh \${wd}/${merged_fasta} \${wd}/${ngs_id} $params.partis_anno_dir
+  initial-annotate.sh $merged_fasta $ngs_id $partis_anno_dir
   """
 }
 
@@ -229,7 +228,7 @@ process GCTREE {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/GCTREE/", mode: "copy"
+  publishDir "$params.results/gctrees/", mode: "copy"
 
   input: 
     path single_mouse_gc_df
@@ -237,6 +236,8 @@ process GCTREE {
     path hdag_mut
     path dms_vscores
     path dms_sites
+    path gctree_tools
+    path trees_utils
   output: path("${single_mouse_gc_df.baseName}"), type: 'dir'
   shell:
   template "gctree_infer_featurize.sh"
@@ -253,7 +254,7 @@ process MERGE_RESULTS {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/MERGE_RESULTS/", mode: "copy"
+  publishDir "$params.results/observed_bcr_and_node_tables/", mode: "copy"
 
   input: path(all_results)
   output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
@@ -273,7 +274,7 @@ process NDS_LB_ANALYSIS {
   cpus 4
   // cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
-  publishDir "$params.results/NDS_LB_ANALYSIS/", mode: "copy"
+  publishDir "$params.results/notebooks/NDS_LB/", mode: "copy"
 
   input: 
     path notebook
@@ -321,7 +322,7 @@ process FITNESS_REGRESSION_ANALYSIS {
   cpus 1
   // cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
-  publishDir "$params.results/FITNESS_REGRESSION_ANALYSIS/", mode: "copy"
+  publishDir "$params.results/notebooks/fitness-regression/", mode: "copy"
 
   input: 
     path notebook
@@ -362,7 +363,7 @@ process MUTATIONS_ANALYSIS {
   cpus 4
   // cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
-  publishDir "$params.results/MUTATIONS_ANALYSIS/", mode: "copy"
+  publishDir "$params.results/notebooks/mutations/", mode: "copy"
 
   input: 
     path notebook

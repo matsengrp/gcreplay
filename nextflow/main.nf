@@ -128,7 +128,11 @@ workflow {
       )
     } | BCR_COUNTS
 
-  PARTIS_ANNOTATION(BCR_COUNTS.out) | set{ partis_anno_ch }
+  PARTIS_ANNOTATION(
+    BCR_COUNTS.out, 
+    file(params.partis_anno_dir)
+  ) | set{ partis_anno_ch }
+
   PARTIS_WRANGLE(
     partis_anno_ch, 
     file(params.gc_metadata)
@@ -139,7 +143,9 @@ workflow {
     file(params.hdag_sub), 
     file(params.hdag_mut), 
     file(params.dms_vscores),
-    file(params.dms_sites)
+    file(params.dms_sites),
+    file("$projectDir/bin/gctree-tools.py"),
+    file("$projectDir/bin/trees.py")
   ) | collect | set{gctree_ch}
 
   MERGE_RESULTS(gctree_ch)
