@@ -254,7 +254,7 @@ process MERGE_RESULTS {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  publishDir "$params.results/observed_bcr_and_node_tables/", mode: "copy"
+  publishDir "$params.results/", mode: "copy"
 
   input: path(all_results)
   output: tuple path("observed-seqs.csv"), path("gctree-node-data.csv")
