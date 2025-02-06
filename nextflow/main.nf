@@ -185,4 +185,6 @@ workflow {
     gctree_rank_ch
   )
 
+  MUTATIONS_ANALYSIS.out | map{it -> it[2]} | view()
+
 }

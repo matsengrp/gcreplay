@@ -406,3 +406,34 @@ process MUTATIONS_ANALYSIS {
     -p workflow_env_exec True
   """
 }
+
+/*
+ * Process 4D: interactive heatmaps notebook
+ */
+process INTERACTIVE_HEATMAPS {
+  time '10m'
+  memory '16g'
+  cpus 4
+  // cache 'lenient'
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  publishDir "$params.results/notebooks/interactive-heatmaps/", mode: "copy"
+
+  input: 
+    path notebook
+    tuple path(mutations_data), val(ranking_coeff_subdir)
+
+  output: 
+    tuple(
+      path("$ranking_coeff_subdir/$notebook"), 
+      path("$ranking_coeff_subdir/*.html")
+    )
+
+  script:
+  """
+  mkdir -p $ranking_coeff_subdir
+
+  # run the notebook
+  papermill $notebook $ranking_coeff_subdir/$notebook \
+    -p mutations_data $mutations_data \
+    -p outbase '$ranking_coeff_subdir'
+  """
