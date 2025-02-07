@@ -380,7 +380,8 @@ process MUTATIONS_ANALYSIS {
     tuple(
       path("$ranking_coeff_subdir/$notebook"), 
       path("$ranking_coeff_subdir/*.pdf"),
-      path("$ranking_coeff_subdir/data.csv")
+      path("$ranking_coeff_subdir/data.csv"),
+      val(ranking_coeff_subdir)
     )
 
   script:
@@ -415,7 +416,7 @@ process INTERACTIVE_HEATMAPS {
   memory '16g'
   cpus 4
   // cache 'lenient'
-  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  container 'quay.io/matsengrp/gcreplay-pipeline:heatmaps-notebook'
   publishDir "$params.results/notebooks/interactive-heatmaps/", mode: "copy"
 
   input: 
@@ -437,3 +438,4 @@ process INTERACTIVE_HEATMAPS {
     -p mutations_data $mutations_data \
     -p outbase '$ranking_coeff_subdir'
   """
+}

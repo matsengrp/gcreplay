@@ -78,6 +78,7 @@ include {
     NDS_LB_ANALYSIS;
     FITNESS_REGRESSION_ANALYSIS;
     MUTATIONS_ANALYSIS;
+    INTERACTIVE_HEATMAPS;
   } from './modules.nf'
 
 
@@ -185,6 +186,9 @@ workflow {
     gctree_rank_ch
   )
 
-  MUTATIONS_ANALYSIS.out | map{it -> it[2]} | view()
+  INTERACTIVE_HEATMAPS(
+    file("${projectDir}/notebooks/interactive-heatmaps.ipynb"),
+    MUTATIONS_ANALYSIS.out | map{it -> tuple(it[2], it[3])}
+  )
 
 }
