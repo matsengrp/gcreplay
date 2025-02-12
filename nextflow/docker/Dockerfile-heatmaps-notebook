@@ -1,0 +1,37 @@
+# Use the mambaforge base image
+FROM quay.io/condaforge/mambaforge
+
+# For this to work with a singularity wrapper
+# we have top move it somewhere other than root
+# ENV PATH="/opt/miniconda3/bin:${PATH}"
+# ARG PATH="/opt/miniconda3/bin:${PATH}"
+
+# Set environment name
+ENV ENV_NAME=replay
+# this is to avoid the fact that apptainer cannot access the default /tmp directory
+ENV MPLCONFIGDIR=/tmp/matplotlib
+RUN mkdir -p /tmp/matplotlib && chmod -R 777 /tmp/matplotlib
+
+# Create and configure the environment
+RUN mamba create -n $ENV_NAME -y \
+    -c bioconda \
+    -c conda-forge \
+    pandas=1.4.4 \
+    altair=4.1 \
+    jsonschema=3.2 \
+    python=3.8 \
+    notebook \
+    git-lfs \
+    papermill \
+ && mamba clean -afy
+
+# Ensure the environment is activated by default
+RUN echo "conda activate $ENV_NAME" >> ~/.bashrc
+ENV PATH /opt/conda/envs/replay/bin:$PATH
+
+
+# Set the working directory
+WORKDIR /workspace
+
+# Define the default command for the container
+ENTRYPOINT ["/bin/bash"]
