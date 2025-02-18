@@ -15,9 +15,9 @@ nextflow/.nextflow*
 **/_ignore
 **/Attic
 
-nextflow/data/input/*.fastq
+# nextflow/data/input/*.fastq
 nextflow/data/test_input/*.fastq
-nextflow/data/micro_input/
+# nextflow/data/micro_input/
 
 nextflow/results/archive/main-pipeline/GCTREE/*/*/node_data.csv
 nextflow/results/archive/main-pipeline/GCTREE/*/outfile
