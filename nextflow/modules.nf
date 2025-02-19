@@ -287,7 +287,8 @@ process NDS_LB_ANALYSIS {
       path("$ranking_coeff_subdir/scale-$svg_scale-$notebook"), 
       path("$ranking_coeff_subdir/scatter*.svg"), 
       path("$ranking_coeff_subdir/stacked_trees/*.svg"), 
-      path("$ranking_coeff_subdir/*.html")
+      path("$ranking_coeff_subdir/*.html"),
+      path("$ranking_coeff_subdir/data.csv")
     )
 
   script:

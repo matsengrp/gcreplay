@@ -1,5 +1,5 @@
 /*
- * This Source Code Form is subject to the terms of the GNU GENERAL PUBLIC LICENCE
+ * This Source Code Form is subject to the terms of the GNU GENERAL PUBLIC LICENSE
  * License, v. 3.0.
  */
 

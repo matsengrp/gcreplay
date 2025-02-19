@@ -56,6 +56,15 @@ class expression_trees:
     )
     cmap.set_bad(color="#ffd400")
 
+class expression_trees_grey_centered:
+    colors = ["#A94E35", "#F48365", "#D3D3D3", "#7378B9", "#383C6C"]
+    norm = mc.Normalize(vmin=-3, vmax=3)
+    positions = np.linspace(0, 1, len(colors))
+    cmap = mc.LinearSegmentedColormap.from_list(
+        "custom_cmap", list(zip(positions, colors))
+    )
+    cmap.set_bad(color="#ffd400")
+
 
 class psr_dms:
     colors = list(reversed(["#A94E35", "#F48365", "#FFFFFF", "#7378B9", "#383C6C"]))
