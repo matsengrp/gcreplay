@@ -58,7 +58,7 @@ gctree-tools.py featurize-seqs \
 # ADD FEATURIZED SEQS TO
 mkdir $OUTDIR
 cp observed_seqs.csv $OUTDIR
-cp $GCDF $OUTDIR
+# cp $GCDF $OUTDIR
 
 # convert some columns into headers and sequences for a basic fasta format conversion
 gctree-tools.py gc-df-to-fasta \
@@ -92,11 +92,11 @@ rm -rf outtree outfile
 dnapars < dnapars.cfg > dnapars.log
 echo \(LOG\) done: dnapars
 
-cp outfile $OUTDIR
-cp abundances.csv $OUTDIR
-cp $GC_DEF.isotypemap $OUTDIR
-cp $GC_DEF.idmap $OUTDIR
-cp $GC_DEF.fasta $OUTDIR
+# cp outfile $OUTDIR
+# cp abundances.csv $OUTDIR
+# cp $GC_DEF.isotypemap $OUTDIR
+# cp $GC_DEF.idmap $OUTDIR
+# cp $GC_DEF.fasta $OUTDIR
 
 # Run inference on sequences, 
 TMPDIR="/tmp"
