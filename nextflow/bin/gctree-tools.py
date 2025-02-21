@@ -299,37 +299,16 @@ def node_featurize(
     df = pd.DataFrame(node_features).set_index("name")
     df.to_csv(f"{output_dir}/node_data.csv")
 
-    phenotypes = [
-        "delta_bind", 
-        "delta_expr"
-    ]
-    # render tree with colormapped features
-    for phenotype in phenotypes + ["LBI", "LBR"]:
-        if phenotype.startswith("LB"):
-            cmap = "plasma"
-            vmin = 0
-            vmax = 10
-        elif phenotype.startswith("delta_"):
-            cmap = "coolwarm"
-            vmin = -2
-            vmax = 2
-        else:
-            raise RuntimeError("unknown phenotype")
-        colormap = tree.feature_colormap(
-            phenotype, cmap=cmap, vmin=vmin, vmax=vmax)
-        # need this loop to render to svg and notebook
-        tree.render(
-            f"{output_dir}/{phenotype}.svg",
-            # scale=None, branch_margin=-7,
-            scale=20,
-            idlabel=render_idlabel,
-            frame=igh_frame,
-            frame2=igk_frame,
-            chain_split=igk_idx,
-            colormap=colormap,
-            position_map=igh_pos_map,
-            position_map2=igk_pos_map,
-        )
+    tree.render(
+        f"{output_dir}/mut_seq_annotated_nodes.svg",
+        scale=20,
+        idlabel=render_idlabel,
+        frame=igh_frame,
+        frame2=igk_frame,
+        chain_split=igk_idx,
+        position_map=igh_pos_map,
+        position_map2=igk_pos_map,
+    )
 
     # write the new featurized tree to a pickle file
     with open(f"{output_dir}/gctree.p", "wb") as f:
