@@ -19,19 +19,23 @@ nextflow/.nextflow*
 nextflow/data/test_input/*.fastq
 # nextflow/data/micro_input/
 
-nextflow/results/archive/main-pipeline/GCTREE/*/*/node_data.csv
-nextflow/results/archive/main-pipeline/GCTREE/*/outfile
-nextflow/results/archive/main-pipeline/GCTREE/*/*.csv
-nextflow/results/archive/main-pipeline/GCTREE/*/*.idmap
-nextflow/results/archive/main-pipeline/GCTREE/*/*.fasta
-nextflow/results/archive/main-pipeline/GCTREE/*/*.isotypemap
-nextflow/results/archive/main-pipeline/GCTREE/*/*/gctree.inference.abundance_rank.svg
-nextflow/results/archive/main-pipeline/GCTREE/*/*/gctree.inference.1.p
-nextflow/results/archive/main-pipeline/GCTREE/*/*/delta*
-nextflow/results/archive/main-pipeline/GCTREE/*/*/LB*
-nextflow/results/archive/main-pipeline/GCTREE/*/*/gctree.inference.parsimony_forest.p
-nextflow/results/archive/main-pipeline/*/*.ipynb
-nextflow/results/archive/beast-pipeline/BEAST_TIMETREE/
+nextflow/results/gctrees/*/observed_seqs.csv
+nextflow/results/gctrees/*/*/node_data.csv
+nextflow/results/gctrees/*/*/*.fasta
+nextflow/results/gctrees/*/*/*.log
+nextflow/results/gctrees/*/*/observed_seqs.csv
+nextflow/results/gctrees/*/*/gctree.inference.abundance_rank.svg
+nextflow/results/gctrees/*/*/gctree.inference.1.p
+nextflow/results/gctrees/*/*/LB*
+nextflow/results/gctrees/*/*/gctree.inference.parsimony_forest.p
+
+# nextflow/results/gctrees/*/outfile
+# nextflow/results/gctrees/*/*.idmap
+# nextflow/results/gctrees/*/*.fasta
+# nextflow/results/gctrees/*/*.isotypemap
+# nextflow/results/gctrees/*/*/delta*
+# nextflow/results/archive/main-pipeline/*/*.ipynb
+# nextflow/results/archive/beast-pipeline/BEAST_TIMETREE/
 
 # ignore run files for now
 nextflow/*.sh
