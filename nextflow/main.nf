@@ -79,6 +79,7 @@ include {
     FITNESS_REGRESSION_ANALYSIS;
     MUTATIONS_ANALYSIS;
     INTERACTIVE_HEATMAPS;
+    CELL_SUMMARIES;
   } from './modules.nf'
 
 
@@ -189,6 +190,12 @@ workflow {
   INTERACTIVE_HEATMAPS(
     file("${projectDir}/notebooks/interactive-heatmaps.ipynb"),
     MUTATIONS_ANALYSIS.out | map{it -> tuple(it[2], it[3])}
+  )
+
+  CELL_SUMMARIES(
+    file("${projectDir}/notebooks/cell-summaries.ipynb"),
+    file(params.gc_metadata),
+    MERGE_RESULTS.out | map{it -> it[0]},
   )
 
 }

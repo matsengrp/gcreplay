@@ -441,3 +441,37 @@ process INTERACTIVE_HEATMAPS {
     -p outbase '$ranking_coeff_subdir'
   """
 }
+
+
+/*
+ * Process 4E: cell summaries notebook
+ */
+process CELL_SUMMARIES {
+  time '10m'
+  memory '16g'
+  cpus 1
+  // cache 'lenient'
+  stageInMode 'copy'
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  publishDir "$params.results/notebooks/cell-summaries/", mode: "copy"
+
+  input: 
+    path notebook
+    path metadata
+    path observed_seqs
+
+  output: 
+    tuple(
+      path("$notebook"),
+      path("*.pdf"), 
+      path("*.csv")
+    )
+
+  script:
+  """
+  papermill $notebook $notebook \
+    -p metadata_csv $metadata \
+    -p cell_table_csv $observed_seqs \
+    -p outbase '.' \
+  """
+}
