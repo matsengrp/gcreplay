@@ -334,7 +334,8 @@ process FITNESS_REGRESSION_ANALYSIS {
   output: 
     tuple(
       path("$ranking_coeff_subdir/$notebook"), 
-      path("$ranking_coeff_subdir/*.pdf")
+      path("$ranking_coeff_subdir/*.pdf"),
+      path("$ranking_coeff_subdir/*.csv")
     )
 
   script:
