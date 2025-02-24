@@ -9,3 +9,4 @@ Then, within the container:
 ```
 jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
 ```
+Note that, at least for me, vscode is setup to use the ports, so it cannot be open at the same time.
