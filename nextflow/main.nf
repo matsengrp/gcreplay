@@ -165,7 +165,7 @@ workflow {
     file("${projectDir}/notebooks/NDS-LB.ipynb"),
     file("${projectDir}/notebooks/utils/"),
     file(params.gc_metadata),
-    gctree_rank_ch.combine(Channel.of(5, 20)) // svg scale
+    gctree_rank_ch //.combine(Channel.of(5, 20)) // svg scale
   )
 
   FITNESS_REGRESSION_ANALYSIS(
@@ -195,7 +195,14 @@ workflow {
   CELL_SUMMARIES(
     file("${projectDir}/notebooks/cell-summaries.ipynb"),
     file(params.gc_metadata),
-    MERGE_RESULTS.out | map{it -> it[0]},
+    NDS_LB_ANALYSIS
+      .out
+      .map{it -> tuple(it[0], it[1])}
+      .combine(MERGE_RESULTS
+        .out
+        .map{it -> it[0]}
+      )
+      .unique()
   )
 
 }
