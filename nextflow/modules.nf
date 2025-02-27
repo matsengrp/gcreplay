@@ -463,14 +463,17 @@ process CELL_SUMMARIES {
 
   output: 
     tuple(
-      path("$notebook"),
-      path("*.pdf"), 
-      path("*.csv")
+      path("$ranking_coeff_subdir/$notebook"), 
+      path("$ranking_coeff_subdir/*.pdf"),
+      path("$ranking_coeff_subdir/*.csv")
     )
 
   script:
   """
   mkdir -p $ranking_coeff_subdir
+  
+  # export IPYTHONDIR=/tmp/.ipython
+  # mkdir -p \$IPYTHONDIR
 
   papermill $notebook $ranking_coeff_subdir/$notebook \
     -p metadata_csv $metadata \
