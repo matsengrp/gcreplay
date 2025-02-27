@@ -280,15 +280,16 @@ process NDS_LB_ANALYSIS {
     path notebook
     path utils
     path metadata
-    tuple path(gctree_dirs), val(ranking_coeff_subdir), val(svg_scale) 
+    tuple path(gctree_dirs), val(ranking_coeff_subdir) //, val(svg_scale) 
 
   output: 
     tuple(
-      path("$ranking_coeff_subdir/scale-$svg_scale-$notebook"), 
+      val(ranking_coeff_subdir),
+      path("$ranking_coeff_subdir/data.csv"),
+      path("$ranking_coeff_subdir/$notebook"), 
       path("$ranking_coeff_subdir/scatter*.svg"), 
       path("$ranking_coeff_subdir/stacked_trees/*.svg"), 
-      path("$ranking_coeff_subdir/*.html"),
-      path("$ranking_coeff_subdir/data.csv")
+      path("$ranking_coeff_subdir/*.html")
     )
 
   script:
@@ -303,15 +304,15 @@ process NDS_LB_ANALYSIS {
   mkdir -p $ranking_coeff_subdir
 
   # run the notebook
-  papermill $notebook $ranking_coeff_subdir/scale-$svg_scale-$notebook \
+  papermill $notebook $ranking_coeff_subdir/$notebook \
     -p results '.' \
     -p ranking_subdir $ranking_coeff_subdir \
-    -p scale $svg_scale \
     -p metadata_csv $metadata \
     -p outbase '.' \
     -p workflow_env_exec True
   """
 }
+//-p scale $svg_scale \
 
 
 /*
@@ -451,27 +452,35 @@ process CELL_SUMMARIES {
   memory '16g'
   cpus 1
   // cache 'lenient'
-  stageInMode 'copy'
+  // stageInMode 'copy'
   container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
   publishDir "$params.results/notebooks/cell-summaries/", mode: "copy"
 
   input: 
     path notebook
     path metadata
-    path observed_seqs
+    tuple val(ranking_coeff_subdir), path(nds_lb_summary_csv), path(observed_seqs)
 
   output: 
     tuple(
-      path("$notebook"),
-      path("*.pdf"), 
-      path("*.csv")
+      path("$ranking_coeff_subdir/$notebook"), 
+      path("$ranking_coeff_subdir/*.pdf"),
+      path("$ranking_coeff_subdir/*.csv")
     )
 
   script:
   """
-  papermill $notebook $notebook \
+  mkdir -p $ranking_coeff_subdir
+  
+  # export IPYTHONDIR=/tmp/.ipython
+  # mkdir -p \$IPYTHONDIR
+
+  papermill $notebook $ranking_coeff_subdir/$notebook \
     -p metadata_csv $metadata \
     -p cell_table_csv $observed_seqs \
+    -p ranking_subdir $ranking_coeff_subdir \
+    -p nds_lb_summary_csv $nds_lb_summary_csv \
     -p outbase '.' \
+    -p workflow_env_exec True
   """
 }
