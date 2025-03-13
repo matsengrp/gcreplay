@@ -1,1 +1,3 @@
-(seq40:8,(seq12:4,seq20:5)11:2,(seq6:1,seq35:1)seq55:3,(seq68:4,seq3:2,seq32:7,seq45:5)10:2,(seq50:8,(seq19:3)seq18:9,(seq17:1,seq29:1,seq1:3,(seq43:4)seq71:1)seq38:4)22:2,((seq22:6,seq58:3)12:2,(seq16:3,seq26:4,seq65:4)seq10:3,(seq8:6,(seq25:4,seq76:4,(seq15:3,seq63:2)19:1)seq78:5)20:1,((seq81:3,seq51:1,seq82:2,seq83:2)13:4,((seq61:5,(seq52:4,seq59:5)14:1)15:1)seq27:1,(seq13:8,seq70:2,seq28:1,seq62:1,seq21:4,seq2:2,seq48:1,(seq75:1,seq84:6)16:1,(seq31:1,seq44:2)17:3)seq5:2)18:1)21:1,(seq24:6,seq11:5,seq53:3,(seq77:5,seq14:6)1:2,(seq80:2,(seq64:3,(seq54:1,seq9:1,seq72:2,seq46:1,seq56:5)2:2)3:2)4:5,(seq74:3,seq7:2,(seq66:5,seq39:2,seq60:2,seq57:6,seq4:2,(seq69:1,seq49:5)5:1,(seq23:5,seq36:1,seq79:1,seq34:1)7:1,((seq30:1)seq47:1,(seq37:2,(seq67:1,seq42:3)6:1)seq41:2)seq33:3)seq73:4)8:1)9:1)naive:0;
+version https://git-lfs.github.com/spec/v1
+oid sha256:09686d6a6f5e2cd28450493f32db7d173a7810865086c20f6c72f45ff7aaa1c5
+size 807

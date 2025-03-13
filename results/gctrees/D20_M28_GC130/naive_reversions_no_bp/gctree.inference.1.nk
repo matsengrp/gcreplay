@@ -1,1 +1,3 @@
-(seq20:7,(seq24:4,(seq30:2)seq23:6)3:1,(seq40:6,seq47:4,seq32:3,(seq26:1,seq33:3)7:2)8:4,(seq51:8,seq12:3,(seq1:1,seq10:3,seq18:4,(seq13:5,seq8:2)seq36:2)seq27:5,((seq46:3,seq42:1,seq31:1)seq41:1,(seq38:2,seq55:2,seq53:2)seq34:1)1:4)2:1,(seq19:1,seq5:2,seq9:1,seq50:7,seq54:2,seq48:2,seq49:1,seq44:1,seq25:1,seq2:3,seq21:4,seq52:3,seq4:5,seq11:2,seq35:1,(seq6:1,seq28:2)6:1,(seq16:6)seq37:1,(seq39:2,seq17:2,seq22:2)4:1,(seq14:1)seq45:2,(seq43:1,seq29:2,seq7:2,seq15:2)5:1)seq3:2)naive:0;
+version https://git-lfs.github.com/spec/v1
+oid sha256:72d4b23c1efdd84df7d87058a5ad144eaa10525dda39a26635b3deb7243dedc9
+size 488
