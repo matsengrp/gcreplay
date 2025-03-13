@@ -1,30 +1,20 @@
 # Analysis/plots of nextflow output
 
-## Utils
-
-### Metadata
-
-[utils/metadata.py](utils/metadata.py) is a script to parse the metadata file and rename the mice and GCs to a more readable format.
-```bash
-python analysis/utils/metadata.py > analysis/output/metadata_renamed.csv
-```
-
-It can also be imported as a module.
-```python
-from utils.metadata import df_renamed as metadata
-```
-
-### Phenotype colormaps
-
-[utils/phenotype_colormaps.py](utils/phenotype_colormaps.py) is a module to create colormaps for the phenotypes.
-```python
-import utils.phenotype_colorscales as pc
-
-cmap = pc.affinity_dms.cmap
-norm = pc.affinity_dms.norm
-...
-```
+This directory contains the notebooks which perform downstream analysis on the gctree, and observed BCR sequences obtained in the upstream processes of the main pipeline.
 
 ## Notebooks
 
-The notebooks produce output in the `output` subdirectory.
+The notebooks produce output in the `output` subdirectory. Note that this is experimental output. The reproducible output for notebooks run within our pipeline can be found at [../results/notebooks](../results/notebooks)
+
+To run notebooks manually in a docker container, using the image defined for a given process:
+
+From the top-level parent directory of this repo:
+```
+docker pull quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks
+docker run -it --rm -p 8888:8888 -v $(pwd):/workspace bb7e42655ce6
+```
+Then, within the container:
+```
+jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+```
+Note that, at least for me, vscode is setup to use the ports, so it cannot be open at the same time.

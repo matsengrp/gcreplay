@@ -3,3 +3,5 @@ nextflow/data/** filter=lfs diff=off merge=lfs -text
 nextflow/results/** filter=lfs diff=off merge=lfs -text
 analysis/output/** filter=lfs diff=off merge=lfs -text
 passenger/output/** filter=lfs diff=off merge=lfs -text
+# SCM syntax highlighting & preventing 3-way merges
+pixi.lock merge=binary linguist-language=YAML linguist-generated=true
