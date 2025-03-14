@@ -1,0 +1,16 @@
+[project]
+authors = ["jgallowa07 <jaredgalloway07@gmail.com>"]
+channels = ["conda-forge"]
+name = "gcreplay"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.9.*"
+git-lfs = ">=3.6.1,<4"
+
+[pypi-dependencies]
+nbconvert = "*"
+jupyter = "*"
