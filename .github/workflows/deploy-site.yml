@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 139_reorganize_repo
 
 jobs:
   build-and-deploy:
