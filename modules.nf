@@ -361,7 +361,7 @@ process FITNESS_REGRESSION_ANALYSIS {
  * Process 4C: mutations analysis notebook papermill
  */
 process MUTATIONS_ANALYSIS {
-  time '10m'
+  time '30m'
   memory '16g'
   cpus 4
   // cache 'lenient'
