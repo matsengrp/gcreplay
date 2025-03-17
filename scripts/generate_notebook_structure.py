@@ -18,7 +18,7 @@ def generate_notebook_structure(docs_dir='docs'):
             
             for html_file in html_files:
                 notebook_filename = os.path.basename(html_file)
-                notebook_name = os.path.splitext(notebook_filename)[0].replace('-', ' ').title()
+                notebook_name = os.path.splitext(notebook_filename)[0].replace('-', ' ')
                 
                 # Check if all variants have this notebook
                 all_variants_have_file = True
@@ -30,7 +30,8 @@ def generate_notebook_structure(docs_dir='docs'):
                 
                 if all_variants_have_file:
                     notebooks.append({
-                        'name': f"{nb_dir.replace('-', ' ').title()}: {notebook_name}",
+                        # 'name': f"{nb_dir.replace('-', ' ').title()}: {notebook_name}",
+                        'name': nb_dir.replace('-', ' '),
                         'path': f"{nb_dir}",
                         'filename': notebook_filename
                     })

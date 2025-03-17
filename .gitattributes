@@ -1,6 +1,7 @@
 *.ipynb filter=strip-notebook-metadata diff=strip-notebook-metadata
 data/** filter=lfs diff=off merge=lfs -text
 results/** filter=lfs diff=off merge=lfs -text
+results/**/*.ipynb filter= diff= merge= text
 analysis/output/** filter=lfs diff=off merge=lfs -text
 passenger/output/** filter=lfs diff=off merge=lfs -text
 # SCM syntax highlighting & preventing 3-way merges
