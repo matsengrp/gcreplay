@@ -1,10 +1,16 @@
-# Analysis Results
+# GC Replay Analysis & Results 
 
-Welcome to the analysis results site. This site contains:
+Here we present some useful reference materials for the analysis of the GC Replay data. 
+The goal of this website is to provide a comprehensive overview of the analysis performed on the GC Replay data,
+including visualizations and summaries of key findings. 
 
-- Jupyter notebooks with different analysis variations
+So far, it includes:
+
+- A summary of the analysis performed, and how to reproduce it
+- Jupyter notebooks with different analysis
 - Interactive figures generated from the analysis
+- Links and descriptions of key files that can be accessed via the repository
 
 ## Getting Started
 
-Use the navigation tabs above to explore the analysis notebooks and interactive figures.
+Use the navigation tabs to explore the analysis notebooks, interactive figures, and key files. 

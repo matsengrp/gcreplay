@@ -1,6 +1,6 @@
-site_name: My Analysis Results
-site_description: Jupyter notebook analysis and interactive figures
-repo_url: https://github.com/yourusername/yourrepo
+site_name: GC Replay Analysis
+site_description: Analysis and results from our manuscript, "X"
+repo_url: https://github.com/matsengrp/gcreplay.git
 
 theme:
   name: material
@@ -43,8 +43,3 @@ nav:
       - Default: interactive-figures/mutation-heatmaps/default.html
       - Naive Reversions First: interactive-figures/mutation-heatmaps/naive_reversions_first.html
       - Naive Reversions No BP: interactive-figures/mutation-heatmaps/naive_reversions_no_bp.html
-  #   - Overview: figures/overview.md
-    # Add specific figure pages here
-
-# extra_javascript:
-#   - javascripts/extra.js
