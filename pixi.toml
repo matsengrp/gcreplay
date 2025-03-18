@@ -12,5 +12,8 @@ python = "3.9.*"
 git-lfs = ">=3.6.1,<4"
 
 [pypi-dependencies]
-nbconvert = "*"
-jupyter = "*"
+mkdocs = "*"
+mkdocs-material = "*"
+mkdocs-jupyter = "*"
+mkdocs-macros-plugin = "*"
+mkdocs-awesome-pages-plugin = "*"

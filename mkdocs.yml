@@ -1,0 +1,35 @@
+site_name: My Analysis Results
+site_description: Jupyter notebook analysis and interactive figures
+repo_url: https://github.com/yourusername/yourrepo
+
+theme:
+  name: material
+  features:
+    # - navigation.tabs
+    - navigation.sections
+    # - navigation.indexes
+    # - content.tabs.link
+    # - navigation.expand    # Expand by default (optional, remove if you want all closed)
+
+plugins:
+  - search
+  - mkdocs-jupyter:
+      # include_source: True
+      ignore_h1_titles: True
+  # - macros
+  - awesome-pages
+
+nav:
+  - Home: index.md
+  - Analysis:
+    - Cell Summaries:
+      - Default: analysis/cell-summaries/default.ipynb
+      - Naive Reversions First: analysis/cell-summaries/naive_reversions_first.ipynb
+      - Naive Reversions No BP: analysis/cell-summaries/naive_reversions_no_bp.ipynb
+    # Add other notebook types here
+  # - Interactive Figures: 
+  #   - Overview: figures/overview.md
+    # Add specific figure pages here
+
+# extra_javascript:
+#   - javascripts/extra.js
