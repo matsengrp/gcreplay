@@ -27,7 +27,11 @@ nav:
       - Naive Reversions First: analysis/cell-summaries/naive_reversions_first.ipynb
       - Naive Reversions No BP: analysis/cell-summaries/naive_reversions_no_bp.ipynb
     # Add other notebook types here
-  # - Interactive Figures: 
+  - Interactive Figures: 
+    - Mutation Heatmaps: 
+      - Default: interactive-figures/mutation-heatmaps/default.html
+      - Naive Reversions First: interactive-figures/mutation-heatmaps/naive_reversions_first.html
+      - Naive Reversions No BP: interactive-figures/mutation-heatmaps/naive_reversions_no_bp.html
   #   - Overview: figures/overview.md
     # Add specific figure pages here
 
