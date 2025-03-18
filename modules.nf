@@ -274,7 +274,7 @@ process NDS_LB_ANALYSIS {
   cpus 4
   // cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
-  publishDir "$params.results/notebooks/NDS_LB/", mode: "copy"
+  publishDir "$params.results/notebooks/NDS-LB/", mode: "copy"
 
   input: 
     path notebook

@@ -26,7 +26,18 @@ nav:
       - Default: analysis/cell-summaries/default.ipynb
       - Naive Reversions First: analysis/cell-summaries/naive_reversions_first.ipynb
       - Naive Reversions No BP: analysis/cell-summaries/naive_reversions_no_bp.ipynb
-    # Add other notebook types here
+    - Fitness Regression:
+      - Default: analysis/fitness-regression/default.ipynb
+      - Naive Reversions First: analysis/fitness-regression/naive_reversions_first.ipynb
+      - Naive Reversions No BP: analysis/fitness-regression/naive_reversions_no_bp.ipynb
+    - Mutations:
+      - Default: analysis/mutations/default.ipynb
+      - Naive Reversions First: analysis/mutations/naive_reversions_first.ipynb
+      - Naive Reversions No BP: analysis/mutations/naive_reversions_no_bp.ipynb
+    - NDS-LB:
+      - Default: analysis/NDS-LB/default.ipynb
+      - Naive Reversions First: analysis/NDS-LB/naive_reversions_first.ipynb
+      - Naive Reversions No BP: analysis/NDS-LB/naive_reversions_no_bp.ipynb
   - Interactive Figures: 
     - Mutation Heatmaps: 
       - Default: interactive-figures/mutation-heatmaps/default.html
