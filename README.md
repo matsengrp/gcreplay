@@ -2,7 +2,7 @@
 
 This repository contains the code and data for the analysis of B cell receptor (BCR) sequences from germinal center (GC) B cells in mice.
 
-For a more gentle walkthrough of the analysis here, see the analysis [website](https://matsengrp.github.io/gcreplay/).
+For more details, please see the analysis [website](https://matsengrp.github.io/gcreplay/).
 
 ## Reproduce analysis
 
