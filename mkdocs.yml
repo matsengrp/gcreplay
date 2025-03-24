@@ -21,14 +21,13 @@ plugins:
 
 nav:
   - Home: index.md
+  - Key files: key-files.md
+  - Mutation Heatmaps: interactive-figures/mutation-heatmaps/naive_reversions_first.html
   - Analysis:
     - Cell Summaries: analysis/cell-summaries/naive_reversions_first.ipynb
     - Fitness Regression: analysis/fitness-regression/naive_reversions_first.ipynb
     - Mutations: analysis/mutations/naive_reversions_first.ipynb
     - NDS-LB: analysis/NDS-LB/naive_reversions_first.ipynb
-  - Mutation Heatmaps: interactive-figures/mutation-heatmaps/naive_reversions_first.html
-  - Key files: key-files.md
-  - Nextflow pipeline: pipeline-details.md
   - Supplementary:
     - Overview: supplementary/overview.md
     - Alternate gctree inference:
@@ -49,3 +48,4 @@ nav:
         - Mutation Heatmaps: 
           - Default: interactive-figures/mutation-heatmaps/default.html
           - Naive Reversions No BP: interactive-figures/mutation-heatmaps/naive_reversions_no_bp.html
+  - Nextflow pipeline: pipeline-details.md
