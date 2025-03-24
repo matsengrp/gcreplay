@@ -286,6 +286,25 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#accessing-the-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Accessing the results
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sample-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sample Metadata
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sample Metadata">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#resultsgc_metadatacsv" class="md-nav__link">
     <span class="md-ellipsis">
       results/gc_metadata.csv
@@ -293,13 +312,18 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#resultsngs_manifestcsv" class="md-nav__link">
     <span class="md-ellipsis">
       results/ngs_manifest.csv
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1291,6 +1315,25 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#accessing-the-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Accessing the results
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sample-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sample Metadata
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sample Metadata">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#resultsgc_metadatacsv" class="md-nav__link">
     <span class="md-ellipsis">
       results/gc_metadata.csv
@@ -1298,13 +1341,18 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#resultsngs_manifestcsv" class="md-nav__link">
     <span class="md-ellipsis">
       results/ngs_manifest.csv
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1446,22 +1494,32 @@
 
 <h1 id="gcreplay-pipeline-results-documentation">GCReplay Pipeline Results Documentation</h1>
 <p>This document provides an overview of the key files in the <a href="https://github.com/matsengrp/gcreplay">gcreplay repository</a>.</p>
+<h2 id="accessing-the-results">Accessing the results</h2>
+<p>You could just use the GitHub web interface for accessing singular files of interest, but  here are further instructions for the detail oriented.</p>
+<p>Many of the result files are stored using Git Large File Storage (LFS) due to their size. To access these files, you'll need to <a href="https://git-lfs.com/">install Git LFS</a> first and then clone the repository:</p>
+<pre><code class="language-bash">git clone https://github.com/matsengrp/gcreplay.git
+cd gcreplay
+</code></pre>
+<p>This will automatically pull the LFS files along with the regular repository contents. If you had already cloned the repository before installing Git LFS, you can pull the LFS files with:</p>
+<pre><code class="language-bash">git lfs pull
+</code></pre>
+<h2 id="sample-metadata">Sample Metadata</h2>
 <h3 id="resultsgc_metadatacsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/gc_metadata.csv">results/gc_metadata.csv</a></h3>
 <p>The metadata for the GC replay experiments is stored in this file. The columns are as follows:</p>
 <ul>
-<li>"uid": (<em>unique identifier</em>) This is in the format of D<imm_duration>_M<mouse>_GC<gc>. </li>
-<li>"ngs_id": (<em>Parallel Replay</em>) reference to associated sequencing run specified in <a href="ngs_manifest.csv">ngs_manifest.csv</a>.</li>
-<li>imm_duration: (<em>immunization duration</em>) This is the number of weeks after immunization that the sample was taken.</li>
-<li>mouse: (<em>mouse number</em>) This is the unique identifier for the mouse.</li>
-<li>gc: (<em>germinal center number</em>) This is the unique identifier for the germinal center.</li>
-<li>strain: (<em>mouse strain</em>) This is the strain of the mouse.</li>
-<li>node: (<em>lymph node number</em>) This identifies the specific lymph node location in the mouse.</li>
-<li>cell_type: (<em>cell type</em>) This is the type of cell that was sequenced.</li>
-<li>plate: (<em>plate barcode</em>) This is the barcode of the plate that the sample was sequenced on.</li>
-<li>hc_barcode : (<em>heavy chain barcode</em>) This is the barcode of the heavy chain.</li>
-<li>lc_barcode : (<em>light chain barcode</em>) This is the barcode of the light chain.</li>
-<li>row : (<em>well rows</em>) Which rows of the 96-well plate contain the sample.</li>
-<li>col : (<em>well columns</em>) Which columns of the 96-well plate contain the sample.</li>
+<li><strong>uid</strong>: (<em>unique identifier</em>) This is in the format of D<imm_duration>_M<mouse>_GC<gc>. </li>
+<li><strong>ngs_id</strong>: (<em>ngs file id</em>) reference to associated sequencing run specified in <a href="ngs_manifest.csv">ngs_manifest.csv</a>.</li>
+<li><strong>imm_duration</strong>: (<em>immunization duration</em>) This is the number of weeks after immunization that the sample was taken.</li>
+<li><strong>mouse</strong>: (<em>mouse number</em>) This is the unique identifier for the mouse.</li>
+<li><strong>gc</strong>: (<em>germinal center number</em>) This is the unique identifier for the germinal center.</li>
+<li><strong>strain</strong>: (<em>mouse strain</em>) This is the strain of the mouse.</li>
+<li><strong>node</strong>: (<em>lymph node number</em>) This identifies the specific lymph node location in the mouse.</li>
+<li><strong>cell_type</strong>: (<em>cell type</em>) This is the type of cell that was sequenced.</li>
+<li><strong>plate</strong>: (<em>plate barcode</em>) This is the barcode of the plate that the sample was sequenced on.</li>
+<li><strong>hc_barcode</strong> : (<em>heavy chain barcode</em>) This is the barcode of the heavy chain.</li>
+<li><strong>lc_barcode</strong> : (<em>light chain barcode</em>) This is the barcode of the light chain.</li>
+<li><strong>row</strong> : (<em>well rows</em>) Which rows of the 96-well plate contain the sample.</li>
+<li><strong>col</strong> : (<em>well columns</em>) Which columns of the 96-well plate contain the sample.</li>
 </ul>
 <h3 id="resultsngs_manifestcsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/ngs_manifest.csv">results/ngs_manifest.csv</a></h3>
 <p>Serves as a manifest for the Next Generation Sequencing (NGS) data, detailing the sequencing runs and their corresponding metadata. It includes information such as the sequencing date, sample identifiers, and other relevant details.</p>
@@ -1490,6 +1548,7 @@ In the manuscript primary analysis, we used the files under the /naive_reversion
     ├── gctree.p
     └── mut_seq_annotated_nodes.svg
 </code></pre>
+<p><code>gctree.p</code> contains the phylogenetic data in a pickle format that can be read by <a href="https://github.com/matsengrp/gctree">gctree</a> version 4.3.0, The other files are a newick formatted tree, and two .svg visualizations show the annotated nodes of the tree including mutations, and a sequence id that can be found within the <a href="https://github.com/matsengrp/gcreplay/blob/main/results/gctree-node-data.csv">gctree-node-data.csv</a> file.</p>
 <h2 id="notebook-analysis-results">(Notebook) Analysis Results</h2>
 <h3 id="resultsnotebookscell-summariesnaive_reversions_firstcell_tablecsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/notebooks/cell-summaries/naive_reversions_first/cell_table.csv">results/notebooks/cell-summaries/naive_reversions_first/cell_table.csv</a></h3>
 <!-- TODO WILL -->
@@ -1503,7 +1562,6 @@ In the manuscript primary analysis, we used the files under the /naive_reversion
 <h3 id="resultsnotebooksnds-lbnaive_reversions_firstdatacsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/notebooks/NDS-LB/naive_reversions_first/data.csv">results/notebooks/NDS-LB/naive_reversions_first/data.csv</a></h3>
 <!-- TODO WILL -->
 
-<p><code>gctree.p</code> contains the phylogenetic data in a pickle format that can be read by <a href="https://github.com/matsengrp/gctree">gctree</a> version 4.3.0, The other files are a newick formatted tree, and two .svg visualizations show the annotated nodes of the tree including mutations, and a sequence id that can be found within the <a href="https://github.com/matsengrp/gcreplay/blob/main/results/gctree-node-data.csv">gctree-node-data.csv</a> file.</p>
 <h2 id="ngs-data">NGS Data</h2>
 <h3 id="datangs-gz"><a href="https://github.com/matsengrp/gcreplay/blob/main/data/NGS-gz">data/NGS-gz</a></h3>
 <p>Directory containing compressed Next Generation Sequencing (NGS) data files that serve as the raw input for the main pipeline. These files contain the sequencing reads from B-cell receptor repertoires before processing and analysis.</p>
