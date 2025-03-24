@@ -1,10 +1,10 @@
 nextflow.enable.dsl = 2
 
 /*
- * Process 1A: trim the first three bases of the paired end reads.
+ * trim the first three bases of the 
+ * paired end reads, and combine the mates
+ * using pandaseq.
  */
-
-// meh, let's un-capitalize these process publishDir's
 process TRIM_COMBINE_MATES { 
   time '1h'
   memory '8g'
@@ -26,20 +26,17 @@ process TRIM_COMBINE_MATES {
 
 
 /*
- * Process 1B: demultiplex the different plates
- * if there are no sequences matching a barcode,
- * and thus th resulting file is empty, we don't
- * output it.
+ * demultiplex by plate barcodes.
+ * This process takes the combined fasta file
+ * from the previous step, and splits it into
+ * separate files for each plate.
  */
-//path plate_barcodes
-// TODO why are we including the date in the prefix? Seems unnecessary
 process DEMULTIPLEX_PLATES {
   time '10m'
   memory '2g'
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  // publishDir "$params.results/DEMULTIPLEX_PLATES/" 
 
   input: 
     tuple val(ngs_id), val(date), path(ngs_id_fasta)
@@ -57,7 +54,7 @@ process DEMULTIPLEX_PLATES {
 }
 
 /*
- * Process 1C: Demultiplex each plate into the 96 wells per plate
+ * Demultiplex each plate into the 96 wells per plate
  */
 process DEMULTIPLEX_WELLS {
   time '10m'
@@ -82,9 +79,9 @@ process DEMULTIPLEX_WELLS {
 
 
 /*
- * Process 1D: Split each demultiplexed fasta into 
+ * Split each demultiplexed fasta into 
  * heavy and light chain by using cutadapt to search
- * for common motifs
+ * for common motifs.
  */
 process SPLIT_HK {
   time '20m'
@@ -112,16 +109,19 @@ process SPLIT_HK {
 
 
 /*
- * Process 1E: Collapse each heavy and light chain
- * demultiplexed files into  
+ * Collapse each heavy and light chain
+ * demultiplexed file, counting the number of occurrences
+ * of each unique sequence. This process will also
+ * prune low abundance BCR's based on the user
+ * defined threshold (default 5).   
  */
 process COLLAPSE_RANK_PRUNE {
   time '20m'
-  memory '2g'
+  memory '8g'
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  // publishDir "$params.results/COLLAPSE_RANK_PRUNE/"
+  publishDir "$params.results/COLLAPSE_RANK_PRUNE/"
 
   input: tuple val(ngs_id), path(well_chain)
   output: tuple val(ngs_id), path("${well_chain}.R")
@@ -137,7 +137,8 @@ process COLLAPSE_RANK_PRUNE {
 
 
 /*
- * Process 1F: Merge the top ranked BCR's
+ * Merge the top ranked BCR's
+ * from all wells into a single fasta file.
  */
 process MERGE_BCRS {
   time '20m'
@@ -145,7 +146,7 @@ process MERGE_BCRS {
   cpus 1
   cache 'lenient'
   container 'quay.io/matsengrp/gcreplay-pipeline:latest'
-  // publishDir "$params.results/MERGE_BCRS/"
+  publishDir "$params.results/MERGE_BCRS/"
 
   input: tuple val(ngs_id), path(all_coll_rank)
   output: tuple val(ngs_id), path("${ngs_id}.fasta")
@@ -158,7 +159,8 @@ process MERGE_BCRS {
 
 
 /*
- * Process 2A: Annotate the top ranked seqs
+ * Annotate the top ranked seqs using partis.
+ * This process will take the merged fasta file
  */
 process PARTIS_ANNOTATION {
   time '30m'
@@ -180,10 +182,11 @@ process PARTIS_ANNOTATION {
 
 
 /*
- * Process 2B: Wrangle and parse the annotations
+ * Wrangle and parse the annotations,
+ * merging the correcsponding well-specific 
+ * heavy and light chain
+ * sequences into a single dataframe per GC.
  */
-// TODO here you'll need to modify the scripts to 
-// deal with the seq id and entire metadata file
 process PARTIS_WRANGLE {
   time '15m'
   memory '2g'
@@ -220,7 +223,7 @@ process PARTIS_WRANGLE {
 }
 
 /*
- * Process 3A: Wrangle and featurize nodes
+ * Wrangle and featurize nodes
  */
 process GCTREE {
   time '8h'
