@@ -79,7 +79,7 @@ should be the well ID, and the second the oligonucleotide barcode
 
 ## Schematic Outline
 
-<img src="./data/images/dag.svg">
+TODO: COMING SOON
 
 ## Requirements 
 
