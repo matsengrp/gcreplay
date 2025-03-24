@@ -22,24 +22,30 @@ plugins:
 nav:
   - Home: index.md
   - Analysis:
-    - Cell Summaries:
-      - Default: analysis/cell-summaries/default.ipynb
-      - Naive Reversions First: analysis/cell-summaries/naive_reversions_first.ipynb
-      - Naive Reversions No BP: analysis/cell-summaries/naive_reversions_no_bp.ipynb
-    - Fitness Regression:
-      - Default: analysis/fitness-regression/default.ipynb
-      - Naive Reversions First: analysis/fitness-regression/naive_reversions_first.ipynb
-      - Naive Reversions No BP: analysis/fitness-regression/naive_reversions_no_bp.ipynb
-    - Mutations:
-      - Default: analysis/mutations/default.ipynb
-      - Naive Reversions First: analysis/mutations/naive_reversions_first.ipynb
-      - Naive Reversions No BP: analysis/mutations/naive_reversions_no_bp.ipynb
-    - NDS-LB:
-      - Default: analysis/NDS-LB/default.ipynb
-      - Naive Reversions First: analysis/NDS-LB/naive_reversions_first.ipynb
-      - Naive Reversions No BP: analysis/NDS-LB/naive_reversions_no_bp.ipynb
-  - Interactive Figures: 
-    - Mutation Heatmaps: 
-      - Default: interactive-figures/mutation-heatmaps/default.html
-      - Naive Reversions First: interactive-figures/mutation-heatmaps/naive_reversions_first.html
-      - Naive Reversions No BP: interactive-figures/mutation-heatmaps/naive_reversions_no_bp.html
+    - Cell Summaries: analysis/cell-summaries/naive_reversions_first.ipynb
+    - Fitness Regression: analysis/fitness-regression/naive_reversions_first.ipynb
+    - Mutations: analysis/mutations/naive_reversions_first.ipynb
+    - NDS-LB: analysis/NDS-LB/naive_reversions_first.ipynb
+  - Mutation Heatmaps: interactive-figures/mutation-heatmaps/naive_reversions_first.html
+  - Key files: key-files.md
+  - Nextflow pipeline: pipeline-details.md
+  - Supplementary:
+    - Overview: supplementary/overview.md
+    - Alternate gctree inference:
+      - Analysis:
+        - Cell Summaries:
+          - Default: analysis/cell-summaries/default.ipynb
+          - Naive Reversions No BP: analysis/cell-summaries/naive_reversions_no_bp.ipynb
+        - Fitness Regression:
+          - Default: analysis/fitness-regression/default.ipynb
+          - Naive Reversions No BP: analysis/fitness-regression/naive_reversions_no_bp.ipynb
+        - Mutations:
+          - Default: analysis/mutations/default.ipynb
+          - Naive Reversions No BP: analysis/mutations/naive_reversions_no_bp.ipynb
+        - NDS-LB:
+          - Default: analysis/NDS-LB/default.ipynb
+          - Naive Reversions No BP: analysis/NDS-LB/naive_reversions_no_bp.ipynb
+      - Interactive Figures: 
+        - Mutation Heatmaps: 
+          - Default: interactive-figures/mutation-heatmaps/default.html
+          - Naive Reversions No BP: interactive-figures/mutation-heatmaps/naive_reversions_no_bp.html
