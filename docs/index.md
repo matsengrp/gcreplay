@@ -1,16 +1,14 @@
 # GC Replay Analysis & Results 
 
-Here we present some useful reference materials for the analysis of the GC Replay data. 
-The goal of this website is to provide a comprehensive overview of the analysis performed on the GC Replay data,
-including visualizations and summaries of key findings. 
+Here we present some useful reference materials for the analysis of the GC Replay data
 
-So far, it includes:
+* **Key Files** for a brief description of the pipeline input, intermediate, and results files that are available to download.
+* **Mutation heatmaps** for browsing mutational effects as measured both across both Deep Mutational Scanning (DMS), and replay data.
+* **Analysis (Notebooks)** for a summary of the analysis performed downstream from BCR isolation, and phylogenetic inference.
+* **Supplementary Figures** for the results we generated with different parameters to the `gctree` inference step
 
-- A summary of the analysis performed, and how to reproduce it
-- Jupyter notebooks with different analysis
-- Interactive figures generated from the analysis
-- Links and descriptions of key files that can be accessed via the repository
+## Citation
 
-## Getting Started
+## Acknowledgement
 
-Use the navigation tabs to explore the analysis notebooks, interactive figures, and key files. 
+## License

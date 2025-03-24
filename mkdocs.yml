@@ -23,7 +23,7 @@ nav:
   - Home: index.md
   - Key files: key-files.md
   - Mutation Heatmaps: interactive-figures/mutation-heatmaps/naive_reversions_first.html
-  - Analysis:
+  - Analysis (Notebooks):
     - Cell Summaries: analysis/cell-summaries/naive_reversions_first.ipynb
     - Fitness Regression: analysis/fitness-regression/naive_reversions_first.ipynb
     - Mutations: analysis/mutations/naive_reversions_first.ipynb
