@@ -30,7 +30,7 @@ nav:
     - Mutations: analysis/mutations/naive_reversions_first.ipynb
     - NDS-LB: analysis/NDS-LB/naive_reversions_first.ipynb
   - Supplementary:
-    - Overview: supplementary/overview.md
+    - Overview: supplementary-overview.md
     - Alternate gctree inference:
       - Analysis:
         - Cell Summaries:
