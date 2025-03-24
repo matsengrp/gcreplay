@@ -1,0 +1,51 @@
+site_name: GC Replay Analysis
+site_description: Analysis and results from our manuscript, "X"
+repo_url: https://github.com/matsengrp/gcreplay.git
+
+theme:
+  name: material
+  features:
+    # - navigation.tabs
+    - navigation.sections
+    # - navigation.indexes
+    # - content.tabs.link
+    # - navigation.expand    # Expand by default (optional, remove if you want all closed)
+
+plugins:
+  - search
+  - mkdocs-jupyter:
+      # include_source: True
+      ignore_h1_titles: True
+  # - macros
+  - awesome-pages
+
+nav:
+  - Home: index.md
+  - Key files: key-files.md
+  - Mutation Heatmaps: interactive-figures/mutation-heatmaps/naive_reversions_first.html
+  - Analysis (Notebooks):
+    - Cell Summaries: analysis/cell-summaries/naive_reversions_first.ipynb
+    - Fitness Regression: analysis/fitness-regression/naive_reversions_first.ipynb
+    - Mutations: analysis/mutations/naive_reversions_first.ipynb
+    - NDS-LB: analysis/NDS-LB/naive_reversions_first.ipynb
+  - Supplementary:
+    - Overview: supplementary/overview.md
+    - Alternate gctree inference:
+      - Analysis:
+        - Cell Summaries:
+          - Default: analysis/cell-summaries/default.ipynb
+          - Naive Reversions No BP: analysis/cell-summaries/naive_reversions_no_bp.ipynb
+        - Fitness Regression:
+          - Default: analysis/fitness-regression/default.ipynb
+          - Naive Reversions No BP: analysis/fitness-regression/naive_reversions_no_bp.ipynb
+        - Mutations:
+          - Default: analysis/mutations/default.ipynb
+          - Naive Reversions No BP: analysis/mutations/naive_reversions_no_bp.ipynb
+        - NDS-LB:
+          - Default: analysis/NDS-LB/default.ipynb
+          - Naive Reversions No BP: analysis/NDS-LB/naive_reversions_no_bp.ipynb
+      - Interactive Figures: 
+        - Mutation Heatmaps: 
+          - Default: interactive-figures/mutation-heatmaps/default.html
+          - Naive Reversions No BP: interactive-figures/mutation-heatmaps/naive_reversions_no_bp.html
+  - Nextflow pipeline: pipeline-details.md

@@ -4,41 +4,41 @@ __pycache__/
 *$py.class
 
 analysis/beast/output/
-nextflow/data/beast/annotated-PR-1-6-1-LB-19-GC.fasta
+data/beast/annotated-PR-1-6-1-LB-19-GC.fasta
 **/building-xvfb/
 **/work
 analysis/output/NDS-LB/*/trees/
 .vscode/
 
-nextflow/run_scripts*
-nextflow/.nextflow*
+run_scripts*
+.nextflow*
 **/_ignore
 **/Attic
 
-# nextflow/data/input/*.fastq
-nextflow/data/test_input/*.fastq
-# nextflow/data/micro_input/
+# data/input/*.fastq
+data/test_input/*.fastq
+# data/micro_input/
 
-nextflow/results/gctrees/*/observed_seqs.csv
-nextflow/results/gctrees/*/*/node_data.csv
-nextflow/results/gctrees/*/*/*.fasta
-nextflow/results/gctrees/*/*/*.log
-nextflow/results/gctrees/*/*/observed_seqs.csv
-nextflow/results/gctrees/*/*/gctree.inference.abundance_rank.svg
-nextflow/results/gctrees/*/*/gctree.inference.1.p
-nextflow/results/gctrees/*/*/LB*
-nextflow/results/gctrees/*/*/gctree.inference.parsimony_forest.p
+results/gctrees/*/observed_seqs.csv
+results/gctrees/*/*/node_data.csv
+results/gctrees/*/*/*.fasta
+results/gctrees/*/*/*.log
+results/gctrees/*/*/observed_seqs.csv
+results/gctrees/*/*/gctree.inference.abundance_rank.svg
+results/gctrees/*/*/gctree.inference.1.p
+results/gctrees/*/*/LB*
+results/gctrees/*/*/gctree.inference.parsimony_forest.p
 
-# nextflow/results/gctrees/*/outfile
-# nextflow/results/gctrees/*/*.idmap
-# nextflow/results/gctrees/*/*.fasta
-# nextflow/results/gctrees/*/*.isotypemap
-# nextflow/results/gctrees/*/*/delta*
-# nextflow/results/archive/main-pipeline/*/*.ipynb
-# nextflow/results/archive/beast-pipeline/BEAST_TIMETREE/
+# results/gctrees/*/outfile
+# results/gctrees/*/*.idmap
+# results/gctrees/*/*.fasta
+# results/gctrees/*/*.isotypemap
+# results/gctrees/*/*/delta*
+# results/archive/main-pipeline/*/*.ipynb
+# results/archive/beast-pipeline/BEAST_TIMETREE/
 
 # ignore run files for now
-nextflow/*.sh
+*.sh
 
 # all log files at top level dir
 **log.log.*
@@ -182,3 +182,7 @@ _ignore/
 
 # temp files in analysis
 analysis/outdir/tmp
+
+# pixi environments
+.pixi
+*.egg-info
