@@ -30,21 +30,21 @@ Launch the pipeline execution with the following command:
 
 ## GC Metadata
 
-The metadata for the GC replay experiments is stored in the `gc_metadata.csv` file. The columns are as follows:
+The metadata for germinal centers analyzed across all replay experiments is stored in this file. The columns are as follows:
 
-- "uid": (_unique identifier_) This is in the format of D<imm_duration>_M<mouse>_GC<gc>. 
-- "ngs_id": (_Parallel Replay_) reference to associated sequencing run specified in [ngs_manifest.csv](ngs_manifest.csv).
-- imm_duration: (_immunization duration_) This is the number of weeks after immunization that the sample was taken.
-- mouse: (_mouse number_) This is the unique identifier for the mouse.
-- gc: (_germinal center number_) This is the unique identifier for the germinal center.
-- strain: (_mouse strain_) This is the strain of the mouse.
-- node: (_lymph node number_) This identifies the specific lymph node location in the mouse.
-- cell_type: (_cell type_) This is the type of cell that was sequenced.
-- plate: (_plate barcode_) This is the barcode of the plate that the sample was sequenced on.
-- hc_barcode : (_heavy chain barcode_) This is the barcode of the heavy chain.
-- lc_barcode : (_light chain barcode_) This is the barcode of the light chain.
-- row : (_well rows_) Which rows of the 96-well plate contain the sample.
-- col : (_well columns_) Which columns of the 96-well plate contain the sample.
+- **uid**: (_unique identifier_) This is in the format of D<imm_duration>_M<mouse>_GC<gc>. 
+- **ngs_id**: (_ngs file id_) reference to associated sequencing run specified in [ngs_manifest.csv](https://github.com/matsengrp/gcreplay/blob/main/ngs_manifest.csv).
+- **imm_duration**: (_immunization duration_) This is the number of weeks after immunization that the sample was taken.
+- **mouse**: (_mouse number_) This is the unique identifier for the mouse.
+- **gc**: (_germinal center number_) This is the unique identifier for the germinal center.
+- **strain**: (_mouse strain_) This is the strain of the mouse.
+- **node**: (_lymph node number_) This identifies the specific lymph node location in the mouse.
+- **cell_type**: (_cell type_) This is the type of cell that was sequenced.
+- **plate**: (_plate barcode_) This is the barcode of the plate that the sample was sequenced on.
+- **hc_barcode** : (_heavy chain barcode_) This is the barcode of the heavy chain.
+- **lc_barcode** : (_light chain barcode_) This is the barcode of the light chain.
+- **row** : (_well rows_) Which rows of the 96-well plate contain the sample.
+- **col** : (_well columns_) Which columns of the 96-well plate contain the sample.
 
 ## Building docs
 
