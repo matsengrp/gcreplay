@@ -45,3 +45,19 @@ The metadata for the GC replay experiments is stored in the `gc_metadata.csv` fi
 - lc_barcode : (_light chain barcode_) This is the barcode of the light chain.
 - row : (_well rows_) Which rows of the 96-well plate contain the sample.
 - col : (_well columns_) Which columns of the 96-well plate contain the sample.
+
+## Building docs
+
+We use `pixi` to manage dependecies. To build the documentation, first install `pixi`:
+
+```bash
+$ curl -fsSL https://pixi.sh/install.sh | bash
+$ cd gcreplay
+$ pixi install
+```
+
+Then, run the following command to build the documentation:
+
+```bash
+mkdocs serve
+```
