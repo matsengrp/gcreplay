@@ -1,6 +1,9 @@
 # Use the mambaforge base image
 FROM quay.io/condaforge/mambaforge
 
+# use apt get to install poppler-utils
+RUN apt-get update && apt-get install -y poppler-utils
+
 # For this to work with a singularity wrapper
 # we have top move it somewhere other than root
 # ENV PATH="/opt/miniconda3/bin:${PATH}"
