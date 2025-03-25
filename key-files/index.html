@@ -330,35 +330,35 @@
         <li class="md-nav__item">
   <a href="#raw-processed-data" class="md-nav__link">
     <span class="md-ellipsis">
-      raw, processed data
+      Raw (processed) data
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="raw, processed data">
+    <nav class="md-nav" aria-label="Raw (processed) data">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#gctree-node-datacsv" class="md-nav__link">
+  <a href="#gctree-node-data-table" class="md-nav__link">
     <span class="md-ellipsis">
-      gctree-node-data.csv
+      gctree node data table
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#observed-seqscsv" class="md-nav__link">
+  <a href="#observed-bcrs-table" class="md-nav__link">
     <span class="md-ellipsis">
-      observed-seqs.csv
+      Observed BCR's table
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#phylogenetic-trees" class="md-nav__link">
+  <a href="#phylogenetic-gctree-directories" class="md-nav__link">
     <span class="md-ellipsis">
-      phylogenetic trees
+      Phylogenetic gctree directories
     </span>
   </a>
   
@@ -421,19 +421,19 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ngs-data" class="md-nav__link">
+  <a href="#raw-ngs-data" class="md-nav__link">
     <span class="md-ellipsis">
-      NGS Data
+      Raw (NGS) Data
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="NGS Data">
+    <nav class="md-nav" aria-label="Raw (NGS) Data">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#datangs-gz" class="md-nav__link">
+  <a href="#ngs-gz" class="md-nav__link">
     <span class="md-ellipsis">
-      data/NGS-gz
+      NGS-gz
     </span>
   </a>
   
@@ -1380,35 +1380,35 @@
         <li class="md-nav__item">
   <a href="#raw-processed-data" class="md-nav__link">
     <span class="md-ellipsis">
-      raw, processed data
+      Raw (processed) data
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="raw, processed data">
+    <nav class="md-nav" aria-label="Raw (processed) data">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#gctree-node-datacsv" class="md-nav__link">
+  <a href="#gctree-node-data-table" class="md-nav__link">
     <span class="md-ellipsis">
-      gctree-node-data.csv
+      gctree node data table
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#observed-seqscsv" class="md-nav__link">
+  <a href="#observed-bcrs-table" class="md-nav__link">
     <span class="md-ellipsis">
-      observed-seqs.csv
+      Observed BCR's table
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#phylogenetic-trees" class="md-nav__link">
+  <a href="#phylogenetic-gctree-directories" class="md-nav__link">
     <span class="md-ellipsis">
-      phylogenetic trees
+      Phylogenetic gctree directories
     </span>
   </a>
   
@@ -1471,19 +1471,19 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ngs-data" class="md-nav__link">
+  <a href="#raw-ngs-data" class="md-nav__link">
     <span class="md-ellipsis">
-      NGS Data
+      Raw (NGS) Data
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="NGS Data">
+    <nav class="md-nav" aria-label="Raw (NGS) Data">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#datangs-gz" class="md-nav__link">
+  <a href="#ngs-gz" class="md-nav__link">
     <span class="md-ellipsis">
-      data/NGS-gz
+      NGS-gz
     </span>
   </a>
   
@@ -1526,7 +1526,7 @@ cd gcreplay
 </code></pre>
 <h2 id="sample-metadata">Sample Metadata</h2>
 <h3 id="gc_metadatacsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/gc_metadata.csv">gc_metadata.csv</a></h3>
-<p>The metadata for the GC replay experiments is stored in this file. The columns are as follows:</p>
+<p>The metadata for germinal centers analyzed across all replay experiments is stored in this file. The columns are as follows:</p>
 <ul>
 <li><strong>uid</strong>: (<em>unique identifier</em>) This is in the format of D<imm_duration>_M<mouse>_GC<gc>. </li>
 <li><strong>ngs_id</strong>: (<em>ngs file id</em>) reference to associated sequencing run specified in <a href="https://github.com/matsengrp/gcreplay/blob/main/ngs_manifest.csv">ngs_manifest.csv</a>.</li>
@@ -1544,12 +1544,13 @@ cd gcreplay
 </ul>
 <h3 id="ngs_manifestcsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/ngs_manifest.csv">ngs_manifest.csv</a></h3>
 <p>Serves as a manifest for the Next Generation Sequencing (NGS) data, detailing the sequencing runs and their corresponding metadata.</p>
-<h2 id="raw-processed-data">raw, processed data</h2>
-<h3 id="gctree-node-datacsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/gctree-node-data.csv">gctree-node-data.csv</a></h3>
+<h2 id="raw-processed-data">Raw (processed) data</h2>
+<h3 id="gctree-node-data-table"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/gctree-node-data.csv">gctree node data table</a></h3>
 <p>Contains detailed information about each node in the phylogenetic trees inferred for each family tree. query the "naive_reversions_first" column values to get the data used for the primary analysis in the manuscript.</p>
-<h3 id="observed-seqscsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/observed-seqs.csv">observed-seqs.csv</a></h3>
-<p>A comprehensive collection of all B-cell sequences observed in the study.</p>
-<h3 id="phylogenetic-trees"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/gctrees">phylogenetic trees</a></h3>
+<h3 id="observed-bcrs-table"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/observed-seqs.csv">Observed BCR's table</a></h3>
+<p>A comprehensive collection of all B-cell sequences observed in the study.
+This includes a ton of information about each sequence, including the sequence itself, the number of times it was observed, the mutations it has aquired, and the germinal center it was observed in.</p>
+<h3 id="phylogenetic-gctree-directories"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/gctrees">Phylogenetic <code>gctree</code> directories</a></h3>
 <p>Directory containing the phylogenetic trees generated from the B-cell receptor sequences, for each germinal center according to it's "uid" (see <a href="https://github.com/matsengrp/gcreplay/blob/main/gc_metadata.csv">the gc metadata file</a>).
 In the manuscript primary analysis, we used the files under the /naive_reversions_first/ directories e.g. for tree <code>D15_M10_GC23</code> (Day 15, Mouse 10, Germinal Center 23), the files are:</p>
 <pre><code>results/gctrees/D15_M10_GC23
@@ -1583,8 +1584,10 @@ In the manuscript primary analysis, we used the files under the /naive_reversion
 <h3 id="resultsnotebooksnds-lbnaive_reversions_firstdatacsv"><a href="https://github.com/matsengrp/gcreplay/blob/main/results/notebooks/NDS-LB/naive_reversions_first/data.csv">results/notebooks/NDS-LB/naive_reversions_first/data.csv</a></h3>
 <!-- TODO WILL -->
 
-<h2 id="ngs-data">NGS Data</h2>
-<h3 id="datangs-gz"><a href="https://github.com/matsengrp/gcreplay/blob/main/data/NGS-gz">data/NGS-gz</a></h3>
+<!-- TODO please do the same for the files coming from 10X and phenotype trajectories -->
+
+<h2 id="raw-ngs-data">Raw (NGS) Data</h2>
+<h3 id="ngs-gz"><a href="https://github.com/matsengrp/gcreplay/blob/main/data/NGS-gz">NGS-gz</a></h3>
 <p>Directory containing compressed Next Generation Sequencing (NGS) data files that serve as the raw input for the main pipeline. These files contain the sequencing reads from B-cell receptor repertoires before processing and analysis.</p>
 
 
