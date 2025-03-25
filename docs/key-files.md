@@ -42,15 +42,16 @@ The metadata for germinal centers analyzed across all replay experiments is stor
 ### [ngs_manifest.csv](https://github.com/matsengrp/gcreplay/blob/main/ngs_manifest.csv)
 Serves as a manifest for the Next Generation Sequencing (NGS) data, detailing the sequencing runs and their corresponding metadata.
 
-## raw (processed) data
+## Raw (processed) data
 
-### [gctree-node-data.csv](https://github.com/matsengrp/gcreplay/blob/main/results/gctree-node-data.csv)
+### [gctree node data table](https://github.com/matsengrp/gcreplay/blob/main/results/gctree-node-data.csv)
 Contains detailed information about each node in the phylogenetic trees inferred for each family tree. query the "naive_reversions_first" column values to get the data used for the primary analysis in the manuscript.
 
-### [observed-seqs.csv](https://github.com/matsengrp/gcreplay/blob/main/results/observed-seqs.csv)
+### [Observed BCR's table](https://github.com/matsengrp/gcreplay/blob/main/results/observed-seqs.csv)
 A comprehensive collection of all B-cell sequences observed in the study.
+This includes a ton of information about each sequence, including the sequence itself, the number of times it was observed, the mutations it has aquired, and the germinal center it was observed in.
 
-### [phylogenetic `gctree` directories](https://github.com/matsengrp/gcreplay/blob/main/results/gctrees)
+### [Phylogenetic `gctree` directories](https://github.com/matsengrp/gcreplay/blob/main/results/gctrees)
 
 Directory containing the phylogenetic trees generated from the B-cell receptor sequences, for each germinal center according to it's "uid" (see [the gc metadata file](https://github.com/matsengrp/gcreplay/blob/main/gc_metadata.csv)).
 In the manuscript primary analysis, we used the files under the /naive_reversions_first/ directories e.g. for tree `D15_M10_GC23` (Day 15, Mouse 10, Germinal Center 23), the files are:

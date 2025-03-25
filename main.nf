@@ -80,6 +80,8 @@ include {
     MUTATIONS_ANALYSIS;
     INTERACTIVE_HEATMAPS;
     CELL_SUMMARIES;
+    PHENOTYPE_TRAJECTORIES;
+    ANALYSIS_10X;
   } from './modules.nf'
 
 
@@ -187,6 +189,17 @@ workflow {
     gctree_rank_ch
   )
 
+  PHENOTYPE_TRAJECTORIES(
+    file("${projectDir}/analysis/phenotype-trajectories.ipynb"),
+    file("${projectDir}/analysis/utils/"),
+    file(params.gc_metadata),
+    file(params.dms_vscores),
+    file(params.dms_sites),
+    file(params.hdag_mut),
+    file(params.hdag_sub),
+    gctree_rank_ch
+  )
+
   INTERACTIVE_HEATMAPS(
     file("${projectDir}/analysis/interactive-heatmaps.ipynb"),
     MUTATIONS_ANALYSIS.out | map{it -> tuple(it[2], it[3])}
@@ -203,6 +216,18 @@ workflow {
         .map{it -> it[0]}
       )
       .unique()
+  )
+
+  ANALYSIS_10X(
+    file("${projectDir}/analysis/10x.ipynb"),
+    file("${projectDir}/data/10x/Timecourse_Novaseqvdj/Data/AV1_VDJ_res/filtered_contig_annotations.csv"),
+    file("${projectDir}/data/10x/Timecourse_Novaseqvdj/Data/AV2_VDJ_res/filtered_contig_annotations.csv"),
+    file("${projectDir}/data/10x/Timecourse_Novaseqvdj/Data/AV3_VDJ_res/filtered_contig_annotations.csv"),
+    file("${projectDir}/data/10x/10week/filtered_contig_annotations.csv"),
+    file("${projectDir}/data/dms/final_variant_scores.csv"),
+    file("${projectDir}/data/dms/CGGnaive_sites.csv"),
+    file("${projectDir}/data/10x/Timecourse_Novaseqvdj/AV_VDJ_GEX_metadata.xlsx"),
+    file("${projectDir}/data/10x/10week/AV10.GC_metadata.xlsx")
   )
 
 }

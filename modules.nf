@@ -487,3 +487,99 @@ process CELL_SUMMARIES {
     -p workflow_env_exec True
   """
 }
+
+/*
+ * 
+ */
+process PHENOTYPE_TRAJECTORIES {
+  time '30m'
+  memory '16g'
+  cpus 4
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  publishDir "$params.results/notebooks/phenotype-trajectories/", mode: "copy"
+
+  input: 
+    path notebook
+    path utils
+    path metadata
+    path dms_vscores
+    path dms_sites
+    path hdag_mut
+    path hdag_sub
+    tuple path(gctree_dirs), val(ranking_coeff_subdir)
+
+  output: 
+    tuple(
+      path("$ranking_coeff_subdir/$notebook"), 
+      path("$ranking_coeff_subdir/*.pdf"),
+      path("$ranking_coeff_subdir/*.csv"),
+      val(ranking_coeff_subdir)
+    )
+
+  script:
+  """
+  mkdir -p gctrees/
+  for dir in ${gctree_dirs}; do
+    mv \$dir gctrees/
+  done
+
+  mkdir -p $ranking_coeff_subdir
+
+  # run the notebook
+  papermill $notebook $ranking_coeff_subdir/$notebook \
+    -p results '.' \
+    -p ranking_subdir $ranking_coeff_subdir \
+    -p metadata_csv $metadata \
+    -p final_variant_scores $dms_vscores \
+    -p dms_sites $dms_sites \
+    -p mutability_csv $hdag_mut \
+    -p substitution_csv $hdag_sub \
+    -p outbase '.' \
+    -p workflow_env_exec True
+  """
+}
+
+/*
+ * 
+ */
+process ANALYSIS_10X {
+  time '30m'
+  memory '16g'
+  cpus 4
+  stageInMode 'copy'
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  publishDir "$params.results/notebooks/10x/", mode: "copy"
+
+  input: 
+    path notebook
+    path data_AV1, stageAs: 'data_AV1'
+    path data_AV2, stageAs: 'data_AV2'
+    path data_AV3, stageAs: 'data_AV3'
+    path data_10wk, stageAs: 'data_10wk'
+    path dms_vscores
+    path dms_sites
+    path metadata_sheet
+    path metadata_10wk_sheet
+
+  output: 
+    tuple(
+      path("$notebook"), 
+      path("*.pdf"),
+      path("*.csv")
+    )
+
+  script:
+  """
+  # run the notebook
+  papermill $notebook $notebook \
+    -p data_AV1 $data_AV1 \
+    -p data_AV2 $data_AV2 \
+    -p data_AV3 $data_AV3 \
+    -p data_10wk $data_10wk \
+    -p final_variant_scores $dms_vscores \
+    -p dms_sites $dms_sites \
+    -p metadata_sheet $metadata_sheet \
+    -p metadata_10wk_sheet $metadata_10wk_sheet \
+    -p outbase '.' \
+  """
+}
