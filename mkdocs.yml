@@ -29,6 +29,8 @@ nav:
     - Fitness Regression: analysis/fitness-regression/naive_reversions_first.ipynb
     - Mutations: analysis/mutations/naive_reversions_first.ipynb
     - NDS-LB: analysis/NDS-LB/naive_reversions_first.ipynb
+    - Phenotype Trajectories: analysis/phenotype-trajectories/naive_reversions_first.ipynb
+    - 10x: analysis/10x/10x.ipynb
   - Supplementary:
     - Overview: supplementary-overview.md
     - Alternate gctree inference:
