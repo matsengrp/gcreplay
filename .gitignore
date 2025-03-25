@@ -29,13 +29,9 @@ results/gctrees/*/*/gctree.inference.1.p
 results/gctrees/*/*/LB*
 results/gctrees/*/*/gctree.inference.parsimony_forest.p
 
-# results/gctrees/*/outfile
-# results/gctrees/*/*.idmap
-# results/gctrees/*/*.fasta
-# results/gctrees/*/*.isotypemap
-# results/gctrees/*/*/delta*
-# results/archive/main-pipeline/*/*.ipynb
-# results/archive/beast-pipeline/BEAST_TIMETREE/
+results/COLLAPSE_RANK_PRUNE/
+results/MERGE_BCRS/
+beast-results/BEAST_TIMETREE/
 
 # ignore run files for now
 *.sh

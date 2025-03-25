@@ -513,6 +513,7 @@ process PHENOTYPE_TRAJECTORIES {
       path("$ranking_coeff_subdir/$notebook"), 
       path("$ranking_coeff_subdir/*.pdf"),
       path("$ranking_coeff_subdir/*.csv"),
+      path("$ranking_coeff_subdir/*.png"),
       path("$ranking_coeff_subdir/phenotype-trajectories/**"),
       val(ranking_coeff_subdir)
     )
