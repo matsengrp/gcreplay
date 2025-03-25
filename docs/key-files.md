@@ -92,6 +92,8 @@ results/gctrees/D15_M10_GC23
 ### [results/notebooks/NDS-LB/naive_reversions_first/data.csv](https://github.com/matsengrp/gcreplay/blob/main/results/notebooks/NDS-LB/naive_reversions_first/data.csv)
 <!-- TODO WILL -->
 
+<!-- TODO please do the same for the files coming from 10X and phenotype trajectories -->
+
 
 ## Raw (NGS) Data
 
