@@ -6,6 +6,9 @@ FROM quay.io/condaforge/mambaforge
 # ENV PATH="/opt/miniconda3/bin:${PATH}"
 # ARG PATH="/opt/miniconda3/bin:${PATH}"
 
+# use apt get to install poppler-utils
+RUN apt-get update && apt-get install -y poppler-utils
+
 # Set environment name
 ENV ENV_NAME=replay
 # this is to avoid the fact that apptainer cannot access the default /tmp directory
@@ -25,12 +28,14 @@ RUN mamba create -n $ENV_NAME -y \
     svgutils \
     gctree==4.3.0 \
     papermill \
+    openpyxl \
  && mamba clean -afy
 
 # Ensure the environment is activated by default
 RUN echo "conda activate $ENV_NAME" >> ~/.bashrc
 ENV PATH /opt/conda/envs/replay/bin:$PATH
 
+RUN python -m pip install pdf2image piecewise_regression
 
 # Set the working directory
 WORKDIR /workspace
