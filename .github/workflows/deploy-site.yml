@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 139_reorganize_repo
 
 permissions:
   contents: read
