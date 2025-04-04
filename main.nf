@@ -82,6 +82,7 @@ include {
     CELL_SUMMARIES;
     PHENOTYPE_TRAJECTORIES;
     ANALYSIS_10X;
+    MUTATION_PROFILE_10X;
   } from './modules.nf'
 
 
@@ -228,6 +229,14 @@ workflow {
     file("${projectDir}/data/dms/CGGnaive_sites.csv"),
     file("${projectDir}/data/10x/Timecourse_Novaseqvdj/AV_VDJ_GEX_metadata.xlsx"),
     file("${projectDir}/data/10x/10week/AV10.GC_metadata.xlsx")
+  )
+
+  MUTATION_PROFILE_10X(
+    file("${projectDir}/analysis/mutation-profile-10x.ipynb"),
+    file(params.hdag_mut),
+    file(params.hdag_sub),
+    file(params.dms_vscores),
+    ANALYSIS_10X.out.map{it -> it[2]}
   )
 
 }
