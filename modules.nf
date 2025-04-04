@@ -567,7 +567,7 @@ process ANALYSIS_10X {
     tuple(
       path("$notebook"), 
       path("*.pdf"),
-      path("*.csv")
+      path("data.csv")
     )
 
   script:
@@ -583,5 +583,38 @@ process ANALYSIS_10X {
     -p metadata_sheet $metadata_sheet \
     -p metadata_10wk_sheet $metadata_10wk_sheet \
     -p outbase '.' \
+  """
+}
+
+/*
+ * Process 5: 
+ * 
+ */
+process MUTATION_PROFILE_10X {
+  time '30m'
+  memory '16g'
+  cpus 4
+  stageInMode 'copy'
+  container 'quay.io/matsengrp/gcreplay-pipeline:analysis-notebooks'
+  publishDir "$params.results/notebooks/mutation-profile-10x/", mode: "copy"
+
+  input: 
+    path notebook
+    path hdag_mut
+    path hdag_sub
+    path dms_vscores
+    path data_10x_
+
+  output: 
+    path("$notebook")
+
+  script:
+  """
+  # run the notebook
+  papermill $notebook $notebook \
+    -p fivemer_mut_path $hdag_mut \
+    -p fivemer_sub_path $hdag_sub \
+    -p seq_data_path $data_10x_ \
+    -p final_variant_scores $dms_vscores
   """
 }
