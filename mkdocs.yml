@@ -31,7 +31,7 @@ nav:
     - NDS-LB: analysis/NDS-LB/naive_reversions_first.ipynb
     - Phenotype Trajectories: analysis/phenotype-trajectories/naive_reversions_first.ipynb
     - 10x: analysis/10x/10x.ipynb
-    - Mutation Profile 10x: analysis/mutation-profile-10x/10x.ipynb
+    - Mutation Profile 10x: analysis/mutation-profile-10x/mutation-profile-10x.ipynb
   - Supplementary:
     - Overview: supplementary-overview.md
     - Alternate gctree inference:
