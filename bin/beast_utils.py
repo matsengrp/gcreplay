@@ -132,27 +132,57 @@ def beast_dendropy_to_ete(tree, phenotype_fn):
             node_label = child.taxon.label if child.taxon else None
             ete_child = ete3.Tree(name=node_label, dist=child.edge_length)
             ete_node.add_child(ete_child)
-        if len(dendropy_node.comments) == 2:
-            mutation_history = format_history_all(dendropy_node.comments[1])
-            mutation_history.sort(key=lambda x: x[1], reverse=True)
-            parent_sequence = list(ete_node.up.sequence)
+        # if len(dendropy_node.comments) == 2:
+        #     mutation_history = format_history_all(dendropy_node.comments[1])
+        #     mutation_history.sort(key=lambda x: x[1], reverse=True)
+        #     parent_sequence = list(ete_node.up.sequence)
 
-            previous_event_age = ete_node.up.age
-            for site, age, ancestral, derived in mutation_history:
-                site -= 1
-                time_to_event = previous_event_age - age
-                parent_sequence[site] = derived
+        #     previous_event_age = ete_node.up.age
+        #     for site, age, ancestral, derived in mutation_history:
+        #         site -= 1
+        #         time_to_event = previous_event_age - age
+        #         parent_sequence[site] = derived
 
-                event = dict(
-                        site=site,
-                        ancestral=ancestral,
-                        derived=derived,
-                        age=age,
-                        time_to_event=time_to_event,
-                        phenotypes=phenotype_fn("".join(parent_sequence))
-                )
+        #         event = dict(
+        #                 site=site,
+        #                 ancestral=ancestral,
+        #                 derived=derived,
+        #                 age=age,
+        #                 time_to_event=time_to_event,
+        #                 phenotypes=phenotype_fn("".join(parent_sequence))
+        #         )
 
-                ete_node.mutations.append(event)
-                previous_event_age = age
+        #         ete_node.mutations.append(event)
+        #         previous_event_age = age
+
+    # now, we want to fix the tree such that naive is the root
+    # outgroup = tree.children[1]
+    outgroup = ete_tree&"naive@0"
+    ete_tree.remove_child(outgroup)
+    ete_tree.dist = outgroup.dist
+    outgroup.dist=0
+    outgroup.add_child(ete_tree)
+    ete_tree = outgroup
+
+    for node in ete_tree.traverse():
+        node.time = node.get_distance(ete_tree)
+
+    leaf_ages = [leaf.time for leaf in ete_tree]
+    assert np.allclose(leaf_ages[0], leaf_ages)
+    time_scale_factor = leaf_ages[0]
+    for node in ete_tree.traverse():
+        node.time /= time_scale_factor
+        node.dist /= time_scale_factor
+        del node.age
+
+    assert len(ete_tree.children) == 1
+    # TODO check that I should be setting these below
+    # ete_tree.children[0].dist = 0
+    # ete_tree.children[0].time = 0
+    assert ete_tree.children[0].time == 0, f"naive time = {ete_tree.children[0].time}"
+    for node in ete_tree.traverse():
+        assert np.isclose(node.get_distance(ete_tree), node.time), f"node {node.name} has distance {node.get_distance(ete_tree)} != time {node.time}"
+        if node.is_leaf():
+            assert node.time == 1, f"leaf time should be 1, {node.time}"    
 
     return ete_tree

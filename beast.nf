@@ -224,12 +224,12 @@ workflow BEAST_FLOW {
             beast_outputs, 
             file("$params.dms_vscores"), 
             file("$params.dms_sites")
-          ) //\
-          //| collect | MERGE_SLICE_DFS
+          ) \
+          | collect | MERGE_SLICE_DFS
     
-    emit:
-      //MERGE_SLICE_DFS.out
-      ETE_CONVERSION.out
+    // emit:
+      // MERGE_SLICE_DFS.out
+      // ETE_CONVERSION.out
 
 }
 

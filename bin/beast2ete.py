@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 
-from utils import *
-import beast_utils
+from utils import aa, mutations, naive_hk_bcr_nt
+from beast_utils import beast_trees_as_ete
+
+import pickle
 import argparse
-import ete3
-from historydag import beast_loader
 import pandas as pd
 import numpy as np
-from Bio.Seq import Seq
-import seaborn as sns
-import matplotlib.pyplot as plt
 import os
 from functools import partial
+
+# TODO remove
+ #import ete3
+# from historydag import beast_loader
+# from Bio.Seq import Seq
+# import seaborn as sns
+# import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='A script that takes in string and file arguments')
 
@@ -39,6 +43,8 @@ parser.add_argument('--burn_frac', type=float, required=False, default=0.9, help
 parser.add_argument('--igk_idx', type=int, required=False, default=336, help='')
 parser.add_argument('--igh_frame', type=int, required=False, default=1, help='')
 parser.add_argument('--igk_frame', type=int, required=False, default=1, help='')
+# TODO add a parameter to save only a single pkl tree
+# parser.add_argument('--save_single_pkl', type=str2bool, nargs='?',
 
 
 if __name__ == '__main__':
@@ -48,6 +54,9 @@ if __name__ == '__main__':
     if not os.path.exists(args.outdir): os.mkdir(args.outdir)
     if args.save_pkl_trees:
         if not os.path.exists(f"{args.outdir}/pkl_ete_trees"): os.mkdir(f"{args.outdir}/pkl_ete_trees")
+    else:
+        raise ValueError("save_pkl_trees must be True to save ete trees. args.save_pkl_trees: {args.save_pkl_trees}")
+        
     naive_sequence=naive_hk_bcr_nt 
 
 
@@ -94,28 +103,32 @@ if __name__ == '__main__':
         return dms_df.loc[all_mutations, fields].sum(0)
 
 
-    def phenotype_slice(tree, age):
+    def phenotype_slice(tree, time):
         def is_leaf_fn(node):
-            return node.age <= age and (node.up is None or node.up.age > age)
+            return node.time >= time and (node.up is None or node.up.time < time)
+        
+        if time < 0.0 or time > 1.0:
+            raise ValueError(f"time {time} is outside tree time range 0, 1")
 
         slice_population = []
         for node in tree.iter_leaves(is_leaf_fn=is_leaf_fn):
-            if node.age == age:
+            if node.time == time:
                 slice_population.append(node.phenotypes)
             else:
                 current_phenotypes = node.up.phenotypes
-                for mut_event in node.mutations:
+                # for mut_event in node.mutations:
 
-                    if mut_event['age'] < age:
-                        break
-                    current_phenotypes = mut_event['phenotypes']
+                #     if mut_event['time'] > time:
+                #         break
+                #     current_phenotypes = mut_event['phenotypes']
 
                 slice_population.append(current_phenotypes)
 
+        # result = pd.concat(slice_population, axis=1).T
         result = pd.concat(slice_population, axis=1).T
         return result
 
-    tree_start_idx, ete_trees = beast_utils.beast_trees_as_ete(
+    tree_start_idx, ete_trees = beast_trees_as_ete(
         args.xml_file, 
         args.nexus_file, 
         naive_sequence,
@@ -130,13 +143,15 @@ if __name__ == '__main__':
             pickle.dump(ete_tree, open(f"{args.outdir}/pkl_ete_trees/{tree_idx}.pkl", "wb"))
 
         # phenotype slices through tree time
-        for age in np.linspace(0, 20, 20):
-            slice = phenotype_slice(ete_tree, age)
-            slice_summary = slice.mean()
-            slice_summary["age"] = age
-            slice_summary["lineages"] = len(slice)
-            slice_summary["tree_idx"] = tree_idx
-            slices.append(slice_summary)
+        # phenotypes_summary 
+        for time in np.linspace(0, 1, 20):
+            slice = phenotype_slice(ete_tree, time)
+            print(slice)
+            assert False, slice
+            slice["time"] = time
+            slice["linetimes"] = len(slice)
+            slice["tree_idx"] = tree_idx
+        slices.append(slice)
 
         # aggregated node data
         for node in ete_tree.traverse():
@@ -145,21 +160,25 @@ if __name__ == '__main__':
                     nodes.append(
                         [
                             tree_idx, 
-                            mut_event["age"], 
+                            mut_event["time"], 
                             mut_event["phenotypes"].delta_bind_CGG, 
                             mut_event["phenotypes"].delta_expr
                         ]
                     )
 
-            nodes.append([tree_idx, node.age, node.phenotypes.delta_bind_CGG, node.phenotypes.delta_expr])
+            nodes.append([tree_idx, node.time, node.phenotypes.delta_bind_CGG, node.phenotypes.delta_expr])
+
 
     slice_df = pd.concat(slices, axis=1).T
-    slice_df["time"] = slice_df.age.max() - slice_df.age
+    # TODO scale tree by parsing the outdir for imm_duration
+    
+
+    slice_df["time"] = slice_df.time.max() - slice_df.time
     slice_df["gc"] = "-".join(args.outdir.split("-")[1:])
     slice_df.to_csv(f"{args.outdir}/slice_df.csv", index=False)
 
-    node_df = pd.DataFrame(nodes, columns=["tree_idx", "age", "delta_bind_CGG", "delta_expr"])
+    node_df = pd.DataFrame(nodes, columns=["tree_idx", "time", "delta_bind_CGG", "delta_expr"])
     node_df["time (days post-immunization)"] = pd.cut(
-            node_df.age.max() - node_df.age, bins=100
+            node_df.time.max() - node_df.time, bins=100
     ).apply(lambda x: 0 if x.left < 0 else x.right)
     node_df.to_csv(f"{args.outdir}/node_df.csv")
