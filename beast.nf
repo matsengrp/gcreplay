@@ -41,6 +41,7 @@ params.log_every          = 10000
 params.convert_to_ete     = true
 params.burn_frac          = 0.2
 params.save_pkl_trees     = false
+params.save_single_pkl    = true
 params.naive_seq_time     = 0
 params.observed_seq_time  = 1
 
@@ -54,8 +55,8 @@ Rockefeller University, New York NY.
 
 
 process ADD_TIME_TO_FASTA {
-  time '5m'
-  memory '2g'
+  time '15m'
+  memory '4g'
   cpus 1
 
   cache 'lenient'  
@@ -128,7 +129,7 @@ process BEAST_TIMETREE {
   cache 'lenient' 
   // stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
-  publishDir "$params.results/BEAST_TIMETREE", mode: "copy"
+  // publishDir "$params.results/BEAST_TIMETREE", mode: "copy"
 
   input: tuple val(id), path(beastgen_root_patched)
   output: 
@@ -153,7 +154,7 @@ process ETE_CONVERSION {
 
   cache 'lenient' 
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
-  publishDir "$params.results/ETE_CONVERSION", mode: "copy"
+  publishDir "$params.results/ETE_CONVERSION"
 
   input: 
     tuple(
@@ -169,6 +170,8 @@ process ETE_CONVERSION {
   output: path("${id}/"), type: 'dir'
   shell:
   """
+  mkdir -p ${id}
+  (
   beast2ete.py \
     --xml_file $beastgen_root_patched \
     --nexus_file $beast_history_trees \
@@ -176,13 +179,15 @@ process ETE_CONVERSION {
     --pos_df $dms_sites \
     --burn_frac $params.burn_frac \
     --outdir ${id} \
-    --save_pkl_trees $params.save_pkl_trees
+    --save_pkl_trees $params.save_pkl_trees \
+    --save_single_pkl $params.save_single_pkl
+  ) > ${id}/ete_conversion.log 2>&1
   """
 }
 
 process MERGE_SLICE_DFS {
-  time '5m'
-  memory '4g'
+  time '2h'
+  memory '16g'
   cpus 1
 
   cache 'lenient'
@@ -191,7 +196,7 @@ process MERGE_SLICE_DFS {
 
 
   input: path(all_ete_outputs)
-  output: path("slice_df.csv")
+  output: path("slice_df.csv.gz")
   script:
   """
   #!/usr/bin/env python  
@@ -200,10 +205,14 @@ process MERGE_SLICE_DFS {
 
   pd.concat(
     [
-      pd.read_csv(f"{ete_dir}/slice_df.csv")
+      pd.read_csv(f"{ete_dir}/slice_df.csv").assign(
+        uid=ete_dir.split("/")[0]
+      )
       for ete_dir in glob.glob("*/")
     ]
-  ).to_csv("slice_df.csv", index=False)
+  )[
+    ['uid','tree_idx','entry_idx','time','delta_expr','delta_bind_CGG']
+  ].to_csv("slice_df.csv.gz", index=False, compression="gzip")
   """
 }
 
@@ -224,12 +233,12 @@ workflow BEAST_FLOW {
             beast_outputs, 
             file("$params.dms_vscores"), 
             file("$params.dms_sites")
-          ) //\
-          //| collect | MERGE_SLICE_DFS
+          ) \
+          | collect | MERGE_SLICE_DFS
     
-    emit:
-      //MERGE_SLICE_DFS.out
-      ETE_CONVERSION.out
+    // emit:
+      // MERGE_SLICE_DFS.out
+      // ETE_CONVERSION.out
 
 }
 
