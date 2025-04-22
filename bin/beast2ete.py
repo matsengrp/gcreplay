@@ -169,7 +169,7 @@ if __name__ == "__main__":
             )
         if args.save_single_pkl and tree_idx == tree_start_idx + len(ete_trees) - 1:
             pickle.dump(
-                ete_tree, open(f"{args.outdir}/pkl_ete_trees/{tree_idx}.pkl", "wb")
+                ete_tree, open(f"{args.outdir}/last_sampled_tree.pkl", "wb")
             )
 
         for time in np.linspace(0, 1, args.n_phenotype_slices):

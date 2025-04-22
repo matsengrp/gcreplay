@@ -39,7 +39,7 @@ params.dms_sites          = "$projectDir/data/dms/CGGnaive_sites.csv"
 params.chain_length       = 25000000
 params.log_every          = 10000
 params.convert_to_ete     = true
-params.burn_frac          = 0.2
+params.burn_frac          = 0.8
 params.save_pkl_trees     = false
 params.save_single_pkl    = true
 params.naive_seq_time     = 0
@@ -154,7 +154,7 @@ process ETE_CONVERSION {
 
   cache 'lenient' 
   container 'quay.io/matsengrp/gcreplay-pipeline:historydag-ete-2023-04-24'
-  publishDir "$params.results/ETE_CONVERSION"
+  publishDir "$params.results/ETE_CONVERSION", mode: "copy"
 
   input: 
     tuple(
