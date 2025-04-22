@@ -145,7 +145,6 @@ if __name__ == "__main__":
 
                 slice_population.append(current_phenotypes)
 
-        # result = pd.concat(slice_population, axis=1).T
         result = pd.concat(slice_population, axis=1).T
         return result
 
