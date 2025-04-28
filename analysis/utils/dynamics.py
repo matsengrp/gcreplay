@@ -1,5 +1,7 @@
+import stat
 import numpy as np
 import jax
+
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 import equinox as eqx
@@ -14,16 +16,17 @@ import matplotlib.pyplot as plt
 
 # NB: It's not possible to have static JAX arrays. That's a requirement from JAX.
 
+
 class AbstractSpatialDiscretization(eqx.Module):
     x0: float = eqx.field(static=True)
     x_final: float = eqx.field(static=True)
     n: int = eqx.field(static=True)
     vals: eqx.AbstractVar[Float[Array, "n"]]
- 
+
     @property
     def δx(self):
         return (self.x_final - self.x0) / (self.n - 1)
-    
+
     @property
     def x(self):
         return jnp.linspace(self.x0, self.x_final, self.n)
@@ -61,23 +64,34 @@ class AbstractSpatialDiscretization(eqx.Module):
         if isinstance(other, AbstractSpatialDiscretization):
             self.check_aligned(other)
             other = other.vals
-        return SpatialDiscretization(self.x0, self.x_final, self.n, fn(self.vals, other))
+        return SpatialDiscretization(
+            self.x0, self.x_final, self.n, fn(self.vals, other)
+        )
 
     def integral(self):
         return jax.scipy.integrate.trapezoid(self.vals, dx=self.δx, axis=-1)
 
     def indefinite_integral(self):
-        return self.map(lambda vals: jnp.concatenate([jnp.zeros_like(vals[..., :1]),
-                                                      jnp.cumsum(self.δx * (vals[..., :-1] + vals[..., 1:]) / 2, axis=-1)],
-                                                     axis=-1
-                                     )
-                )
+        return self.map(
+            lambda vals: jnp.concatenate(
+                [
+                    jnp.zeros_like(vals[..., :1]),
+                    jnp.cumsum(self.δx * (vals[..., :-1] + vals[..., 1:]) / 2, axis=-1),
+                ],
+                axis=-1,
+            )
+        )
 
     def convolve(self, other):
         if isinstance(other, AbstractSpatialDiscretization):
             self.check_aligned(other)
             other = other.vals
-        return SpatialDiscretization(self.x0, self.x_final, self.n, jnp.convolve(self.vals, other, mode="same") * self.δx)
+        return SpatialDiscretization(
+            self.x0,
+            self.x_final,
+            self.n,
+            jnp.convolve(self.vals, other, mode="same") * self.δx,
+        )
 
     def __add__(self, other):
         return self.binop(other, lambda x, y: x + y)
@@ -99,19 +113,18 @@ class AbstractSpatialDiscretization(eqx.Module):
 
     def __rmul__(self, other):
         return self.binop(other, lambda x, y: y * x)
-    
+
     def __rtruediv__(self, other):
         return self.binop(other, lambda x, y: y / x)
-    
+
     def plot(self, axis=None, t=None, **kwargs):
         if axis is not None:
             plt.sca(axis)
         if self.vals.ndim == 2:
             return plt.pcolor(t, self.x, self.vals.T, **kwargs)
         return plt.plot(self.x, self.vals, **kwargs)
-    
 
-    
+
 class SpatialDiscretization(AbstractSpatialDiscretization):
     vals: Float[Array, "n"] = eqx.field(converter=jnp.asarray)
 
@@ -121,6 +134,10 @@ class SpatialDiscretization(AbstractSpatialDiscretization):
             jnp.logical_not(jnp.array_equal(self.vals.shape[-1], self.n)),
             f"Domain has size {self.vals.shape[-1]} but should have size {self.n}",
         )
+
+    def eval(self, x: Float[Array, "n"]) -> Float[Array, "n"]:
+        return jnp.interp(x, self.x, self.vals)
+
 
 class ParameterizedSpatialDiscretization(AbstractSpatialDiscretization, abc.ABC):
     @property
@@ -132,22 +149,31 @@ class ParameterizedSpatialDiscretization(AbstractSpatialDiscretization, abc.ABC)
         pass
 
     def __repr__(self):
-        return eqx.tree_pformat(self,
-                                short_arrays=False,
-                                truncate_leaf=lambda x: isinstance(x, jnp.ndarray) and x.size > 100)
+        return eqx.tree_pformat(
+            self,
+            short_arrays=False,
+            truncate_leaf=lambda x: isinstance(x, jnp.ndarray) and x.size > 100,
+        )
+
 
 class Sigmoid(ParameterizedSpatialDiscretization):
     α: float = eqx.field(converter=jnp.asarray)
     β: float = eqx.field(converter=jnp.asarray)
     γ: float = eqx.field(converter=jnp.asarray)
+    ν: float = eqx.field(converter=jnp.asarray)
 
     def eval(self, x):
-        return self.α * (jnp.tanh(self.β * x + self.γ) - jnp.tanh(self.γ))
-    
-    def derivative(self):
-        return SpatialDiscretization(self.x0, self.x_final, self.n,
-                                         self.α * self.β * jnp.cosh(self.β * self.x + self.γ) ** -2
-                                        )
+        # return self.α * (jnp.tanh(self.β * x + self.γ) - jnp.tanh(self.γ))
+        return self.α / (1 + jnp.exp(-(self.β * x - self.γ)))**self.ν
+
+    # def derivative(self):
+    #     return SpatialDiscretization(
+    #         self.x0,
+    #         self.x_final,
+    #         self.n,
+    #         self.α * self.β * jnp.cosh(self.β * self.x + self.γ) ** -2,
+    #     )
+
 
 class Gaussian(ParameterizedSpatialDiscretization):
     mass: float = eqx.field(converter=jnp.asarray)
@@ -162,7 +188,18 @@ class Gaussian(ParameterizedSpatialDiscretization):
         )
 
     def eval(self, x):
-        return self.mass * jnp.exp(-0.5 * ((x - self.mean) / self.std) ** 2) / (self.std * jnp.sqrt(2 * jnp.pi))
+        return (
+            self.mass
+            * jnp.exp(-0.5 * ((x - self.mean) / self.std) ** 2)
+            / (self.std * jnp.sqrt(2 * jnp.pi))
+        )
+    
+    def logpdf(self, x):
+        return -0.5 * ((x - self.mean) / self.std) ** 2 - jnp.log(self.std * jnp.sqrt(2 * jnp.pi))
+
+    def integral(self):
+        return self.mass
+
 
 class GaussianMixture(ParameterizedSpatialDiscretization):
     weights: Float[Array, "r"] = eqx.field(converter=jnp.asarray)
@@ -177,18 +214,36 @@ class GaussianMixture(ParameterizedSpatialDiscretization):
         )
 
     def eval(self, x):
-        return jnp.sum(self.weights * jnp.exp(-0.5 * ((x[:, None] - self.means) / self.stds) ** 2) / (self.stds * jnp.sqrt(2 * jnp.pi)), axis=-1)
+        return jnp.sum(
+            self.weights
+            * jnp.exp(-0.5 * ((x[:, None] - self.means) / self.stds) ** 2)
+            / (self.stds * jnp.sqrt(2 * jnp.pi)),
+            axis=-1,
+        )
+    
+    def logpdf(self, x):
+        weights = self.weights / jnp.sum(self.weights)
+        return jax.scipy.special.logsumexp(
+            jnp.log(weights)
+            - 0.5 * ((x[:, None] - self.means) / self.stds) ** 2
+            - jnp.log(self.stds * jnp.sqrt(2 * jnp.pi)),
+            axis=-1,
+        )
 
-# class Spline(ParameterizedSpatialDiscretization):
-#     knots: np.ndarray = eqx.field(converter=jnp.asarray, static=True)  # note: cannot be a JAX array because it's static!
-#     coefs: tuple[Float[Array, "k"]] = eqx.field(converter=jnp.asarray)
+    def integral(self):
+        return jnp.sum(self.weights)
 
-#     def __init__(self, x0, x_final, n, knots, y):
-#         super().__init__(x0, x_final, n)
-#         self.coefs = dx.backward_hermite_coefficients(knots, y)
+class Interp(ParameterizedSpatialDiscretization):
+    xp: Float[Array, "k"] = eqx.field(static=True, converter=jnp.asarray)
+    yp: Float[Array, "k"] = eqx.field(converter=jnp.asarray)
+
+    def eval(self, x):
+        return jnp.interp(x, self.xp, self.yp)
+
 
 def _is_scalar_field(node):
     return isinstance(node, SpatialDiscretization)
+
 
 def _field_structure(field):
     return jax.tree_util.tree_structure(field, is_leaf=_is_scalar_field)
@@ -201,9 +256,14 @@ class PDETerm(dx.AbstractTerm):
     ``vector_field`` should return some PyTree, with the same structure as the initial
     state ``y0``, and with every leaf broadcastable to the equivalent leaf in ``y0``.
     """
-    vector_field: Callable[[Scalar, SpatialDiscretization, PyTree], SpatialDiscretization]
 
-    def vf(self, t: Scalar, y: SpatialDiscretization, args: PyTree) -> SpatialDiscretization:
+    vector_field: Callable[
+        [Scalar, SpatialDiscretization, PyTree], SpatialDiscretization
+    ]
+
+    def vf(
+        self, t: Scalar, y: SpatialDiscretization, args: PyTree
+    ) -> SpatialDiscretization:
         out = self.vector_field(t, y, args)
         if _field_structure(out) != _field_structure(y):
             raise ValueError(
@@ -220,7 +280,7 @@ class PDETerm(dx.AbstractTerm):
     @staticmethod
     def prod(vf: SpatialDiscretization, control: Scalar) -> PyTree:
         return jax.tree_util.tree_map(lambda v: control * v, vf)
-    
+
 
 class CrankNicolson(dx.AbstractSolver):
     rtol: float
@@ -254,7 +314,13 @@ class CrankNicolson(dx.AbstractSolver):
             return new_y1, not_converged
 
         euler_y1 = y0 + δt * f0
-        y1, _ = eqx.internal.while_loop(keep_iterating, fixed_point_iteration, (euler_y1, False), kind="checkpointed", checkpoints=100)
+        y1, _ = eqx.internal.while_loop(
+            keep_iterating,
+            fixed_point_iteration,
+            (euler_y1, False),
+            kind="checkpointed",
+            checkpoints=100,
+        )
 
         y_error = y1 - euler_y1
         dense_info = dict(y0=y0, y1=y1)
