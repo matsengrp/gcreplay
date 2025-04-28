@@ -166,13 +166,13 @@ class Sigmoid(ParameterizedSpatialDiscretization):
         # return self.α * (jnp.tanh(self.β * x + self.γ) - jnp.tanh(self.γ))
         return self.α / (1 + jnp.exp(-(self.β * x - self.γ)))**self.ν
 
-    # def derivative(self):
-    #     return SpatialDiscretization(
-    #         self.x0,
-    #         self.x_final,
-    #         self.n,
-    #         self.α * self.β * jnp.cosh(self.β * self.x + self.γ) ** -2,
-    #     )
+    def derivative(self):
+        return SpatialDiscretization(
+            self.x0,
+            self.x_final,
+            self.n,
+            self.α * self.β * self.ν * jnp.exp(self.β * self.ν * self.x + self.γ) * (jnp.exp(self.γ) + jnp.exp(self.β * self.x)) ** (-self.ν - 1)
+        )
 
 
 class Gaussian(ParameterizedSpatialDiscretization):
