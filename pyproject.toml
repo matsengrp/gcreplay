@@ -1,0 +1,19 @@
+[project]
+authors = [{name = "jgallowa07", email = "jaredgalloway07@gmail.com"}]
+dependencies = []
+name = "gcreplay"
+requires-python = ">= 3.11"
+version = "0.1.0"
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+
+[tool.pixi.dependencies]
+numpy = ">=2.2.4,<3"
+pandas = ">=2.2.3,<3"
+seaborn = ">=0.13.2,<0.14"
+matplotlib = ">=3.10.1,<4"
+notebook = ">=7.4.0,<8"
+git-lfs = ">=3.6.1,<4"
+ipykernel = ">=6.29.5,<7"
