@@ -53,9 +53,6 @@ params.bcr_count_thresh     = 5
 
 log.info """\
 G C Re - F L O W!
-Matsen, Victora Labs
-Fred Hutchinson CRC, Seattle WA
-Rockefeller University, New York NY.
 ================================
 """
 

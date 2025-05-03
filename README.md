@@ -1,10 +1,6 @@
 # GC replay
 
-This repository contains the code and data for the analysis of B cell receptor (BCR) sequences isolated in Germinal Center (GC) - Replay experiments. 
-The protocol and analysis were a collaborative effort between the 
-[Victora](https://www.germinal.center/) and 
-[Matsen](https://matsen.fhcrc.org/) labs.
-For question and inquiries, please contact [X]()
+This repository contains the code and data for the analysis of B cell receptor (BCR) sequences isolated in Germinal Center (GC) - Replay experiments.
 
 For more details, please see the analysis [website](https://matsengrp.github.io/gcreplay/).
 

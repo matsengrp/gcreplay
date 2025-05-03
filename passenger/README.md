@@ -1,6 +1,6 @@
 # Passenger allele analysis
 
-This directory contains the code and results for the passenger allele analysis in collaboration with the Victora group and Will DeWitt.
+This directory contains the code and results for the passenger allele analysis.
 The primary outputs are in `output/chigy_{h,l}c_mutation_rates_nt.csv`, which describe the rate of mutating to each alternate base for each site.
 This is normalized across bases and across sites, so the total of the numerical entries in this matrix is 1.
 The `_extras.csv` files also provide 5mer estimates using the model of [Cui ... Kleinstein (2016)](http://dx.doi.org/10.4049/jimmunol.1502263). 
