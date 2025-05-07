@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+beast_results*
+beast_sandbox/
 analysis/beast/output/
 data/beast/annotated-PR-1-6-1-LB-19-GC.fasta
 **/building-xvfb/

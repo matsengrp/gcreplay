@@ -129,7 +129,7 @@ process BEAST_TIMETREE {
   cache 'lenient' 
   // stageInMode 'copy' // I guess beast doesn't like symlinks
   container 'quay.io/matsengrp/gcreplay-pipeline:beagle-beast-2023-04-24'
-  // publishDir "$params.results/BEAST_TIMETREE", mode: "copy"
+  publishDir "$params.results/BEAST_TIMETREE"
 
   input: tuple val(id), path(beastgen_root_patched)
   output: 
