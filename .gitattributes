@@ -2,6 +2,7 @@
 data/** filter=lfs diff=off merge=lfs -text
 results/** filter=lfs diff=off merge=lfs -text
 beast_results/** filter=lfs diff=off merge=lfs -text
+beast_results_constantsize/** filter=lfs diff=off merge=lfs -text
 results/**/*.ipynb filter= diff= merge= text
 results/**/*.html filter= diff= merge= text
 analysis/output/** filter=lfs diff=off merge=lfs -text
