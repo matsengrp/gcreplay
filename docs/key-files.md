@@ -20,7 +20,7 @@ git lfs pull
 
 ## Manuscript Figures:
 
-Here, we tie the figures seen in our manuscript, to the source code from which they were derived.
+Here, we tie the figures seen in our manuscript to the source code/data from which they were derived.
 
 ### Chapter 1
 - Figures 1(C-J), S1(E), and S2(A-B) were generated from [NDS-LB.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/NDS-LB.ipynb).
