@@ -15,7 +15,7 @@ plugins:
   - search
   - mkdocs-jupyter:
       # include_source: True
-      ignore_h1_titles: False
+      ignore_h1_titles: True
   # - macros
   - awesome-pages
 
