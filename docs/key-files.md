@@ -18,6 +18,37 @@ This will automatically pull the LFS files along with the regular repository con
 git lfs pull
 ```
 
+## Manuscript Figures:
+
+Here, we tie the figures seen in our manuscript to the source code/data from which they were derived.
+
+### Chapter 1
+- Figures 1(C-J), S1(E), and S2(A-B) were generated from [NDS-LB.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/NDS-LB.ipynb).
+
+### Chapter 2
+- Figures 2(A,B,H,I), and S3(C) were generated from [mutations.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/mutations.ipynb).
+- Figure S3(J) was generated from [NDS-LB.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/NDS-LB.ipynb).
+- Figure S3(B) was generated from [collapse_scores.mb](https://github.com/jbloomlab/Ab-CGGnaive_DMS/blob/main/results/summary/collapse_scores.md).
+
+### Chapter 3
+- Figure 3(A) was generated from the analysis in [passenger](https://github.com/matsengrp/gcreplay/tree/main/passenger), with final plots in [plots_for_paper.ipynb](https://github.com/matsengrp/gcreplay/blob/main/passenger/plots_for_paper.ipynb).
+- Figures 3(B-I), and S4(C-D) were generated from analysis in [mutations.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/mutations.ipynb).
+- Figures 3(B,F) was generated from interactive software using the key files [here](https://matsen.group/gcreplay/key-files/#raw-processed-data).
+- Figure 3(G) was generated from analysis in [mutation-accessibility.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/mutation-accessibility.ipynb).
+- Figures 3(H-I) were generated from interactive software using the key files [here](https://matsen.group/gcreplay/key-files/#raw-processed-data).
+
+### Chapter 4
+- Figure 4(A) was generates from the analysis in [cell-summaries.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/cell-summaries.ipynb).
+- Figures 4(B-E) were generated from analysis in [fitness-trajectories](https://github.com/matsengrp/gcreplay/blob/main/analysis/phenotype-trajectories.ipynb).
+- Figures 5(A,C,F,G) were generated from analysis in [NDS-LB.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/NDS-LB.ipynb).
+- Figures 5(B,D,H) were generated from analysis in [fitness-regression.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/fitness-regression.ipynb).
+- Figure 5(E) was generated from interactive software using the key files [here](https://matsen.group/gcreplay/key-files/#raw-processed-data).
+- Figure S5(A) was generated from [cell-summaries.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/cell-summaries.ipynb).
+- Figure S5(C) was generated from interactive software using the key files [here](https://matsen.group/gcreplay/key-files/#raw-processed-data).
+- Figure S5(B) was generated from [NDS-LB.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/NDS-LB.ipynb).
+- Figure S5(D) was generated from [fitness-regression.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/fitness-regression.ipynb).
+
+
 ## Sample Metadata 
 
 ### [gc_metadata.csv](https://github.com/matsengrp/gcreplay/blob/main/gc_metadata.csv)

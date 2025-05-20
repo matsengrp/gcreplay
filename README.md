@@ -28,7 +28,7 @@ Launch the pipeline execution with the following command:
 
 The metadata for germinal centers analyzed across all replay experiments is stored in this file. The columns are as follows:
 
-- **uid**: (_unique identifier_) This is in the format of D<imm_duration>_M<mouse>_GC<gc>. 
+- **uid**: (_unique identifier_) This is in the format of `D<imm_duration>_M<mouse>_GC<gc>`. 
 - **ngs_id**: (_ngs file id_) reference to associated sequencing run specified in [ngs_manifest.csv](https://github.com/matsengrp/gcreplay/blob/main/ngs_manifest.csv).
 - **imm_duration**: (_immunization duration_) This is the number of weeks after immunization that the sample was taken.
 - **mouse**: (_mouse number_) This is the unique identifier for the mouse.
@@ -55,5 +55,5 @@ $ pixi install
 Then, run the following command to build the documentation:
 
 ```bash
-mkdocs serve
+$ docs
 ```
