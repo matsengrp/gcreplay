@@ -47,9 +47,6 @@ params.observed_seq_time  = 1
 
 log.info """\
 G C Re - F L O W (beast)!
-Matsen, Victora Labs
-Fred Hutchinson CRC, Seattle WA
-Rockefeller University, New York NY.
 ================================
 """
 

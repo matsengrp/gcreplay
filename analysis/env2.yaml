@@ -2,7 +2,7 @@ name: replay2
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.12
   - seaborn
   - altair
   - biopython
@@ -18,7 +18,5 @@ dependencies:
     - equinox
     - diffrax
     - jaxopt
-    - ott-jax
     - pomegranate
     - openpyxl  # for reading excel files
-    - fcsparser

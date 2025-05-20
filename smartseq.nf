@@ -42,9 +42,6 @@ params.igk_idx          = 336
 
 log.info """\
 G C Re - F L O W (smart-Seq)!
-Matsen, Victora Labs
-Fred Hutchinson CRC, Seattle WA
-Rockefeller University, New York NY.
 ================================
 """
 
