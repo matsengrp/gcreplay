@@ -31,7 +31,7 @@ Here, we tie the figures seen in our manuscript to the source code/data from whi
 - Figure S3(B) was generated from [collapse_scores.mb](https://github.com/jbloomlab/Ab-CGGnaive_DMS/blob/main/results/summary/collapse_scores.md).
 
 ### Chapter 3
-- Figure 3A was generated from the analysis in [passenger](https://github.com/matsengrp/gcreplay/tree/main/passenger), with final plots in [plots_for_paper.ipynb](https://github.com/matsengrp/gcreplay/blob/main/passenger/plots_for_paper.ipynb).
+- Figure 3(A) was generated from the analysis in [passenger](https://github.com/matsengrp/gcreplay/tree/main/passenger), with final plots in [plots_for_paper.ipynb](https://github.com/matsengrp/gcreplay/blob/main/passenger/plots_for_paper.ipynb).
 - Figures 3(B-I), and S4(C-D) were generated from analysis in [mutations.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/mutations.ipynb).
 - Figures 3(B,F) was generated from interactive software using the key files [here](https://matsen.group/gcreplay/key-files/#raw-processed-data).
 - Figure 3(G) was generated from analysis in [mutation-accessibility.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/mutation-accessibility.ipynb).
