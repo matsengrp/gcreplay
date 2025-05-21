@@ -38,7 +38,7 @@ Here, we tie the figures seen in our manuscript to the source code/data from whi
 - Figures 3(H-I) were generated from interactive software using the key files [here](https://matsen.group/gcreplay/key-files/#raw-processed-data).
 
 ### Chapter 4
-- Figure 4(A) was generates from the analysis in [cell-summaries.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/cell-summaries.ipynb).
+- Figure 4(A) was generated from the analysis in [cell-summaries.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/cell-summaries.ipynb).
 - Figures 4(B-E) were generated from analysis in [fitness-trajectories](https://github.com/matsengrp/gcreplay/blob/main/analysis/phenotype-trajectories.ipynb).
 - Figures 5(A,C,F,G) were generated from analysis in [NDS-LB.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/NDS-LB.ipynb).
 - Figures 5(B,D,H) were generated from analysis in [fitness-regression.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/fitness-regression.ipynb).
