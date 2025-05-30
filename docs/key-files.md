@@ -115,18 +115,17 @@ results/gctrees/D15_M10_GC23
 ## (Notebook) Analysis Results
 
 ### [results/notebooks/cell-summaries/naive_reversions_first/cell_table.csv](https://github.com/matsengrp/gcreplay/blob/main/results/notebooks/cell-summaries/naive_reversions_first/cell_table.csv)
-<!-- TODO WILL -->
+A comprehensive dataset containing single-cell information from all germinal centers (GCs) analyzed in the study. Each row represents a single B cell with detailed sequence data, including unique identifiers, mutation information (nucleotide and amino acid substitutions), antigen binding affinity (delta_bind), gene expression measurements (delta_expr), and immunoglobulin isotype information. This file serves as the foundation for cell-level analyses throughout the study.
 
 ### [results/notebooks/cell-summaries/naive_reversions_first/gc_summary.csv](https://github.com/matsengrp/gcreplay/blob/main/results/notebooks/cell-summaries/naive_reversions_first/gc_summary.csv)
-<!-- TODO WILL -->
+An aggregated summary of germinal center characteristics, with each row representing a distinct germinal center. Contains metrics such as sampling time, number of cells sampled, median affinity measurements, dominance scores (indicating clonal diversity), and maximum Revving Evolutionary Influence (REI) scores. This file provides a high-level view of evolutionary dynamics and selection pressures within each germinal center structure.
 
 ### [results/notebooks/mutations/naive_reversions_first/data.csv](https://github.com/matsengrp/gcreplay/blob/main/results/notebooks/mutations/naive_reversions_first/data.csv)
-<!-- TODO WILL -->
+A detailed catalog of all mutations observed across B-cell receptors, including their effects on antigen binding and gene expression. Each row represents a unique mutation with information about its location (position, chain), frequency (events, abundance), biophysical properties (binding affinity, expression changes), and spatial characteristics (distance to antigen). This dataset is crucial for understanding mutation patterns and selection pressures during B-cell affinity maturation.
 
 ### [results/notebooks/NDS-LB/naive_reversions_first/data.csv](https://github.com/matsengrp/gcreplay/blob/main/results/notebooks/NDS-LB/naive_reversions_first/data.csv)
-<!-- TODO WILL -->
+Contains tree shape statistics and evolutionary metrics for each germinal center, generated from phylogenetic analysis. The data includes Normalized Dominance Scores (NDS) that quantify clonal diversity, Revving Evolutionary Influence (REI) measurements that identify key evolutionary events, and various affinity metrics that track selection for improved antigen binding. This file is essential for understanding the relationship between tree topology and functional outcomes during B-cell evolution.
 
-<!-- TODO please do the same for the files coming from 10X and phenotype trajectories -->
 
 
 ## Raw (NGS) Data
