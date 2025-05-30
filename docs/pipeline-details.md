@@ -22,46 +22,41 @@ Launch the pipeline execution with the following command:
 
 ## Pipeline parameters
 
-#### `--manifest` 
-   
-A CSV describing 
-1. "sample_id" A unique identifier for and set of paired miseq NGS files (a "PR")
-2. "key_file" A Key File describing the Germinal Centers expected in each well
-2. "date" Date the experiment was sequenced 
-3. "read1" & "read2" Paths to each of the paried end fastq files - relative to the project directory (where the main.nf file is located)
+* `--ngs_manifest` - Path to the NGS manifest CSV file containing sequencing run information. Default: `ngs_manifest.csv`
 
-#### `--plate_barcodes`
+* `--gc_metadata` - Path to the germinal center metadata CSV file. Default: `gc_metadata.csv`
 
-* Specifies the barcodes (at the **beginning** of read) for demultiplexing
-individual plates from single pair of MiSeq Raw NGS Fastq files
+* `--reads_prefix` - Directory containing the NGS read files. Default: `data/NGS-gz`
 
-* formatted with two, space-deliminated, columns. The first column
-should be the plate ID, and the second the oligonucleotide barcode  
+* `--results` - Directory where pipeline results will be stored. Default: `results/`
 
-#### `--well_barcodes`
+* `--plate_barcodes` - File containing plate barcode sequences. Default: `data/barcodes/plateBC.txt`
 
-* Specifies the barcodes (at the **end** of read) for demultiplexing
-individual wells from each of the plate-demultiplexed NGS Fastq files.
+* `--well_barcodes` - File containing 96-well plate barcode sequences. Default: `data/barcodes/96FBC.txt`
 
-* formatted with two, space-delimited, columns. The first column
-should be the well ID, and the second the oligonucleotide barcode  
+* `--partis_anno_dir` - Directory containing partis annotation germline data. Default: `data/partis_annotation/germlines`
 
-#### `--partis_anno_dir`
+* `--hdag_sub` - File containing HDAG substitution model data. Default: `data/mutability/MK_RS5NF_substitution.csv`
 
-* Path to the germline sequences needed for partis annotation.
-- relative to the project directory (where the main.nf file is located)
+* `--hdag_mut` - File containing HDAG mutability model data. Default: `data/mutability/MK_RS5NF_mutability.csv`
 
-#### `--top_n_rank`
+* `--chigy_hc_mut_rates` - File containing chimeric gamma heavy chain mutation rates. Default: `data/mutability/chigy_hc_mutation_rates_nt.csv`
 
-* This parameter is used after
+* `--chigy_lc_mut_rates` - File containing chimeric gamma light chain mutation rates. Default: `data/mutability/chigy_lc_mutation_rates_nt.csv`
 
+* `--pdb` - PDB structure file for antibody analysis. Default: `data/AbCGG_structure/combined_ch2_eh2-coot_IMGT.pdb`
 
-#### `--results`
+* `--dms_vscores` - File containing deep mutational scanning variant scores. Default: `data/dms/final_variant_scores.csv`
 
-* where you would like the final results to be places
+* `--dms_sites` - File containing naive sites information. Default: `data/dms/CGGnaive_sites.csv`
 
-* a relative path (does not need to exist)
+* `--heavy_chain_motif` - DNA motif sequence used to identify heavy chain reads. Default: `aGCgACgGGaGTtCAcagACTGCAACCGGTGTACATTCC`
 
+* `--light_chain_motif` - DNA motif sequence used to identify light chain reads. Default: `aGCgACgGGaGTtCAcagGTATACATGTTGCTGTGGTTGTCTG`
+
+* `--igk_idx` - Index position for immunoglobulin kappa chain processing. Default: `336`
+
+* `--bcr_count_thresh` - Minimum count threshold for B-cell receptor sequences. Default: `5`
 
 ## Pipeline steps
 
@@ -208,8 +203,8 @@ Other misc annotations regarding the barcode and plate locations the cell derive
 - row_LC: The row of the 96 well plate from which this cell was derived
 - column_HC: The column of the 96 well plate from which this cell was derived
 - column_LC: The column of the 96 well plate from which this cell was derived
-- chain_HC: ?
-- chain_LC: ?
+- chain_HC: 
+- chain_LC: 
 - rank_HC: The rank of the cell within the well. ranked from 1 - N seqs that met the bcr count threshold
 - rank_LC: The rank of the cell within the well. ranked from 1 - N seqs that met the bcr count threshold
 - counts_HC: The number of times this cell was observed in the well
