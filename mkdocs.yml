@@ -32,6 +32,7 @@ nav:
     - Phenotype Trajectories: analysis/phenotype-trajectories/naive_reversions_first.ipynb
     - 10x: analysis/10x/10x.ipynb
     - Mutation Profile 10x: analysis/mutation-profile-10x/mutation-profile-10x.ipynb
+    - Affinity Fitness Response: analysis/affinity-fitness-response/affinity-fitness-response.ipynb
   - Supplementary:
     - Overview: supplementary-overview.md
     - Alternate gctree inference:
