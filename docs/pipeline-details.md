@@ -76,20 +76,11 @@ Note that this pipeline is computationally intensive, we run the pipeline on a S
 (3) Split Heavy and light chain reads per well
 (4) Collapse identical sequences, while retaining and ordering rank of each sequence per well
 (5) Prune to keep the top N sequences observed from each well
-(6) Merge the results, formatting for [partis](TODO) annotation.
-(7) [partis](TODO) annotation
+(6) Merge the results, formatting for [partis](https://github.com/psathyrella/partis) annotation.
+(7) [partis](https://github.com/psathyrella/partis) annotation
 (8) curation, cleaning, and merging of Heavy and Light Chains
-(9) [gctree](TODO) lineage inference using HDAG.
+(9) [gctree](https://github.com/matsengrp/gctree) lineage inference using HDAG.
 (10) Merge the results
-
-
-## Schematic Outline
-
-
-
-
-# 
-
 
 # Beast pipeline
 
