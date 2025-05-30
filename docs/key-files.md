@@ -48,6 +48,9 @@ Here, we tie the figures seen in our manuscript to the source code/data from whi
 - Figure S5(B) was generated from [NDS-LB.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/NDS-LB.ipynb).
 - Figure S5(D) was generated from [fitness-regression.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/fitness-regression.ipynb).
 
+### Chapter 5
+- Figure 6(A-H) were all generated from [affinity-fitness-response.ipynb](https://github.com/matsengrp/gcreplay/blob/main/analysis/affinity-fitness-response.ipynb)
+
 
 ## Sample Metadata 
 
