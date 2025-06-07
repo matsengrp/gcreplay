@@ -15,7 +15,7 @@ For complete computational pipeline see our [GitHub repository](https://github.c
 
 ### Preprint
 
-**Replaying germinal center evolution on a quantified affinity landscape.** William S. DeWitt, Ashni A. Vora, Tatsuya Araki, Jared G. Galloway, Tanwee Alkutkar, Juliana Bortolatto, Tiago B.R. Castro, Will Dumm, Chris Jennings-Shaffer, Tongqiu Jia, Luka Mesin, Gabriel Ozorowski, Juhee Pae, Duncan K. Ralph, Jesse D. Bloom, Armita Nourmohammad, Yun S. Song, Andrew B. Ward, Tyler N. Starr, Frederick A. Matsen IV, Gabriel D. Victora. *bioRxiv* 2025.06.02.656870; doi: https://doi.org/10.1101/2025.06.02.656870
+**Replaying germinal center evolution on a quantified affinity landscape.** William S. DeWitt, Ashni A. Vora, Tatsuya Araki, Jared G. Galloway, Tanwee Alkutkar, Juliana Bortolatto, Tiago B.R. Castro, Will Dumm, Chris Jennings-Shaffer, Tongqiu Jia, Luka Mesin, Gabriel Ozorowski, Juhee Pae, Duncan K. Ralph, Jesse D. Bloom, Armita Nourmohammad, Yun S. Song, Andrew B. Ward, Tyler N. Starr, Frederick A. Matsen IV, Gabriel D. Victora. *bioRxiv* 2025.06.02.656870; doi: [https://doi.org/10.1101/2025.06.02.656870](https://doi.org/10.1101/2025.06.02.656870)
 
 <details>
   <summary>bibtex</summary>
