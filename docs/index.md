@@ -13,11 +13,26 @@ For complete computational pipeline see our [GitHub repository](https://github.c
 
 ## Citation
 
-TODO: COMING SOON
+### Preprint
 
-## Acknowledgements
+**Replaying germinal center evolution on a quantified affinity landscape.** William S. DeWitt, Ashni A. Vora, Tatsuya Araki, Jared G. Galloway, Tanwee Alkutkar, Juliana Bortolatto, Tiago B.R. Castro, Will Dumm, Chris Jennings-Shaffer, Tongqiu Jia, Luka Mesin, Gabriel Ozorowski, Juhee Pae, Duncan K. Ralph, Jesse D. Bloom, Armita Nourmohammad, Yun S. Song, Andrew B. Ward, Tyler N. Starr, Frederick A. Matsen IV, Gabriel D. Victora. *bioRxiv* 2025.06.02.656870; doi: https://doi.org/10.1101/2025.06.02.656870
 
-TODO: COMING SOON
+<details>
+  <summary>bibtex</summary>
+
+```text.bibtex
+@article {DeWitt2025.06.02.656870,
+	author = {DeWitt, William S. and Vora, Ashni A. and Araki, Tatsuya and Galloway, Jared G. and Alkutkar, Tanwee and Bortolatto, Juliana and Castro, Tiago B.R. and Dumm, Will and Jennings-Shaffer, Chris and Jia, Tongqiu and Mesin, Luka and Ozorowski, Gabriel and Pae, Juhee and Ralph, Duncan K. and Bloom, Jesse D. and Nourmohammad, Armita and Song, Yun S. and Ward, Andrew B. and Starr, Tyler N. and Matsen, Frederick A. and Victora, Gabriel D.},
+	title = {Replaying germinal center evolution on a quantified affinity landscape},
+	year = {2025},
+	doi = {10.1101/2025.06.02.656870},
+	publisher = {Cold Spring Harbor Laboratory},
+	URL = {https://www.biorxiv.org/content/early/2025/06/05/2025.06.02.656870},
+	journal = {bioRxiv}
+}
+```
+</details>
+
 
 ## License
 
