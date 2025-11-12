@@ -175,6 +175,16 @@ class Sigmoid(ParameterizedSpatialDiscretization):
         )
 
 
+class Softplus(ParameterizedSpatialDiscretization):
+    α: float = eqx.field(converter=jnp.asarray)
+    β: float = eqx.field(converter=jnp.asarray)
+    γ: float = eqx.field(converter=jnp.asarray)
+
+    def eval(self, x):
+        # return self.α * (jnp.tanh(self.β * x + self.γ) - jnp.tanh(self.γ))
+        return -self.α * (jnp.log1p(jnp.exp(-self.β * (x - self.γ))) - jnp.log1p(jnp.exp(self.β * self.γ))) / self.β
+
+
 class Gaussian(ParameterizedSpatialDiscretization):
     mass: float = eqx.field(converter=jnp.asarray)
     mean: float = eqx.field(converter=jnp.asarray)
