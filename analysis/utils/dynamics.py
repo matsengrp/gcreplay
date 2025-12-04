@@ -155,34 +155,47 @@ class ParameterizedSpatialDiscretization(AbstractSpatialDiscretization, abc.ABC)
             truncate_leaf=lambda x: isinstance(x, jnp.ndarray) and x.size > 100,
         )
 
-
-class Sigmoid(ParameterizedSpatialDiscretization):
-    α: float = eqx.field(converter=jnp.asarray)
-    β: float = eqx.field(converter=jnp.asarray)
-    γ: float = eqx.field(converter=jnp.asarray)
-    ν: float = eqx.field(converter=jnp.asarray)
-
-    def eval(self, x):
-        # return self.α * (jnp.tanh(self.β * x + self.γ) - jnp.tanh(self.γ))
-        return self.α / (1 + jnp.exp(-(self.β * x - self.γ)))**self.ν
+    
+class MonotonePiecewise(ParameterizedSpatialDiscretization):
+    x_points: list[float] = eqx.field(static=True)
+    y_points: Float[Array, "k"] = eqx.field(converter=jnp.asarray)
 
     def derivative(self):
         return SpatialDiscretization(
             self.x0,
             self.x_final,
             self.n,
-            self.α * self.β * self.ν * jnp.exp(self.β * self.ν * self.x + self.γ) * (jnp.exp(self.γ) + jnp.exp(self.β * self.x)) ** (-self.ν - 1)
+            jnp.interp(self.x, jnp.asarray(self.x_points), self.y_points),
+        )
+    
+    def derivative2(self):
+        dfdx_vals = self.derivative().vals
+        return SpatialDiscretization(
+            self.x0,
+            self.x_final,
+            self.n,
+            jnp.concatenate(
+                [
+                    jnp.zeros_like(dfdx_vals[..., :1]),
+                    jnp.diff(dfdx_vals) / self.δx,
+                ],
+                axis=-1,
+            ),
         )
 
-
-class Softplus(ParameterizedSpatialDiscretization):
-    α: float = eqx.field(converter=jnp.asarray)
-    β: float = eqx.field(converter=jnp.asarray)
-    γ: float = eqx.field(converter=jnp.asarray)
-
+    def _eval(self, x):
+        dfdx_vals = self.derivative().vals
+        return jnp.interp(x, self.x, jnp.concatenate(
+                        [
+                            jnp.zeros_like(dfdx_vals[..., :1]),
+                            jnp.cumsum(self.δx * (dfdx_vals[..., :-1] + dfdx_vals[..., 1:]) / 2, axis=-1),
+                        ],
+                        axis=-1,
+                    )
+                )
+    
     def eval(self, x):
-        # return self.α * (jnp.tanh(self.β * x + self.γ) - jnp.tanh(self.γ))
-        return -self.α * (jnp.log1p(jnp.exp(-self.β * (x - self.γ))) - jnp.log1p(jnp.exp(self.β * self.γ))) / self.β
+        return self._eval(x) - self._eval(np.asarray(0.0))
 
 
 class Gaussian(ParameterizedSpatialDiscretization):
@@ -242,13 +255,6 @@ class GaussianMixture(ParameterizedSpatialDiscretization):
 
     def integral(self):
         return jnp.sum(self.weights)
-
-class Interp(ParameterizedSpatialDiscretization):
-    xp: Float[Array, "k"] = eqx.field(static=True, converter=jnp.asarray)
-    yp: Float[Array, "k"] = eqx.field(converter=jnp.asarray)
-
-    def eval(self, x):
-        return jnp.interp(x, self.xp, self.yp)
 
 
 def _is_scalar_field(node):
