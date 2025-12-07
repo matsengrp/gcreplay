@@ -44,6 +44,7 @@ params.save_pkl_trees     = false
 params.save_single_pkl    = true
 params.naive_seq_time     = 0
 params.observed_seq_time  = 1
+params.add_naive_sequence = false
 
 log.info """\
 G C Re - F L O W (beast)!
@@ -72,6 +73,7 @@ process ADD_TIME_TO_FASTA {
     --naive_seq_time $params.naive_seq_time \
     --observed_seq_time $params.observed_seq_time \
     --output ${id}.fasta \
+    --add_naive_sequence $params.add_naive_sequence \
     input.fasta \
   """
 }

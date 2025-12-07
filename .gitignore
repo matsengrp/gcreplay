@@ -1,3 +1,9 @@
+gc_metadata_1_8.csv
+ngs_manifest_1_8.csv
+results/dag.svg
+results_1_8/
+results_notebook_cleanup/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
