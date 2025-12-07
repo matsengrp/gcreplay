@@ -558,10 +558,13 @@ process ANALYSIS_10X {
     path data_AV2, stageAs: 'data_AV2'
     path data_AV3, stageAs: 'data_AV3'
     path data_10wk, stageAs: 'data_10wk'
+    path data_20_30, stageAs: 'data_20_30'
     path dms_vscores
     path dms_sites
     path metadata_sheet
     path metadata_10wk_sheet
+    path metadata_20_30_sheet
+    path timepoints_20_30_sheet
 
   output: 
     tuple(
@@ -578,10 +581,13 @@ process ANALYSIS_10X {
     -p data_AV2 $data_AV2 \
     -p data_AV3 $data_AV3 \
     -p data_10wk $data_10wk \
+    -p data_20_30 $data_20_30 \
     -p final_variant_scores $dms_vscores \
     -p dms_sites $dms_sites \
     -p metadata_sheet $metadata_sheet \
     -p metadata_10wk_sheet $metadata_10wk_sheet \
+    -p metadata_20_30_sheet $metadata_20_30_sheet \
+    -p timepoints_20_30_sheet $timepoints_20_30_sheet \
     -p outbase '.' \
   """
 }
