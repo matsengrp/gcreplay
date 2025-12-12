@@ -222,10 +222,13 @@ workflow {
     file("${projectDir}/data/10x/Timecourse_Novaseqvdj/Data/AV2_VDJ_res/filtered_contig_annotations.csv"),
     file("${projectDir}/data/10x/Timecourse_Novaseqvdj/Data/AV3_VDJ_res/filtered_contig_annotations.csv"),
     file("${projectDir}/data/10x/10week/filtered_contig_annotations.csv"),
+    file("${projectDir}/data/10x/Day2030/filtered_contig_annotations_TC20.csv"),
     file("${projectDir}/data/dms/final_variant_scores.csv"),
     file("${projectDir}/data/dms/CGGnaive_sites.csv"),
     file("${projectDir}/data/10x/Timecourse_Novaseqvdj/AV_VDJ_GEX_metadata.xlsx"),
-    file("${projectDir}/data/10x/10week/AV10.GC_metadata.xlsx")
+    file("${projectDir}/data/10x/10week/AV10.GC_metadata.xlsx"),
+    file("${projectDir}/data/10x/Day2030/seu.AV_TC20.csv"),
+    file("${projectDir}/data/10x/Day2030/TC20_Sample_Hash_Timepoint.csv")
   )
 
   MUTATION_PROFILE_10X(
