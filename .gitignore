@@ -178,8 +178,7 @@ passenger/passenger-blast/old
 *.db.n*
 _ignore/
 
-# MNM notebook rendered outputs (source is mnm_spatial_correlation.py)
-passenger/mnm_spatial_correlation.ipynb
+# MNM notebook HTML render (source is mnm_spatial_correlation.py)
 passenger/mnm_spatial_correlation.html
 
 # temp files in analysis
