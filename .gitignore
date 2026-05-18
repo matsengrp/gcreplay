@@ -178,9 +178,15 @@ passenger/passenger-blast/old
 *.db.n*
 _ignore/
 
+# MNM notebook HTML render (source is mnm_spatial_correlation.py)
+passenger/mnm_spatial_correlation.html
+
 # temp files in analysis
 analysis/outdir/tmp
 
 # pixi environments
 .pixi
 *.egg-info
+
+# Issue drafts
+ISSUE-*.md

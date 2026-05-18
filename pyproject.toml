@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [tool.pixi.project]
-channels = ["conda-forge"]
+channels = ["https://prefix.dev/conda-forge"]
 platforms = ["linux-64", "osx-arm64"]
 
 [tool.pixi.dependencies]
@@ -24,3 +24,5 @@ notebook = ">=7.4.0,<8"
 git-lfs = ">=3.6.1,<4"
 ipykernel = ">=6.29.5,<7"
 papermill = ">=2.6.0,<3"
+biopython = ">=1.87,<2"
+scipy = ">=1.17.1,<2"
